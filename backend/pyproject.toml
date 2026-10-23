@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "firestarter"
 version = "0.1.0"
 description = "Orchestratore open source di progetti complessi: piani, strumenti, artefatti e verifiche."
-readme = "../README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
