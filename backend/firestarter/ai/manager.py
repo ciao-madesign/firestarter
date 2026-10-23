@@ -45,8 +45,16 @@ class OllamaProvider(AIProvider):
         req = urllib.request.Request(
             self.base_url + path, data=data, headers={"Content-Type": "application/json"}
         )
-        with urllib.request.urlopen(req, timeout=timeout or self.timeout) as resp:
-            return json.loads(resp.read().decode())
+        try:
+            with urllib.request.urlopen(req, timeout=timeout or self.timeout) as resp:
+                return json.loads(resp.read().decode())
+        except urllib.error.HTTPError as exc:
+            # il corpo della risposta contiene il motivo reale (es. memoria insufficiente)
+            try:
+                detail = json.loads(exc.read().decode()).get("error", "")
+            except (ValueError, OSError):
+                detail = ""
+            raise RuntimeError(f"Ollama ha risposto {exc.code}: {detail or exc.reason}") from exc
 
     def check(self) -> tuple[bool, str]:
         try:
