@@ -11,6 +11,10 @@ dipendenze, versioni e controlli, e chiede l'intervento dell'utente dove l'autom
 
 ## Avvio rapido
 
+**Windows:** installa Python, Node.js e Pandoc (`winget install Python.Python.3.12 OpenJS.NodeJS.LTS JohnMacFarlane.Pandoc`), clona il repo e fai doppio clic su `avvia.bat`.
+
+Manuale:
+
 Requisiti: Python ≥ 3.11, Node ≥ 18, [Ollama](https://ollama.com) con almeno un modello, [Pandoc](https://pandoc.org) nel PATH.
 
 ```bash
