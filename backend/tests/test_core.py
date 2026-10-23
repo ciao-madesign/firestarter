@@ -306,3 +306,12 @@ def test_model_name_matches_latest_tag(settings):
     settings.ollama_model = "llama3.2"
     _, meta = AIManager(settings, [Tagged()]).generate(kind="generation", prompt="x")
     assert meta["model"] == "llama3.2:latest"
+
+
+def test_ollama_options_are_sent(monkeypatch):
+    from firestarter.ai.manager import OllamaProvider
+
+    sent = {}
+    p = OllamaProvider("http://x", options={"num_gpu": 0})
+    monkeypatch.setattr(p, "_request", lambda path, payload=None, timeout=None: sent.update(payload) or {"response": "ok"})
+    assert p.generate("ciao", "", "m") == "ok" and sent["options"] == {"num_gpu": 0}

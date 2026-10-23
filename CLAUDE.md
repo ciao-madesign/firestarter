@@ -39,7 +39,7 @@ python -m firestarter                                              # server su h
 cd frontend && npm install && npm run build                        # build UI (servita dal backend)
 cd frontend && npm run dev                                         # UI in sviluppo (proxy /api -> 8000)
 ```
-Variabili: `FIRESTARTER_HOME` (db e progetti), `OLLAMA_HOST`, `FIRESTARTER_OLLAMA_MODEL`, `FIRESTARTER_PANDOC`.
+Variabili: `FIRESTARTER_HOME` (db e progetti), `OLLAMA_HOST`, `FIRESTARTER_OLLAMA_MODEL`, `FIRESTARTER_PANDOC`, `FIRESTARTER_OLLAMA_NUM_GPU` (0 = solo CPU).
 
 ## Regole di architettura (non violarle)
 1. Il **nucleo** (`core/`) non importa workflow o connettori concreti e non contiene regole di
@@ -73,6 +73,7 @@ Variabili: `FIRESTARTER_HOME` (db e progetti), `OLLAMA_HOST`, `FIRESTARTER_OLLAM
 | 2026-10-22 | Connettori iniziali: Ollama, Pandoc, ArtCraft generico via CLI (`<app>-cli`), file, manuale | Verificato sui repo storytold: ogni app ha CLI + MCP + canale `--control` |
 | 2026-10-22 | Nessuna capacità ArtCraft è `verified` finché non c'è un test ripetibile | App in alpha (RNF-14) |
 | 2026-10-22 | Integrazione Git: **rimandata**; vincolo invariato (nessun commit/push verso repo originali) | Spec 13.3, fuori dal primo scheletro |
+| 2026-10-23 | Opzione `FIRESTARTER_OLLAMA_NUM_GPU=0` per la sola CPU | Crash CUDA di Ollama su GTX 1060 (llama-server esce con 0xc0000409) |
 | 2026-10-22 | Push diretto su `main` | Indicazione del proprietario |
 
 ## Ecosistema ArtCraft (verificato leggendo i repo `storytold/*`, 2026-10-22)

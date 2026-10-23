@@ -23,6 +23,10 @@ class Settings:
     allow_external_ai: bool = False
     # percorsi espliciti dei CLI ArtCraft: {"designcraft": "C:\\...\\designcraft-cli.exe"}
     artcraft_paths: dict[str, str] = field(default_factory=dict)
+    # opzioni passate a Ollama; FIRESTARTER_OLLAMA_NUM_GPU=0 forza la sola CPU (utile con GPU instabili)
+    ollama_options: dict = field(default_factory=lambda: (
+        {"num_gpu": int(os.environ["FIRESTARTER_OLLAMA_NUM_GPU"])} if os.environ.get("FIRESTARTER_OLLAMA_NUM_GPU") else {}
+    ))
     pandoc_path: str | None = field(default_factory=lambda: os.environ.get("FIRESTARTER_PANDOC"))
     subprocess_timeout: int = 600
 

@@ -36,7 +36,8 @@ class OllamaProvider(AIProvider):
     id = "ollama"
     is_local = True
 
-    def __init__(self, base_url: str, timeout: int = 900) -> None:
+    def __init__(self, base_url: str, timeout: int = 900, options: dict | None = None) -> None:
+        self.options = options or {}
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
@@ -71,13 +72,15 @@ class OllamaProvider(AIProvider):
         payload = {"model": model, "prompt": prompt, "stream": False}
         if system:
             payload["system"] = system
+        if self.options:
+            payload["options"] = self.options
         return self._request("/api/generate", payload)["response"]
 
 
 class AIManager:
     def __init__(self, settings: Settings, providers: list[AIProvider] | None = None) -> None:
         self.settings = settings
-        self.providers: list[AIProvider] = providers if providers is not None else [OllamaProvider(settings.ollama_url)]
+        self.providers: list[AIProvider] = providers if providers is not None else [OllamaProvider(settings.ollama_url, options=settings.ollama_options)]
 
     def add_provider(self, provider: AIProvider) -> None:
         self.providers.append(provider)
