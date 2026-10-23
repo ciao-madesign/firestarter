@@ -42,7 +42,9 @@ class TechDocsWorkflow(Workflow):
                 params={
                     "kind": "generation", "system": SYSTEM,
                     "prompt": brief_block() + "\n\nAnalisi:\n{file:02_Working/analisi.md}\n\n"
-                    f"Scrivi la specifica tecnica con le sezioni: {sec_list}. Usa un titolo H1 e sezioni H2.",
+                    f"Scrivi la specifica tecnica con le sezioni: {sec_list}. Usa un titolo H1 e, per ogni sezione, "
+                    "un titolo H2 con ESATTAMENTE questo nome, nello stesso ordine: "
+                    + "; ".join(f"## {s}" for s in sections) + ".",
                 },
                 outputs=["04_Artifacts/specifica.md"],
                 validations=[

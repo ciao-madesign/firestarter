@@ -84,9 +84,11 @@ def min_words(path: Path, params: dict, ws: Workspace) -> CheckResult:
 
 @check("md_sections")
 def md_sections(path: Path, params: dict, ws: Workspace) -> CheckResult:
-    required = [s.lower() for s in params.get("sections", [])]
+    # confronto sulla radice, cosi' "Obiettivi" soddisfa "Obiettivo" e "Rischio" soddisfa "Rischi"
+    stem = lambda s: s.lower().rstrip("aeiou") if len(s) > 4 else s.lower()  # noqa: E731
+    required = params.get("sections", [])
     present = [h[1].lower() for h in _headings(_text(path))]
-    missing = [s for s in required if not any(s in p for p in present)]
+    missing = [s for s in required if not any(stem(s) in p for p in present)]
     return CheckResult(not missing, "sezioni richieste presenti", [f"sezione mancante: {m}" for m in missing])
 
 

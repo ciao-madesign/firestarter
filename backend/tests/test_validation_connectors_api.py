@@ -98,3 +98,12 @@ def test_api_end_to_end(client: TestClient):
     r = client.post(f"/api/projects/{pid}/tasks/tech_docs.spec/regenerate", json={})
     assert r.status_code == 409 and r.json()["protected"] == ["04_Artifacts/specifica.md"]
     assert client.post(f"/api/projects/{pid}/tasks/tech_docs.spec/regenerate", json={"confirm": True}).status_code == 200
+
+
+def test_md_sections_tolerates_plural_and_singular(tmp_path):
+    ws = Workspace(tmp_path)
+    f = tmp_path / "s.md"
+    f.write_text("# S\n\n## Obiettivi\n\nx\n\n## Requisito\n\nx\n\n## Rischio\n\nx\n", encoding="utf-8")
+    ok = run_check("md_sections", f, {"sections": ["Obiettivo", "Requisiti", "Rischi"]}, ws)
+    assert ok.passed, ok.issues
+    assert not run_check("md_sections", f, {"sections": ["Architettura"]}, ws).passed
