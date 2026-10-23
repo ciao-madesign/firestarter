@@ -100,6 +100,9 @@ class AIManager:
             installed = p.models()
             chosen = model or self.settings.models_by_kind.get(kind) or self.settings.ollama_model
             if chosen and installed and chosen not in installed:
+                # Ollama considera "nome" equivalente a "nome:latest"
+                chosen = next((m for m in installed if m == f"{chosen}:latest" or m.removesuffix(":latest") == chosen), chosen)
+            if chosen and installed and chosen not in installed:
                 raise AIUnavailable(f"modello '{chosen}' non installato su {p.id} (disponibili: {', '.join(installed)})")
             chosen = chosen or (installed[0] if installed else None)
             if not chosen:

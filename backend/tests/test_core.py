@@ -296,3 +296,13 @@ def test_declare_complete_requires_criteria(core, project):
         core.declare_complete(project["id"])
     core.declare_complete(project["id"], accept_exceptions=True, note="demo")
     assert core.store.get_project(project["id"])["state"] == "delivered"
+
+
+def test_model_name_matches_latest_tag(settings):
+    class Tagged(FakeAI):
+        def models(self):
+            return ["llama3.2:latest"]
+
+    settings.ollama_model = "llama3.2"
+    _, meta = AIManager(settings, [Tagged()]).generate(kind="generation", prompt="x")
+    assert meta["model"] == "llama3.2:latest"
