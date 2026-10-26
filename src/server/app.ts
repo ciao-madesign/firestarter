@@ -2,6 +2,7 @@
  * Backend applicativo: espone i motori (simulazione, esercizi, documenti, tutor) via API JSON interne.
  * Nessun comando viene mai eseguito sul server: tutto passa dal Simulation Engine.
  */
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { extname, join, normalize, resolve, sep } from 'node:path';
@@ -27,6 +28,10 @@ export interface AppConfig {
   store: Store;
   singleUser: boolean;
   webRoot: string;
+  /** se impostata, l'API richiede il login con questa password */
+  password?: string;
+  /** fiducia nell'intestazione X-Forwarded-* (dietro tunnel o proxy) */
+  trustProxy?: boolean;
 }
 
 class HttpError extends Error {
@@ -55,6 +60,26 @@ export function createApp(cfg: AppConfig): Server {
   const cache = new Map<string, { ws: WorkspaceState; course: CourseProgress }>();
   const locks = new Map<string, Promise<unknown>>();
   const hits = new Map<string, number[]>();
+  const loginFails = new Map<string, number[]>();
+  const key = cfg.password ? createHash('sha256').update('lab-session:' + cfg.password).digest() : null;
+  const SESSION_DAYS = 30;
+
+  const clientIp = (req: IncomingMessage): string => {
+    const f = req.headers['x-forwarded-for'];
+    if (cfg.trustProxy && typeof f === 'string') return f.split(',')[0].trim();
+    return req.socket.remoteAddress ?? 'x';
+  };
+  const sign = (exp: number): string => `${exp}.${createHmac('sha256', key!).update(String(exp)).digest('hex')}`;
+  const validToken = (tok: string | undefined): boolean => {
+    if (!key || !tok) return false;
+    const [exp, mac] = tok.split('.');
+    const e = Number(exp);
+    if (!e || e < Date.now() || !mac) return false;
+    const want = createHmac('sha256', key).update(String(e)).digest('hex');
+    return mac.length === want.length && timingSafeEqual(Buffer.from(mac), Buffer.from(want));
+  };
+  const cookieOf = (req: IncomingMessage): string | undefined => /(?:^|;\s*)lab_session=([^;]+)/.exec(req.headers.cookie ?? '')?.[1];
+  const authed = (req: IncomingMessage): boolean => !cfg.password || validToken(cookieOf(req));
 
   function wsId(req: IncomingMessage): string {
     if (cfg.singleUser) return 'student';
@@ -226,6 +251,31 @@ export function createApp(cfg: AppConfig): Server {
     const method = req.method ?? 'GET';
     const path = url.pathname.replace(/^\/api/, '') || '/';
     if (path === '/health') return sendJson(res, 200, { status: 'ok', simulated: true });
+    if (path === '/auth-status') return sendJson(res, 200, { required: !!cfg.password, authenticated: authed(req) });
+    if (path === '/login' && method === 'POST') {
+      if (!cfg.password) return sendJson(res, 200, { ok: true });
+      const ip = clientIp(req);
+      const now = Date.now();
+      const fails = (loginFails.get(ip) ?? []).filter((t) => now - t < 60_000);
+      if (fails.length >= 5) throw new HttpError(429, 'Troppi tentativi: riprova tra un minuto.');
+      const body = await readBody(req);
+      const a = createHash('sha256').update(String(body.password ?? '')).digest();
+      const b = createHash('sha256').update(cfg.password).digest();
+      if (!timingSafeEqual(a, b)) {
+        fails.push(now);
+        loginFails.set(ip, fails);
+        throw new HttpError(401, 'Password non corretta.');
+      }
+      const exp = now + SESSION_DAYS * 86_400_000;
+      const secure = cfg.trustProxy && req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : '';
+      res.setHeader('Set-Cookie', `lab_session=${sign(exp)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_DAYS * 86400}${secure}`);
+      return sendJson(res, 200, { ok: true });
+    }
+    if (path === '/logout' && method === 'POST') {
+      res.setHeader('Set-Cookie', 'lab_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');
+      return sendJson(res, 200, { ok: true });
+    }
+    if (!authed(req)) throw new HttpError(401, 'Accesso richiesto: effettua il login.');
     const id = wsId(req);
     const c = load(id);
     const { ws, course } = c;
@@ -551,7 +601,7 @@ export function createApp(cfg: AppConfig): Server {
     res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Content-Security-Policy', "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'");
-    const ip = req.socket.remoteAddress ?? 'x';
+    const ip = clientIp(req);
     const now = Date.now();
     const arr = (hits.get(ip) ?? []).filter((t) => now - t < 60_000);
     arr.push(now);

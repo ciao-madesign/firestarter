@@ -1,0 +1,22 @@
+# Servizio systemd per il Wyse. Installazione: vedi docs/INSTALLAZIONE-WYSE.md
+[Unit]
+Description=CLI & API Learning Lab (ambiente simulato)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__UTENTE__
+WorkingDirectory=__CARTELLA__
+EnvironmentFile=/etc/lab.env
+ExecStart=/opt/node22/bin/node dist/server.mjs
+Restart=on-failure
+RestartSec=3
+# il lab non ha bisogno di privilegi
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=__DATI__
+
+[Install]
+WantedBy=multi-user.target

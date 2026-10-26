@@ -185,9 +185,33 @@ function buildSplitter(): HTMLElement {
   return s;
 }
 
+async function loginScreen(rootEl: HTMLElement): Promise<void> {
+  clear(rootEl);
+  const pw = h('input', { type: 'password', id: 'lab-pw', autocomplete: 'current-password', 'aria-label': 'Password', required: true });
+  const msg = h('p', { role: 'alert', class: 'fatal' });
+  const form = h('form', { class: 'login', on: { submit: async (e) => {
+    e.preventDefault();
+    try {
+      await api('POST', '/login', { password: pw.value });
+      location.reload();
+    } catch (err) {
+      msg.textContent = (err as Error).message;
+    }
+  } } }, h('h1', null, 'CLI & API Learning Lab'), h('p', { class: 'muted' }, 'Accesso riservato. Ambiente simulato: nessun comando viene eseguito sul tuo dispositivo.'), h('label', null, 'Password', pw), h('button', { class: 'btn primary', type: 'submit' }, 'Entra'), msg);
+  rootEl.append(form);
+  pw.focus();
+}
+
 async function boot(): Promise<void> {
   const rootEl = $('#app');
   clear(rootEl);
+  try {
+    const st = await api<{ required: boolean; authenticated: boolean }>('GET', '/auth-status');
+    if (st.required && !st.authenticated) return void (await loginScreen(rootEl));
+  } catch {
+    /* offline: si prosegue con i contenuti in cache */
+  }
+  on('auth-required', () => location.reload());
   term = new Terminal();
   initLesson({
     insertCommand: (cmd) => { term.setLine(cmd); if (matchMedia('(max-width: 899px)').matches) setMobile('terminal'); },

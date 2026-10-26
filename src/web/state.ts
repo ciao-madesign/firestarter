@@ -65,6 +65,7 @@ export async function api<T = Json>(method: string, path: string, body?: unknown
   } catch {
     data = text;
   }
+  if (res.status === 401 && path !== '/login') emit('auth-required');
   if (!res.ok) {
     if (res.status === 503 && data?.error === 'offline') setOnline(false);
     throw new ApiError(data?.message ?? `Errore ${res.status}`, res.status);

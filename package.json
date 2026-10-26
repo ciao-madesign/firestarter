@@ -9,6 +9,7 @@
     "build:web": "node scripts/build-web.mjs",
     "build": "npm run typecheck && npm run build:web",
     "start": "tsx src/server/main.ts",
+    "start:prod": "node dist/server.mjs",
     "dev": "npm run build:web && tsx watch src/server/main.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

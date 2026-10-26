@@ -35,7 +35,7 @@ Specifica funzionale completa: la versione 0.1 fornita dall'utente (non è nel r
 | Verifica | Deterministica su file, log delle richieste e storico comandi; le verifiche autonome non hanno soluzione; ogni soluzione documentata è testata in entrambe le shell |
 | Valutazione | Livello 1–4; 7 competenze separate; soluzione mostrata ≠ autonomia |
 | Git e webhook (M5 del brief) | Non simulati: restano nel tutor CLI |
-| Hosting (deciso, **da implementare**) | Entrambe: (a) app statica nel browser con i motori eseguiti lato client, pubblicabile come pagina web e usabile senza terminale né installazioni; (b) piccolo servizio online per sincronizzare i progressi e fare da proxy al tutor AI |
+| Hosting (deciso, implementato) | **Server di casa: Dell Wyse 5070** (Celeron J4105, 8 GB, eMMC 16 GB + SSD esterno per i dati), con Linux e Docker. Accesso con **Tailscale** (`serve` per i dispositivi personali, `funnel` per il PC di lavoro dove non si può installare Tailscale) + **password** (`LAB_PASSWORD`). Nessun servizio cloud (Vercel ecc.). Guida: `docs/INSTALLAZIONE-WYSE.md` |
 | Chiave API Anthropic (deciso, **da implementare**) | Solo lato server, variabile d'ambiente del servizio; mai nel browser né nel repo; tutor AI opzionale; l'app funziona senza |
 
 ## Vincoli da rispettare
@@ -69,7 +69,7 @@ Regole di sviluppo:
 
 ## Lavori aperti (prossimi passi concordati)
 
-1. **Hosting**: esecuzione dei motori nel browser (app statica, PWA) con stato in IndexedDB; esportazione/importazione e sincronizzazione dei progressi tramite servizio online; pubblicazione come pagina web. Se il servizio sincronizza dati personali serve almeno una password.
+1. **Hosting sul Wyse**: pacchetto pronto (Dockerfile, compose, script, password); da fare sul dispositivo: installare Linux, Docker e Tailscale; da verificare se il PC di lavoro raggiunge `*.ts.net`.
 2. **Tutor AI**: adattatore `TutorAdapter` per l'API Anthropic dietro un endpoint server (chiave in variabile d'ambiente, limiti di costo e di richieste, contesto filtrato, modalità deterministica come fallback). Chat e commenti sulle risposte/documenti dello studente.
 3. Test automatici dell'interfaccia (oggi solo prove manuali); prova su dispositivi mobili reali.
 
@@ -84,3 +84,4 @@ Aggiungere in fondo una riga per ogni decisione importante: data (YYYY-MM-DD), d
 - 2026-10-26 — Git e webhook non simulati. Motivo: richiedono comandi reali; restano nel tutor CLI.
 - 2026-10-26 — Hosting: strategia "entrambe" (app statica nel browser + servizio online per sincronizzazione e tutor AI). Motivo: l'utente non può usare il terminale su tutti i dispositivi e non vuole installare nulla.
 - 2026-10-26 — Chiave API Anthropic solo lato server, tutor AI opzionale. Motivo: sicurezza della chiave, l'app deve funzionare anche senza AI.
+- 2026-10-26 — Hosting: **server di casa Wyse 5070 + Tailscale (serve/funnel) + password**, al posto di app statica e servizi cloud. Motivo: il lab è già un server unico, nessuna riscrittura dei motori, progressi uguali su tutti i dispositivi, nessun costo; Tailscale non installabile sul PC di lavoro quindi Funnel + password. Sostituisce la decisione "entrambe".

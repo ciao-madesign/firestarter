@@ -128,3 +128,37 @@ describe('Backend applicativo', () => {
     expect(r.headers.get('x-content-type-options')).toBe('nosniff');
   });
 });
+
+describe('Protezione con password', () => {
+  let s2: Server;
+  let b2 = '';
+  beforeAll(async () => {
+    s2 = createApp({ store: new MemoryStore(), singleUser: true, webRoot: 'dist/web', password: 'segreta-di-prova' });
+    await new Promise<void>((r) => s2.listen(0, '127.0.0.1', r));
+    b2 = `http://127.0.0.1:${(s2.address() as AddressInfo).port}`;
+  });
+  afterAll(() => s2.close());
+
+  it('senza login l\'API è negata, lo stato di autenticazione no', async () => {
+    expect((await fetch(b2 + '/api/session')).status).toBe(401);
+    const st = await (await fetch(b2 + '/api/auth-status')).json();
+    expect(st).toEqual({ required: true, authenticated: false });
+  });
+  it('password errata rifiutata, corretta accettata con cookie HttpOnly', async () => {
+    const bad = await fetch(b2 + '/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password: 'no' }) });
+    expect(bad.status).toBe(401);
+    const ok = await fetch(b2 + '/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password: 'segreta-di-prova' }) });
+    expect(ok.status).toBe(200);
+    const cookie = ok.headers.get('set-cookie')!;
+    expect(cookie).toContain('HttpOnly');
+    expect(cookie).toContain('SameSite=Strict');
+    const r = await fetch(b2 + '/api/session', { headers: { cookie: cookie.split(';')[0] } });
+    expect(r.status).toBe(200);
+  });
+  it('un cookie falsificato non vale e i tentativi ripetuti sono limitati', async () => {
+    expect((await fetch(b2 + '/api/session', { headers: { cookie: 'lab_session=9999999999999.abc' } })).status).toBe(401);
+    let last = 0;
+    for (let i = 0; i < 7; i++) last = (await fetch(b2 + '/api/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password: 'x' + i }) })).status;
+    expect(last).toBe(429);
+  });
+});
