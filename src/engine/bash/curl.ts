@@ -192,7 +192,9 @@ export function curl(args: string[], io: Io, rt: BashRuntime, shell: ShellId = '
     for (const [k, v] of Object.entries(res.headers)) text += `${k}: ${v}\r\n`;
     text += '\r\n';
   }
-  if (outFile) {
+  if (outFile === '/dev/null') {
+    if (include || head) io.out(text);
+  } else if (outFile) {
     const abs = rt.resolve(outFile);
     try {
       rt.vfs.writeFile(abs, res.body);

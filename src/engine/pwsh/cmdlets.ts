@@ -676,6 +676,7 @@ function webRequest(c: CmdCtx, cmd: 'Invoke-RestMethod' | 'Invoke-WebRequest'): 
       statusName: STATUS_NAMES[res.status] ?? res.statusText,
       statusText: STATUS_TEXT_NET[res.status] ?? res.statusText,
       body: res.body,
+      headers: res.headers,
     });
   }
   if (cmd === 'Invoke-RestMethod') {

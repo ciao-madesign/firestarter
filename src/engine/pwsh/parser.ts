@@ -483,7 +483,7 @@ export class PsParser {
   /** valore a destra di un'assegnazione: if/foreach non supportati come espressione; pipeline sì */
   private parseStatementValue(): Stmt {
     const kw = this.peekKeyword();
-    if (kw === 'if' || kw === 'foreach') {
+    if (kw === 'if' || kw === 'foreach' || kw === 'try') {
       const s = this.parseKeyword(kw);
       if (s) return s;
     }
@@ -561,7 +561,7 @@ export class PsParser {
     const c = this.ch();
     if (c === '$' || /\d/.test(c) || c === '"' || c === "'" || c === '(' || c === '[' || c === '{' || c === '!') return true;
     if (c === '@' && /[({"']/.test(this.ch(1))) return true;
-    if ((c === '-' || c === '+') && /[\d$(]/.test(this.ch(1))) return true;
+    if (c === '-' || c === '+') return true;
     return false;
   }
 

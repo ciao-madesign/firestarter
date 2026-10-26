@@ -47,6 +47,9 @@ export function getMember(rt: PsRuntime, obj: unknown, name: string): unknown {
       if (l === 'values') return obj.keys().map((k) => obj.props[k]);
       return null;
     }
+    if (l === 'psobject') {
+      return custom({ Properties: obj.keys().filter((k) => !k.startsWith('__')).map((k) => custom({ Name: k, Value: obj.props[k] })) });
+    }
     if (isEnum(obj)) return l === 'value__' ? (obj as PSObject).props.value__ : null;
     if (name.startsWith('__')) return null;
     return obj.get(name);

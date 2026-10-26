@@ -58,6 +58,8 @@ export class PsRuntime {
   tryDepth = 0;
   errors: unknown[] = [];
   lastOk = true;
+  /** esito dell'istruzione precedente, letto da `$?` */
+  prevOk = true;
   lastNative: number | null = null;
   errorPref = 'Continue';
   depth = 0;
@@ -104,6 +106,7 @@ export class PsRuntime {
       }
     }
     this.lastOk = this.ss.lastOk;
+    this.prevOk = this.lastOk;
   }
   save(): void {
     const out: Record<string, unknown> = {};
@@ -142,7 +145,7 @@ export class PsRuntime {
       case 'psitem':
         return this.itemStack.length ? this.itemStack[this.itemStack.length - 1] : null;
       case '?':
-        return this.lastOk;
+        return this.prevOk;
       case 'true':
         return true;
       case 'false':
@@ -285,6 +288,7 @@ export class PsRuntime {
       ? custom({
           StatusCode: enumValue(String(err.data.statusName), err.data.status as number),
           StatusDescription: String(err.data.statusText ?? ''),
+          Headers: hash((err.data.headers as Record<string, unknown>) ?? {}),
         })
       : null;
     return new PSObject('ErrorRecord', {
@@ -514,6 +518,7 @@ export class PsRuntime {
   private execPipeline(s: Extract<Stmt, { k: 'pipeline' }>): unknown[] {
     let items: unknown[] = [];
     const prevOk = this.lastOk;
+    this.prevOk = prevOk;
     this.lastOk = true;
     let streamErr: string[] | null = null;
     const redirErr = s.redirs.find((r) => r.fd === 2 || r.fd === 0);

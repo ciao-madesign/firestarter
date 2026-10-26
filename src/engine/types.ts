@@ -121,6 +121,20 @@ export interface ExerciseProgress {
   help: Partial<Record<ShellId, { hints: number; explanation: number; example: number; solution: boolean }>>;
   attempts: number;
   lastVerify?: VerifyResult;
+  /** finestra del tentativo corrente: orologio simulato e numero di sequenza API all'avvio */
+  startClock?: number;
+  startSeq?: number;
+}
+
+export interface PredictionRecord {
+  lesson: string;
+  step: number;
+  shell: ShellId;
+  text: string;
+  why: string;
+  at: number;
+  /** autovalutazione dopo il confronto con l'output reale */
+  accurate: boolean | null;
 }
 
 export interface CheckResult {
@@ -170,6 +184,7 @@ export interface WorkspaceState {
   docVersions: Record<string, DocVersion[]>;
   notes: string;
   prefs: Preferences;
+  predictions: PredictionRecord[];
   tutorChat: { role: 'user' | 'tutor'; text: string; at: number }[];
   changeLog: { at: number; what: string }[];
 }

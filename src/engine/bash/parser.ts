@@ -452,7 +452,10 @@ export class Parser {
         flush();
         const s = this.readDollar(false);
         if (s) segs.push(s);
-        else buf += '$';
+        else {
+          buf += '$';
+          this.pos++;
+        }
         continue;
       }
       if (c === '`') {
@@ -511,6 +514,7 @@ export class Parser {
           segs.push(s);
         } else {
           buf += '$';
+          this.pos++;
         }
         continue;
       }
@@ -577,7 +581,10 @@ export class Parser {
         buf = '';
         const s = this.readDollar(true);
         if (s) segs.push(s);
-        else buf += '$';
+        else {
+          buf += '$';
+          this.pos++;
+        }
         continue;
       }
       buf += c;

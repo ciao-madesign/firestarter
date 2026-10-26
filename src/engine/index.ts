@@ -61,6 +61,7 @@ export function createWorkspace(id: string): WorkspaceState {
     docVersions: {},
     notes: '',
     prefs: { fontSize: 15, rightPanelVisible: true, splitPercent: 60, shell: 'bash', tab: 'istruzioni' },
+    predictions: [],
     tutorChat: [],
     changeLog: [],
   };
