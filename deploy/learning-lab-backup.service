@@ -1,0 +1,18 @@
+# Backup del Learning Lab (eseguito dal timer): legge solo i dati del lab, scrive solo nella cartella dei backup.
+[Unit]
+Description=Backup del CLI & API Learning Lab
+
+[Service]
+Type=oneshot
+User=learninglab
+Group=learninglab
+Environment=LAB_DATA=__DATI__
+Environment=BACKUP_DIR=__BACKUP__
+Environment=KEEP=__COPIE__
+ExecStart=__CARTELLA__/deploy/backup-learning-lab.sh
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=__DATI__ __CARTELLA__
+ReadWritePaths=__BACKUP__

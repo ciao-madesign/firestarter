@@ -1,0 +1,10 @@
+[Unit]
+Description=Backup settimanale del Learning Lab
+
+[Timer]
+OnCalendar=Sun *-*-* 03:30:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

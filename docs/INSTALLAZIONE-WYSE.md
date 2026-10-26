@@ -24,7 +24,22 @@ Porte già occupate sul Wyse dagli altri progetti (non toccarle): 22, 80, 139, 4
 | Backup | copia di `/mnt/data/learning-lab` (contiene `course/progress.json` e i workspace) |
 | Password | `sudo nano /etc/learning-lab.env` (riga `LAB_PASSWORD`), poi riavvio |
 
-Da fare: riservare `192.168.1.8` al Wyse nel router (se l'IP cambia il servizio non si avvia perché ascolta solo su quell'indirizzo) e non aprire mai la porta 3100 verso Internet (http, password in chiaro). I dati stanno sullo stesso disco dell'hub (`/mnt/data`, circa 80% pieno): il lab usa pochi MB.
+## Backup
+
+Un timer systemd dedicato (`learning-lab-backup.timer`) salva ogni **domenica alle 03:30** (recupera all'accensione se il Wyse era spento) un archivio `learning-lab-AAAAMMGG-HHMMSS.tar.gz` di `/mnt/data/learning-lab` in `/mnt/data/backup-learning-lab`, tenendo le **ultime 8 copie**. Gira come utente `learninglab` con sandbox (legge i dati, scrive solo nella cartella dei backup) e verifica che l'archivio sia leggibile. Installazione (una volta): `cd /opt/learning-lab && ./deploy/install-backup-wyse.sh`.
+
+Limite: i backup stanno sullo **stesso disco** dei dati (`/mnt/data`): proteggono da errori e cancellazioni, non da un guasto del disco. Per questo, ogni tanto copia un archivio anche su un altro supporto (per esempio `scp` verso un altro computer).
+
+| Cosa | Comando |
+|---|---|
+| Backup subito | `sudo systemctl start learning-lab-backup.service` |
+| Elenco copie | `sudo ls -lh /mnt/data/backup-learning-lab` |
+| Prossima esecuzione | `systemctl list-timers learning-lab-backup.timer --no-pager` |
+| Esito dell'ultima | `journalctl -u learning-lab-backup.service -n 20 --no-pager` |
+| Ripristino | `sudo systemctl stop learning-lab && sudo tar -xzf /mnt/data/backup-learning-lab/<archivio> -C /mnt/data/learning-lab && sudo chown -R learninglab:learninglab /mnt/data/learning-lab && sudo systemctl start learning-lab` |
+| Rimozione | `sudo systemctl disable --now learning-lab-backup.timer && sudo rm /etc/systemd/system/learning-lab-backup.*` |
+
+Da fare: ~~riservare `192.168.1.8`~~ (fatto) al Wyse nel router (se l'IP cambia il servizio non si avvia perché ascolta solo su quell'indirizzo) e non aprire mai la porta 3100 verso Internet (http, password in chiaro). I dati stanno sullo stesso disco dell'hub (`/mnt/data`, circa 80% pieno): il lab usa pochi MB.
 
 Il lab gira sul Wyse e lo raggiungi da telefono, tablet e PC con un normale browser. I progressi restano sul Wyse, uguali su ogni dispositivo.
 
