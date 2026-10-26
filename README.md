@@ -25,7 +25,7 @@ Poi apri l'indirizzo nel browser. Lo stato (file, progressi, documenti) si salva
   - **Ambiente**: ambienti development/testing/staging di un'API REST simulata (TaskFlow), endpoint con comandi pronti, dati e ultime richieste, ripristino dei dati.
   - **Documentazione**: editor Markdown con anteprima, versioni e confronto, e **controllo tecnico** che esegue gli esempi `curl` e li confronta con lo stato dichiarato; distingue errori verificabili e valutazioni editoriali.
   - **Risultati**: livello (1–4), competenze misurate separatamente, errori ricorrenti, test intermedi, REGISTRO importabile/esportabile, report di test, esportazione JSON/YAML/Markdown, cancellazione dei dati.
-- **Curriculum**: M1–M6 come da programma del corso (circa 30 minuti a lezione), con M4–M6 espansi, più il modulo facoltativo M7 (automazione). Vedi `course/programma.md`.
+- **Curriculum**: M1–M6 come da programma del corso (circa 30 minuti a lezione), con M4–M6 espansi, più i moduli facoltativi M7 (automazione) e M8 (portfolio: guida, OpenAPI, bug report, script di test). Vedi `course/programma.md`.
 
 ## Il corso e il tutor in terminale
 

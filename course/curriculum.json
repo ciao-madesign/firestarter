@@ -716,6 +716,94 @@
           ]
         }
       ]
+    },
+    {
+      "n": 8,
+      "title": "Portfolio",
+      "summary": "Quattro artefatti da portfolio verificati dal laboratorio: guida rapida, specifica OpenAPI, bug report con troubleshooting, script di test con report.",
+      "optional": true,
+      "lessons": [
+        {
+          "id": "M8.L1",
+          "title": "Portfolio 1: guida rapida all'API",
+          "objective": "Scrivere da zero una guida \"primi passi\" i cui esempi curl sono tutti verificati dal controllo tecnico.",
+          "concepts": [
+            "guida rapida",
+            "esempi verificabili",
+            "portfolio"
+          ],
+          "skills": [
+            "docs",
+            "http",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M8.L2",
+          "title": "Portfolio 2: specifica OpenAPI",
+          "objective": "Scrivere una specifica OpenAPI per tre risorse e confrontarla con quella pubblicata dal servizio.",
+          "concepts": [
+            "OpenAPI",
+            "specifica come contratto",
+            "portfolio"
+          ],
+          "skills": [
+            "docs",
+            "http",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M8.L3",
+          "title": "Portfolio 3: bug report e troubleshooting",
+          "objective": "Scrivere un bug report riproducibile su un difetto reale e una tabella di risoluzione dei problemi per gli errori più comuni.",
+          "concepts": [
+            "bug report",
+            "troubleshooting",
+            "differenze tra ambienti"
+          ],
+          "skills": [
+            "docs",
+            "diagnosi",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M8.L4",
+          "title": "Portfolio 4: script di test con report",
+          "objective": "Scrivere uno script di test dell'API che stampa PASS/FAIL, scrive un report ed esce con un codice che riflette l'esito.",
+          "concepts": [
+            "script di test",
+            "report",
+            "exit code"
+          ],
+          "skills": [
+            "testing",
+            "autonomia",
+            "comandi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        }
+      ]
     }
   ]
 }

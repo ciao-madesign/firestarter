@@ -288,3 +288,39 @@ Concetti: gestione di errori e retry; rate limit; concatenazione di operazioni.
 
 Verifica (criterio): L'esecuzione stampa "completate 8 ricerche" con almeno un 429 gestito ed esce con 0.
 
+## M8 — Portfolio (estensione facoltativa)
+
+Quattro artefatti da portfolio verificati dal laboratorio: guida rapida, specifica OpenAPI, bug report con troubleshooting, script di test con report.
+
+### M8.L1 — Portfolio 1: guida rapida all'API
+
+Obiettivo: Scrivere da zero una guida "primi passi" i cui esempi curl sono tutti verificati dal controllo tecnico.
+
+Concetti: guida rapida; esempi verificabili; portfolio.
+
+Verifica (criterio): Zero errori/avvisi verificabili; almeno 3 endpoint; almeno 3 esempi eseguiti tutti corretti, di cui uno con status 4xx.
+
+### M8.L2 — Portfolio 2: specifica OpenAPI
+
+Obiettivo: Scrivere una specifica OpenAPI per tre risorse e confrontarla con quella pubblicata dal servizio.
+
+Concetti: OpenAPI; specifica come contratto; portfolio.
+
+Verifica (criterio): JSON valido; tre percorsi con i metodi richiesti; per ogni operazione tutti gli status della specifica del servizio; POST /tasks con `title` obbligatorio; nessun percorso inventato.
+
+### M8.L3 — Portfolio 3: bug report e troubleshooting
+
+Obiettivo: Scrivere un bug report riproducibile su un difetto reale e una tabella di risoluzione dei problemi per gli errori più comuni.
+
+Concetti: bug report; troubleshooting; differenze tra ambienti.
+
+Verifica (criterio): Bug report senza errori verificabili e con esempio eseguito; tutte le sezioni presenti; tabella con le quattro righe complete.
+
+### M8.L4 — Portfolio 4: script di test con report
+
+Obiettivo: Scrivere uno script di test dell'API che stampa PASS/FAIL, scrive un report ed esce con un codice che riflette l'esito.
+
+Concetti: script di test; report; exit code.
+
+Verifica (criterio): Esecuzione con PASS ≥ 6 e FAIL: 0, exit 0; con token sbagliato exit 1 e righe FAIL; `report.txt` creato.
+

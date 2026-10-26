@@ -251,7 +251,7 @@ export function lintDocument(state: WorkspaceState, md: string, opts: { env?: En
       if (success !== undefined && codes.length && !codes.includes(success)) {
         add({ id: 'status-successo-mancante', severity: 'warning', line: where, message: `${key}: non è indicato lo status di successo (${success}).` });
       }
-      if (!codes.some((c) => c >= 400)) {
+      if (!codes.some((c) => c >= 400) && allowed.some((s) => s >= 400)) {
         add({ id: 'caso-errore-mancante', severity: 'warning', line: where, message: `${key}: manca almeno un caso di errore (es. ${allowed.filter((s) => s >= 400).join(', ')}).` });
       }
       const hasBlock = blocks.some((b) => b.line > d.heading!.line && b.line < d.heading!.line + text.split('\n').length);
