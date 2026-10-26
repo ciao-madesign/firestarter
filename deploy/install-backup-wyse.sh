@@ -10,11 +10,12 @@ DIR="$(cd "$(dirname "$0")/.." && pwd)"
 fail() { echo "STOP: $*" >&2; exit 1; }
 
 echo "== Controlli preliminari (nessuna modifica) =="
-[ -f "$LAB_DATA/.learning-lab" ] || fail "$LAB_DATA non è la cartella dati del Learning Lab"
+# la cartella dati è 700 di learninglab: il controllo va fatto con sudo
+sudo test -f "$LAB_DATA/.learning-lab" || fail "$LAB_DATA non è la cartella dati del Learning Lab"
 id "$RUN_USER" >/dev/null 2>&1 || fail "l'utente $RUN_USER non esiste: installa prima il lab"
 case "$DIR" in /home/*|/root/*) fail "il progetto deve stare fuori da /home";; esac
 case "$BACKUP_DIR" in "$LAB_DATA"|"$LAB_DATA"/*) fail "BACKUP_DIR non può stare dentro i dati";; esac
-if [ -e "$BACKUP_DIR" ] && [ -n "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ] && [ ! -f "$BACKUP_DIR/.learning-lab-backup" ]; then fail "$BACKUP_DIR non è vuota e non è dei backup del lab"; fi
+if sudo test -e "$BACKUP_DIR" && [ -n "$(sudo ls -A "$BACKUP_DIR" 2>/dev/null)" ] && ! sudo test -f "$BACKUP_DIR/.learning-lab-backup"; then fail "$BACKUP_DIR non è vuota e non è dei backup del lab"; fi
 for u in learning-lab-backup.service learning-lab-backup.timer; do [ ! -e "/etc/systemd/system/$u" ] || fail "$u esiste già"; done
 echo "Dati: $LAB_DATA  ->  Backup: $BACKUP_DIR (ultime $KEEP copie, ogni domenica alle 03:30)"
 read -r -p "Procedere? [s/N] " ok; [ "$ok" = "s" ] || exit 0
