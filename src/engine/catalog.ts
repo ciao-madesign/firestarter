@@ -179,7 +179,7 @@ const ALIASES: Record<string, string> = {
   measure: 'Measure-Object', group: 'Group-Object', ft: 'Format-Table', fl: 'Format-List', irm: 'Invoke-RestMethod', iwr: 'Invoke-WebRequest',
   curl: 'Invoke-WebRequest', wget: 'Invoke-WebRequest', gcm: 'Get-Command', help: 'Get-Help', man: 'Get-Help', h: 'Get-History', history: 'Get-History',
   ps: 'Get-Process', gps: 'Get-Process', clear: 'Clear-Host', cls: 'Clear-Host', gal: 'Get-Alias', diff: 'Compare-Object', compare: 'Compare-Object',
-  sleep: 'Start-Sleep', gv: 'Get-Variable', mkdir: 'New-Item', gm: 'Get-Member', sls: 'Select-String',
+  sleep: 'Start-Sleep', gv: 'Get-Variable', mkdir: 'New-Item', sls: 'Select-String',
 };
 
 /** Alias PowerShell (Windows PowerShell 5.1: `curl` e `wget` puntano a Invoke-WebRequest). */
