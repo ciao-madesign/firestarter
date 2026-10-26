@@ -1,5 +1,31 @@
 # Installazione sul Wyse 5070 (Ubuntu), accanto ad altri progetti
 
+> **Stato reale (2026-10-26):** installato su `homehub` (Ubuntu 24.04, Node 22 di sistema). Solo rete di casa, senza Tailscale: `http://192.168.1.8:3100`. Codice in `/opt/learning-lab`, dati in `/mnt/data/learning-lab`, servizio `learning-lab`. Verificato dal telefono. Le altre sezioni descrivono la procedura generale e l'evoluzione con Tailscale.
+
+## Come è stato installato (comandi usati)
+
+```bash
+sudo mkdir /opt/learning-lab && sudo chown michele:michele /opt/learning-lab
+git clone --branch claude/wonderful-mayer-1nhrp7 https://github.com/ciao-madesign/firestarter /opt/learning-lab
+cd /opt/learning-lab
+NODE=/usr/bin/node LAB_HOST=192.168.1.8 LAB_TRUST_PROXY=0 LAB_DATA=/mnt/data/learning-lab ./deploy/install-wyse.sh
+```
+
+Porte già occupate sul Wyse dagli altri progetti (non toccarle): 22, 80, 139, 445, 631, 2283, 4000, 8096. Il lab usa solo la 3100.
+
+## Gestione ordinaria
+
+| Cosa | Comando |
+|---|---|
+| Stato | `systemctl status learning-lab --no-pager` |
+| Log | `journalctl -u learning-lab -f` |
+| Riavvio | `sudo systemctl restart learning-lab` |
+| Aggiornamento | `cd /opt/learning-lab && git pull && npm ci && npm run build:web && sudo systemctl restart learning-lab` |
+| Backup | copia di `/mnt/data/learning-lab` (contiene `course/progress.json` e i workspace) |
+| Password | `sudo nano /etc/learning-lab.env` (riga `LAB_PASSWORD`), poi riavvio |
+
+Da fare: riservare `192.168.1.8` al Wyse nel router (se l'IP cambia il servizio non si avvia perché ascolta solo su quell'indirizzo) e non aprire mai la porta 3100 verso Internet (http, password in chiaro). I dati stanno sullo stesso disco dell'hub (`/mnt/data`, circa 80% pieno): il lab usa pochi MB.
+
 Il lab gira sul Wyse e lo raggiungi da telefono, tablet e PC con un normale browser. I progressi restano sul Wyse, uguali su ogni dispositivo.
 
 ## Isolamento da PersonalHub (e da ogni altro progetto)
