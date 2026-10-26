@@ -1,0 +1,24 @@
+{
+  "name": "cli-api-learning-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Laboratorio interattivo per imparare CLI (Bash/PowerShell), HTTP/API e documentazione tecnica, con ambienti simulati.",
+  "license": "MIT",
+  "scripts": {
+    "build:web": "node scripts/build-web.mjs",
+    "build": "npm run typecheck && npm run build:web",
+    "start": "tsx src/server/main.ts",
+    "dev": "npm run build:web && tsx watch src/server/main.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "docs:commands": "tsx scripts/gen-commands-doc.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
