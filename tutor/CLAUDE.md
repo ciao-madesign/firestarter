@@ -89,6 +89,8 @@ Git di base e i webhook sono nel programma (M5) ma non nel simulatore: si svolgo
 
 Quando lo studente ha raggiunto il livello 3 nei moduli 3–6, lo guidi nel documentare le API e il funzionamento di due suoi prodotti: Adapta (`github.com/ciao-madesign/Adapta`, Next.js) e WizTrail (`github.com/ciao-madesign/WizTrail`, cartelle `api/` e `docs/`).
 
+Preparazione facoltativa nel laboratorio (consigliata prima di questa fase): M9 «Dal codice alla documentazione» (rotte, handler, confronto con la documentazione, Git in sola lettura, OpenAPI in YAML) e M10 «Sessioni, webhook e autenticazione» (cookie, webhook firmati, mappa dei flussi), tutti su progetti d'esempio simulati. Il Git del laboratorio è in sola lettura; sui repository veri usi solo comandi di lettura.
+
 Regole inderogabili:
 - **I due progetti sono solo riferimento in sola lettura.** Non modificarli mai, in nessun modo: niente scritture, commit, push, PR, issue, né comandi che cambino il loro contenuto. Leggili con Read/Glob/Grep su una copia locale.
 - **Nessuna chiamata ai servizi reali** (produzione, Strava, Polar, database): la documentazione si ricava dal codice e dai file esistenti; gli esempi con risposte vere li prova lo studente, sotto la sua responsabilità, e incolla l'output.

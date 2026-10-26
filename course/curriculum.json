@@ -925,6 +925,180 @@
           ]
         }
       ]
+    },
+    {
+      "n": 9,
+      "title": "Dal codice alla documentazione",
+      "summary": "Sola lettura su un progetto d'esempio: trovare le rotte, ricavare il contratto da un handler, confrontare codice e documentazione, cronologia Git, OpenAPI in YAML e JSON Schema di base.",
+      "optional": true,
+      "lessons": [
+        {
+          "id": "M9.L1",
+          "title": "Trovare le rotte nel codice",
+          "objective": "Ricavare dal codice di un progetto Next.js d'esempio l'elenco degli endpoint (metodo, percorso, file) usando find e grep, in sola lettura.",
+          "concepts": [
+            "rotte Next.js",
+            "funzioni serverless",
+            "find e grep su un progetto"
+          ],
+          "skills": [
+            "comandi",
+            "docs",
+            "http"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M9.L2",
+          "title": "Leggere un handler e ricavarne il contratto",
+          "objective": "Leggere il codice di due handler e ricavarne autenticazione, parametri, validazioni e risposte, senza eseguire nulla.",
+          "concepts": [
+            "lettura di un handler",
+            "validazione e status",
+            "limit e massimo"
+          ],
+          "skills": [
+            "docs",
+            "http",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M9.L3",
+          "title": "Confrontare codice e documentazione esistente",
+          "objective": "Trovare le discrepanze tra la documentazione esistente (docs/api.md) e il comportamento del codice, citando l'evidenza.",
+          "concepts": [
+            "audit della documentazione",
+            "evidenza dal codice",
+            "discrepanze"
+          ],
+          "skills": [
+            "docs",
+            "diagnosi",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M9.L4",
+          "title": "Git in sola lettura: quando e perché è cambiato",
+          "objective": "Usare git log, show e blame per scoprire quando e da chi è stato cambiato un comportamento, senza modificare il repository.",
+          "concepts": [
+            "git log, show, blame",
+            "cronologia di un file",
+            "Git in sola lettura"
+          ],
+          "skills": [
+            "comandi",
+            "diagnosi",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M9.L5",
+          "title": "OpenAPI in YAML scritto a mano e JSON Schema di base",
+          "objective": "Scrivere in YAML una specifica OpenAPI per due endpoint del progetto, con schema JSON del body, risposte e autenticazione, e farla validare.",
+          "concepts": [
+            "OpenAPI in YAML",
+            "JSON Schema di base",
+            "validazione di un documento"
+          ],
+          "skills": [
+            "docs",
+            "http",
+            "testing"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        }
+      ]
+    },
+    {
+      "n": 10,
+      "title": "Sessioni, webhook e autenticazione",
+      "summary": "Cookie di sessione, webhook firmati con HMAC, confronto dei flussi di autenticazione (Bash).",
+      "optional": true,
+      "lessons": [
+        {
+          "id": "M10.L1",
+          "title": "Sessioni con cookie",
+          "objective": "Eseguire un login che restituisce un cookie di sessione, riusarlo, chiudere la sessione e documentare gli attributi del cookie.",
+          "concepts": [
+            "cookie di sessione",
+            "curl -c e -b",
+            "attributi dei cookie"
+          ],
+          "skills": [
+            "http",
+            "docs",
+            "diagnosi"
+          ],
+          "review": false,
+          "shells": [
+            "bash"
+          ]
+        },
+        {
+          "id": "M10.L2",
+          "title": "Webhook firmati: la callback di un servizio esterno",
+          "objective": "Inviare una notifica a un endpoint che richiede una firma HMAC, capire perché viene rifiutata e documentare la procedura di verifica.",
+          "concepts": [
+            "webhook",
+            "firma HMAC SHA-256",
+            "replay e tolleranza",
+            "gestione dei segreti"
+          ],
+          "skills": [
+            "http",
+            "diagnosi",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash"
+          ]
+        },
+        {
+          "id": "M10.L3",
+          "title": "Mappa dei flussi di autenticazione",
+          "objective": "Confrontare in un documento i meccanismi di autenticazione provati nel corso (token Bearer, cookie di sessione, firma dei webhook, token personale) dopo averli usati.",
+          "concepts": [
+            "flussi di autenticazione",
+            "confronto di meccanismi",
+            "documentare la sicurezza"
+          ],
+          "skills": [
+            "docs",
+            "http",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash"
+          ]
+        }
+      ]
     }
   ]
 }

@@ -2,6 +2,7 @@
  * API Simulation Engine: server HTTP simulato "TaskFlow".
  * Deterministico: tempi, id, token e rate limit dipendono solo dallo stato (clock simulato).
  */
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { ApiEnvState, ApiLogEntry, ApiState, ApiTask, EnvName, ShellId, WorkspaceState } from '../types.ts';
 import { Vfs } from '../vfs.ts';
 import { API_VERSION, BASE_URLS, ENDPOINTS, TASK_FIELDS, buildOpenApi, findEndpoint, type FieldSpec } from './spec.ts';
@@ -13,6 +14,16 @@ export const CREDENTIALS: Record<EnvName, { id: string; secret: string; user: st
   testing: { id: 'tf-test-client', secret: 'test-secret-77', user: 'bob', role: 'member' },
   staging: { id: 'tf-stg-client', secret: 'stg-secret-91', user: 'bob', role: 'member' },
 };
+
+/** Password dell'utente di prova per il login con sessione (area dimostrativa, credenziali simulate). */
+export const demoPassword = (env: EnvName): string => `pw_${ENV_TAG[env]}_demo`;
+/** Segreto condiviso per la firma dei webhook ricevuti (credenziale simulata). */
+export const webhookSecret = (env: EnvName): string => `whsec_${ENV_TAG[env]}_demo`;
+export const WEBHOOK_TOLERANCE_S = 300;
+/** Firma di un webhook: HMAC-SHA256 esadecimale di "<timestamp>.<body>". */
+export function signWebhook(secret: string, ts: number | string, body: string): string {
+  return createHmac('sha256', secret).update(`${ts}.${body}`).digest('hex');
+}
 
 const ENV_TAG: Record<EnvName, string> = { development: 'dev', testing: 'test', staging: 'stg' };
 
@@ -361,6 +372,84 @@ function methodNotAllowed(allow: string[]): Raw {
   return err(405, 'method_not_allowed', `Metodo non consentito. Metodi ammessi: ${allow.join(', ')}.`, {}, { Allow: allow.join(', ') });
 }
 
+/** Area dimostrativa (non nella specifica OpenAPI): login con cookie di sessione e ricezione di webhook firmati. */
+function demoRoute(ctx: Ctx, head: string, rest: string[], method: string): Raw {
+  const { req, u } = ctx;
+  const tag = ENV_TAG[ctx.env];
+  const secureAttr = u.scheme === 'https' ? '; Secure' : '';
+  if (head === 'login' && rest.length === 1) {
+    if (method !== 'POST') return methodNotAllowed(['POST']);
+    const p = parseBody(ctx, true);
+    if ('fail' in p) return p.fail;
+    if (p.data.username !== 'bob' || p.data.password !== demoPassword(ctx.env)) {
+      appLog(ctx, 'WARN ', `session: login rifiutato per username=${String(p.data.username)}`);
+      return err(401, 'invalid_credentials', 'Utente o password non corretti.');
+    }
+    const exp = ctx.state.clock + 1800;
+    appLog(ctx, 'INFO ', `session: sessione creata per bob (scade ${iso(exp)})`);
+    return json(200, { user: 'bob', expires_at: iso(exp) }, { 'Set-Cookie': `session=sess_${tag}_bob_${exp}; Path=/v1; HttpOnly; SameSite=Lax; Max-Age=1800${secureAttr}` });
+  }
+  if (head === 'session' && rest.length === 1) {
+    if (method !== 'GET') return methodNotAllowed(['GET']);
+    const cookie = req.headers['cookie'] ?? '';
+    const m = /(?:^|;\s*)session=([^;]*)/.exec(cookie);
+    if (!m || !m[1]) {
+      appLog(ctx, 'WARN ', 'session: cookie di sessione assente');
+      return err(401, 'no_session', 'Nessuna sessione: esegui prima POST /v1/login e invia il cookie.');
+    }
+    const t = /^sess_(dev|test|stg)_([a-z]+)_(\d+)$/.exec(m[1]);
+    if (!t || t[1] !== tag) {
+      appLog(ctx, 'WARN ', 'session: cookie non valido per questo ambiente');
+      return err(401, 'invalid_session', 'Cookie di sessione non valido per questo ambiente.');
+    }
+    const exp = parseInt(t[3], 10);
+    if (exp <= ctx.state.clock) {
+      appLog(ctx, 'WARN ', `session: sessione scaduta (exp=${iso(exp)})`);
+      return err(401, 'session_expired', 'Sessione scaduta: esegui di nuovo il login.');
+    }
+    return json(200, { user: t[2], expires_at: iso(exp) });
+  }
+  if (head === 'logout' && rest.length === 1) {
+    if (method !== 'POST') return methodNotAllowed(['POST']);
+    return { status: 204, body: '', headers: { 'Set-Cookie': `session=; Path=/v1; HttpOnly; Max-Age=0${secureAttr}` } };
+  }
+  if (head === 'webhooks' && rest[1] === 'receive' && rest.length === 2) {
+    if (method !== 'POST') return methodNotAllowed(['POST']);
+    const sig = req.headers['x-signature'];
+    const ts = req.headers['x-webhook-timestamp'];
+    if (!sig) {
+      appLog(ctx, 'WARN ', 'webhook: header X-Signature assente');
+      return err(401, 'missing_signature', 'Header X-Signature assente.');
+    }
+    if (!ts || !/^\d+$/.test(ts)) {
+      appLog(ctx, 'WARN ', 'webhook: header X-Webhook-Timestamp assente o non numerico');
+      return err(401, 'missing_timestamp', 'Header X-Webhook-Timestamp assente: serve il tempo in secondi.');
+    }
+    if (Math.abs(ctx.state.clock - parseInt(ts, 10)) > WEBHOOK_TOLERANCE_S) {
+      appLog(ctx, 'WARN ', `webhook: timestamp fuori tolleranza (${ts} contro ${ctx.state.clock})`);
+      return err(401, 'stale_timestamp', `Timestamp fuori tolleranza (${WEBHOOK_TOLERANCE_S} s): possibile replay.`);
+    }
+    const body = req.body ?? '';
+    const expected = `sha256=${signWebhook(webhookSecret(ctx.env), ts, body)}`;
+    const a = Buffer.from(sig);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) {
+      appLog(ctx, 'WARN ', 'webhook: firma non valida');
+      return err(401, 'invalid_signature', 'Firma non valida: il segreto o il contenuto firmato non coincidono.');
+    }
+    let event = 'sconosciuto';
+    try {
+      const d = JSON.parse(body) as { type?: unknown };
+      if (typeof d.type === 'string') event = d.type;
+    } catch {
+      return err(400, 'invalid_json', 'Il body non è JSON valido.');
+    }
+    appLog(ctx, 'INFO ', `webhook: evento ${event} accettato`);
+    return json(200, { received: true, event });
+  }
+  return err(404, 'route_not_found', `Endpoint inesistente: ${req.method} ${u.path}`);
+}
+
 function route(ctx: Ctx): Raw {
   const { req, u, e } = ctx;
   const method = req.method === 'HEAD' ? 'GET' : req.method;
@@ -368,6 +457,7 @@ function route(ctx: Ctx): Raw {
   if (parts[0] !== 'v1') return err(404, 'route_not_found', `Percorso inesistente: ${u.path}. Le API sono sotto /v1.`);
   const rest = parts.slice(1);
   const head = rest[0] ?? '';
+  if (['login', 'logout', 'session', 'webhooks'].includes(head)) return demoRoute(ctx, head, rest, method);
   const spec = findEndpoint(method, '/' + rest.join('/'));
   const authNeed = spec?.auth ?? (['tasks', 'projects', 'me', 'search', 'admin'].includes(head) ? 'user' : 'none');
 

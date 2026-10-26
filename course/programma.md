@@ -372,3 +372,75 @@ Concetti: script di test; report; exit code.
 
 Verifica (criterio): Esecuzione con PASS ≥ 6 e FAIL: 0, exit 0; con token sbagliato exit 1 e righe FAIL; `report.txt` creato.
 
+## M9 — Dal codice alla documentazione (estensione facoltativa)
+
+Sola lettura su un progetto d'esempio: trovare le rotte, ricavare il contratto da un handler, confrontare codice e documentazione, cronologia Git, OpenAPI in YAML e JSON Schema di base.
+
+### M9.L1 — Trovare le rotte nel codice
+
+Obiettivo: Ricavare dal codice di un progetto Next.js d'esempio l'elenco degli endpoint (metodo, percorso, file) usando find e grep, in sola lettura.
+
+Concetti: rotte Next.js; funzioni serverless; find e grep su un progetto.
+
+Verifica (criterio): Le 6 rotte ci sono con il file giusto; hai cercato nel codice con find o grep (o Get-ChildItem/Select-String).
+
+### M9.L2 — Leggere un handler e ricavarne il contratto
+
+Obiettivo: Leggere il codice di due handler e ricavarne autenticazione, parametri, validazioni e risposte, senza eseguire nulla.
+
+Concetti: lettura di un handler; validazione e status; limit e massimo.
+
+Verifica (criterio): Il documento contiene Bearer/Authorization, title obbligatorio di almeno 3 caratteri, gli status 201/401/422, limit (default 20, massimo 100) e la proprietà items.
+
+### M9.L3 — Confrontare codice e documentazione esistente
+
+Obiettivo: Trovare le discrepanze tra la documentazione esistente (docs/api.md) e il comportamento del codice, citando l'evidenza.
+
+Concetti: audit della documentazione; evidenza dal codice; discrepanze.
+
+Verifica (criterio): Almeno 4 delle 5 discrepanze (forma della risposta, limite massimo, status della creazione, autenticazione di health, risposta di DELETE) con il file di evidenza.
+
+### M9.L4 — Git in sola lettura: quando e perché è cambiato
+
+Obiettivo: Usare git log, show e blame per scoprire quando e da chi è stato cambiato un comportamento, senza modificare il repository.
+
+Concetti: git log, show, blame; cronologia di un file; Git in sola lettura.
+
+Verifica (criterio): storia.md contiene 053b271, Alice Rossi, 2026-09-02 e 942277e; hai usato git log/show/blame; il repository non è stato modificato.
+
+### M9.L5 — OpenAPI in YAML scritto a mano e JSON Schema di base
+
+Obiettivo: Scrivere in YAML una specifica OpenAPI per due endpoint del progetto, con schema JSON del body, risposte e autenticazione, e farla validare.
+
+Concetti: OpenAPI in YAML; JSON Schema di base; validazione di un documento.
+
+Verifica (criterio): Il YAML è valido e contiene tutti gli elementi richiesti.
+
+## M10 — Sessioni, webhook e autenticazione (estensione facoltativa)
+
+Cookie di sessione, webhook firmati con HMAC, confronto dei flussi di autenticazione (Bash).
+
+### M10.L1 — Sessioni con cookie
+
+Obiettivo: Eseguire un login che restituisce un cookie di sessione, riusarlo, chiudere la sessione e documentare gli attributi del cookie.
+
+Concetti: cookie di sessione; curl -c e -b; attributi dei cookie.
+
+Verifica (criterio): Il registro mostra login 200, session 200, logout 204, session 401 in quest'ordine; sessione.md spiega gli attributi; nessuna password nei comandi.
+
+### M10.L2 — Webhook firmati: la callback di un servizio esterno
+
+Obiettivo: Inviare una notifica a un endpoint che richiede una firma HMAC, capire perché viene rifiutata e documentare la procedura di verifica.
+
+Concetti: webhook; firma HMAC SHA-256; replay e tolleranza; gestione dei segreti.
+
+Verifica (criterio): Il registro mostra due 401 diversi (missing_signature e invalid_signature) e un 200; webhook.md descrive la procedura senza rivelare il segreto; il segreto non è nei comandi.
+
+### M10.L3 — Mappa dei flussi di autenticazione
+
+Obiettivo: Confrontare in un documento i meccanismi di autenticazione provati nel corso (token Bearer, cookie di sessione, firma dei webhook, token personale) dopo averli usati.
+
+Concetti: flussi di autenticazione; confronto di meccanismi; documentare la sicurezza.
+
+Verifica (criterio): Il registro mostra i tre 200; la tabella ha le colonne richieste e le quattro righe; nessun segreto nei comandi o nel documento.
+

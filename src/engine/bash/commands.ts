@@ -8,6 +8,8 @@ import { CREDENTIALS } from '../api/server.ts';
 import { BUILTINS, COMMANDS, ExitSignal, isAssoc, LoopSignal, ReturnSignal, type BashRuntime, type CmdFn, type Io } from './interp.ts';
 import { curl } from './curl.ts';
 import { AwkError, runAwk } from './awk.ts';
+import { git } from './git.ts';
+import { createHash, createHmac } from 'node:crypto';
 import { DNS_SERVER, LISTENING, lookupHost, pingMs } from '../net.ts';
 import { renderHelp } from '../catalog.ts';
 import { BashSyntaxError } from './parser.ts';
@@ -1237,16 +1239,27 @@ reg('find', (args, io, rt) => {
   let i = 0;
   while (i < args.length && !args[i].startsWith('-')) paths.push(args[i++]);
   if (!paths.length) paths.push('.');
-  let name: RegExp | null = null;
-  let type: string | null = null;
+  const globRe = (pat: string, flags = ''): RegExp => new RegExp('^' + pat.replace(/[.+^${}()|\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$', flags);
+  const preds: { neg: boolean; test: (abs: string, shown: string, isDir: boolean) => boolean }[] = [];
   let maxdepth = Infinity;
+  let negate = false;
   for (; i < args.length; i++) {
     const a = args[i];
+    const push = (test: (abs: string, shown: string, isDir: boolean) => boolean): void => {
+      preds.push({ neg: negate, test });
+      negate = false;
+    };
     if (a === '-name' || a === '-iname') {
-      const pat = args[++i] ?? '';
-      name = new RegExp('^' + pat.replace(/[.+^${}()|\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$', a === '-iname' ? 'i' : '');
-    } else if (a === '-type') type = args[++i];
-    else if (a === '-maxdepth') maxdepth = parseInt(args[++i], 10);
+      const re = globRe(args[++i] ?? '', a === '-iname' ? 'i' : '');
+      push((abs) => re.test(basename(abs)));
+    } else if (a === '-path' || a === '-ipath') {
+      const re = globRe(args[++i] ?? '', a === '-ipath' ? 'i' : '');
+      push((_abs, shown) => re.test(shown));
+    } else if (a === '-type') {
+      const t = args[++i];
+      push((_abs, _shown, isDir) => (t === 'f' ? !isDir : t === 'd' ? isDir : true));
+    } else if (a === '-maxdepth') maxdepth = parseInt(args[++i], 10);
+    else if (a === '-not' || a === '!') negate = !negate;
     else if (a === '-print') continue;
     else {
       io.err(`find: unknown predicate \`${a}'\n`);
@@ -1266,10 +1279,8 @@ reg('find', (args, io, rt) => {
       const depth = a === abs ? 0 : a.slice(abs.length).split('/').length - 1;
       if (depth > maxdepth) continue;
       const n = rt.vfs.get(a)!;
-      if (type === 'f' && n.type !== 'file') continue;
-      if (type === 'd' && n.type !== 'dir') continue;
-      if (name && !name.test(basename(a))) continue;
       const shown = a === abs ? p : (p.endsWith('/') ? p : p + '/') + a.slice(abs.length + (abs === '/' ? 0 : 1));
+      if (!preds.every((q) => q.test(a, shown, n.type === 'dir') !== q.neg)) continue;
       io.out(shown + '\n');
     }
   }
@@ -1849,6 +1860,41 @@ reg('ps', (args, io) => {
     for (const p of PROCS) io.out(`${p.user.padEnd(12)} ${String(p.pid).padStart(4)}  0.0  0.1 ${p.cmd}\n`);
   } else {
     io.out('  PID TTY          TIME CMD\n  530 pts/0    00:00:00 bash\n  611 pts/0    00:00:00 ps\n');
+  }
+  return 0;
+});
+reg('git', (args, io, rt) => git(args, io, rt));
+reg('openssl', (args, io, rt) => {
+  if (args[0] !== 'dgst') {
+    io.err('openssl: nel laboratorio è supportato solo "openssl dgst -sha256 [-hmac chiave] [file]"\n');
+    return 1;
+  }
+  const o = getopt(args.slice(1), { flags: 'r', values: 'h', alias: {} });
+  const rest = [...args.slice(1)];
+  let key: string | null = null;
+  const files: string[] = [];
+  let algo: string | null = null;
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i];
+    if (a === '-hmac') key = rest[++i] ?? '';
+    else if (a === '-sha256') algo = 'sha256';
+    else if (a === '-hex' || a === '-r') continue;
+    else if (a.startsWith('-')) {
+      io.err(`openssl: opzione ${a} non supportata nel laboratorio\n`);
+      return 1;
+    } else files.push(a);
+  }
+  void o;
+  if (algo !== 'sha256') {
+    io.err('openssl: nel laboratorio è supportato solo -sha256\n');
+    return 1;
+  }
+  const { inputs, failed } = readInputs(rt, io, 'openssl', files);
+  if (failed) return 1;
+  for (const inp of inputs) {
+    const hex = key !== null ? createHmac('sha256', key).update(inp.text).digest('hex') : createHash('sha256').update(inp.text).digest('hex');
+    const label = inp.name === '-' ? 'stdin' : inp.name;
+    io.out(`${key !== null ? 'HMAC-SHA2-256' : 'SHA2-256'}(${label})= ${hex}\n`);
   }
   return 0;
 });

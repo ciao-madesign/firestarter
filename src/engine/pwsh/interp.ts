@@ -1008,7 +1008,7 @@ export class PsRuntime {
 
   private nativeCommand(lower: string, ev: ReturnType<PsRuntime['evalArgs']>, input: unknown[]): unknown[] | null {
     const strArgs = ev.order.flatMap((o) => (o.t === 'p' ? [`-${ev.params[o.i].name}`, ...(ev.params[o.i].has ? [psToString(ev.params[o.i].value)] : [])] : [psToString(ev.pos[o.i])]));
-    const fsish = { state: this.state, vfs: this.vfs, resolve: (p: string) => this.rp(p) };
+    const fsish = { state: this.state, vfs: this.vfs, resolve: (p: string) => this.rp(p), cwd: this.ss.cwd };
     const stdin = input.map(psToString).join('\n');
     return runNative(this, lower, strArgs, stdin, fsish);
   }
@@ -1328,11 +1328,12 @@ export class PsRuntime {
 
 // ---------- comandi nativi ----------
 import { curl } from '../bash/curl.ts';
+import { git } from '../bash/git.ts';
 import { runJq, formatJson, parseJsonStream, JqError } from '../jq.ts';
 import { getopt } from '../util.ts';
 import { renderHelp } from '../catalog.ts';
 
-function runNative(rt: PsRuntime, name: string, args: string[], stdin: string, fsish: { state: WorkspaceState; vfs: Vfs; resolve: (p: string) => string }): unknown[] | null {
+function runNative(rt: PsRuntime, name: string, args: string[], stdin: string, fsish: { state: WorkspaceState; vfs: Vfs; resolve: (p: string) => string; cwd: string }): unknown[] | null {
   let out = '';
   let err = '';
   const io: Io = { stdin, out: (t) => (out += t), err: (t) => (err += t), tty: false };
@@ -1364,6 +1365,8 @@ function runNative(rt: PsRuntime, name: string, args: string[], stdin: string, f
         } else throw e;
       }
     }
+  } else if (name === 'git' || name === 'git.exe') {
+    code = git(args, io, fsish as never);
   } else if (name === 'hostname') {
     out = 'lab\n';
     code = 0;

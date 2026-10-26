@@ -8,6 +8,8 @@ import { m5 } from './m5.ts';
 import { m6 } from './m6.ts';
 import { m7 } from './m7.ts';
 import { m8 } from './m8.ts';
+import { m9 } from './m9.ts';
+import { m10 } from './m10.ts';
 import { scenarios } from './scenarios.ts';
 import { diagnosi } from './diagnosi.ts';
 import { guidedM12 } from './guided-m12.ts';
@@ -22,6 +24,8 @@ const UNSORTED: ModuleInfo[] = [
   { n: 6, title: 'Documentazione professionale + progetto finale', summary: 'Test case e test plan, bug report riproducibili, documentazione con esempi verificabili, troubleshooting, procedura da ambiente pulito, progetto finale.' },
   { n: 7, title: 'Automazione (estensione facoltativa)', summary: 'Cicli e funzioni, suite di test ripetibili con report, retry e rate limit.', optional: true },
   { n: 8, title: 'Portfolio', summary: 'Quattro artefatti da portfolio verificati dal laboratorio: guida rapida, specifica OpenAPI, bug report con troubleshooting, script di test con report.', optional: true },
+  { n: 9, title: 'Dal codice alla documentazione', summary: 'Sola lettura su un progetto d\'esempio: trovare le rotte, ricavare il contratto da un handler, confrontare codice e documentazione, cronologia Git, OpenAPI in YAML e JSON Schema di base.', optional: true },
+  { n: 10, title: 'Sessioni, webhook e autenticazione', summary: 'Cookie di sessione, webhook firmati con HMAC, confronto dei flussi di autenticazione (Bash).', optional: true },
   { n: 4, title: 'Testing API REST + OpenAPI', summary: 'Specifica OpenAPI, autenticazione e segreti, CRUD, validazione, paginazione, idempotenza, timeout, rate limit, confronto con PowerShell.' },
 ];
 
@@ -31,7 +35,7 @@ export const CURRICULUM_VERSION = '0.1.0';
 
 const EXTRA_GUIDED = { ...guidedM12, ...guidedM34, ...guidedM5678 };
 
-export const LESSONS: Lesson[] = [...m1, ...m2, ...m3, ...m4, ...m5, ...m6, ...m7, ...m8, ...scenarios, ...diagnosi]
+export const LESSONS: Lesson[] = [...m1, ...m2, ...m3, ...m4, ...m5, ...m6, ...m7, ...m8, ...m9, ...m10, ...scenarios, ...diagnosi]
   .map((l) => (EXTRA_GUIDED[l.id] ? { ...l, guided: [...l.guided, ...EXTRA_GUIDED[l.id]] } : l)).sort((a, b) => lessonIndex(a.id) - lessonIndex(b.id) || (a.review ? -1 : 1));
 
 export function getLesson(id: string): Lesson | undefined {

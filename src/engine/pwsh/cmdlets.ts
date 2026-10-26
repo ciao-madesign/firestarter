@@ -456,7 +456,17 @@ def('Select-String', 'Pattern:0, Path|LiteralPath:1, SimpleMatch!, CaseSensitive
       }
     }
   } else {
-    scan(c.input.flatMap((x) => psToString(x).split('\n')), null, null);
+    for (const x of c.input) {
+      if (x instanceof PSObject && (x.typeName === 'FileInfo' || x.typeName === 'DirectoryInfo')) {
+        // file dalla pipeline (Get-ChildItem | Select-String): si legge il contenuto del file
+        if (x.typeName === 'DirectoryInfo') continue;
+        const abs = psToString(x.props.FullName);
+        if (!c.rt.vfs.isFile(abs)) continue;
+        const lines = c.rt.vfs.readFile(abs).split('\n');
+        if (lines[lines.length - 1] === '') lines.pop();
+        scan(lines, abs, abs.startsWith(c.rt.cwd + '/') ? abs.slice(c.rt.cwd.length + 1) : abs);
+      } else scan(psToString(x).split('\n'), null, null);
+    }
   }
   return out;
 });
@@ -949,7 +959,7 @@ def('Get-Command', 'Name:0, CommandType', (c) => {
     if (c.rt.funcs.has(l)) out.push(custom({ CommandType: 'Function', Name: n, Version: '' }));
     else if (alias && !CMDLETS.has(l)) out.push(custom({ CommandType: 'Alias', Name: `${n} -> ${alias}`, Version: '' }));
     else if (CMDLETS.has(l)) out.push(custom({ CommandType: 'Cmdlet', Name: CMDLETS.get(l)!.name, Version: '3.1.0.0' }));
-    else if (['curl.exe', 'jq', 'jq.exe', 'hostname', 'whoami'].includes(l)) out.push(custom({ CommandType: 'Application', Name: n, Version: '' }));
+    else if (['curl.exe', 'jq', 'jq.exe', 'git', 'git.exe', 'hostname', 'whoami'].includes(l)) out.push(custom({ CommandType: 'Application', Name: n, Version: '' }));
     else fail(c, new PSError(`The term '${n}' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.`, 'ObjectNotFound', 'CommandNotFoundException,Microsoft.PowerShell.Commands.GetCommandCommand', n, 'Get-Command'));
   }
   return out;

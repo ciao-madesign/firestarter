@@ -688,6 +688,38 @@ Elenca i processi (simulati).
 
 Sintassi: `ps [aux]`
 
+### `git`
+
+Git in SOLA LETTURA sul repository d'esempio del corso (cinque commit di un progetto "demo-note").
+
+Sintassi: `git status | log | show | diff | blame | branch`
+
+- `log --oneline`: una riga per commit
+- `log -n N, --author=X, -- percorso`: filtri
+- `show <commit> [-- percorso]`: modifiche di un commit
+- `diff [<a> [<b>]] [-- percorso]`: differenze tra commit o con la copia di lavoro
+- `blame [-L a,b] file`: chi ha scritto ogni riga
+
+Esempio: `git log --oneline`
+
+Differenze rispetto al comando reale:
+- Solo repository d'esempio: git add, commit, push, checkout, pull e altri comandi che modificano danno un errore esplicito (si usano nel tutor in terminale, su repository veri).
+- Opzioni come --graph, --stat, -p non sono supportate. Il diff mostra tre righe di contesto; le date sono in UTC.
+
+### `openssl`
+
+Calcola l'hash SHA-256 o la firma HMAC di un testo (per verificare i webhook).
+
+Sintassi: `openssl dgst -sha256 [-hmac chiave] [file]`
+
+- `-sha256`: algoritmo
+- `-hmac chiave`: firma HMAC con una chiave segreta
+
+Esempio: `printf '%s' abc | openssl dgst -sha256 -hmac chiave`
+
+Differenze rispetto al comando reale:
+- Solo `dgst -sha256`. Il formato di uscita (`HMAC-SHA2-256(stdin)= <hex>`) è quello di OpenSSL 3; su macOS (LibreSSL) il prefisso è diverso: per ottenere solo l'esadecimale usa `awk '{print $NF}'`. Con printf '%s' si firma il testo esatto, senza a capo finale.
+
 ### `ping`
 
 Verifica che un host risponda e quanto ci mette (ICMP simulato).
@@ -785,6 +817,8 @@ Sintassi: `curl [opzioni] URL`
 - `-u u:p`: autenticazione Basic
 - `-m sec`: timeout totale
 - `-k`: ignora gli errori di certificato (solo per diagnosi!)
+- `-c file`: salva i cookie ricevuti (formato Netscape)
+- `-b file`: testo|invia i cookie da un file o da "nome=valore"
 
 Esempio: `curl -s $TASKFLOW_URL/v1/health`
 
@@ -811,6 +845,24 @@ Differenze rispetto al comando reale:
 - Sottoinsieme di jq: percorsi, pipe, select, map, length, keys, sort, sort_by, group_by, unique, unique_by, min, max, reverse, flatten, paths, index, add, join, test, interpolazione di stringhe \(...), @csv @tsv @json @text @sh, costruttori di oggetti/array. Niente variabili, reduce, def, if/then/else: le funzioni mancanti danno un errore esplicito (codice 3).
 
 ## PowerShell 5.1
+
+### `git`
+
+Git in SOLA LETTURA sul repository d'esempio del corso (cinque commit di un progetto "demo-note").
+
+Sintassi: `git status | log | show | diff | blame | branch`
+
+- `log --oneline`: una riga per commit
+- `log -n N, --author=X, -- percorso`: filtri
+- `show <commit> [-- percorso]`: modifiche di un commit
+- `diff [<a> [<b>]] [-- percorso]`: differenze tra commit o con la copia di lavoro
+- `blame [-L a,b] file`: chi ha scritto ogni riga
+
+Esempio: `git log --oneline`
+
+Differenze rispetto al comando reale:
+- Solo repository d'esempio: git add, commit, push, checkout, pull e altri comandi che modificano danno un errore esplicito (si usano nel tutor in terminale, su repository veri).
+- Opzioni come --graph, --stat, -p non sono supportate. Il diff mostra tre righe di contesto; le date sono in UTC.
 
 ### `Get-Location`
 
