@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { clear, h, renderMarkdown, toast } from './dom.ts';
+import { clear, copyText, h, renderMarkdown, toast } from './dom.ts';
 import { api, app, emit, on, type Json } from './state.ts';
 
 let root: HTMLElement;
@@ -166,6 +166,12 @@ function draw(): void {
       h('span', { class: 'spacer' }),
       modes,
       isMd ? h('button', { class: 'btn small primary', type: 'button', on: { click: () => void runLint() } }, 'Controlla') : null,
+      h('button', { class: 'btn small', type: 'button', title: 'Copia il documento con l\'esito del controllo, da incollare nella chat di Claude per un commento', on: { click: async () => {
+        try {
+          const r = await api<Json>('POST', '/brief', { kind: 'doc', content: current!.content, path: current!.path, shell: app.shell, question: 'Commenta questo documento e indica cosa migliorare.' });
+          toast((await copyText(r.text)) ? 'Riepilogo copiato: incollalo nella chat di Claude' : 'Copia non riuscita', 'info');
+        } catch (e) { toast((e as Error).message, 'error'); }
+      } } }, 'Copia per Claude'),
       current.notes ? null : h('button', { class: 'btn small', type: 'button', on: { click: () => void showDiff() } }, 'Confronta con la versione precedente'),
       h('button', { class: 'btn small', type: 'button', on: { click: () => { const b = new Blob([current!.content], { type: 'text/plain' }); const a = h('a', { href: URL.createObjectURL(b), download: current!.path.split('/').pop() ?? 'documento.md' }); a.click(); } } }, 'Scarica')),
   );

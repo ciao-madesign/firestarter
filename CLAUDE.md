@@ -36,7 +36,7 @@ Specifica funzionale completa: la versione 0.1 fornita dall'utente (non è nel r
 | Valutazione | Livello 1–4; 7 competenze separate; soluzione mostrata ≠ autonomia |
 | Git e webhook (M5 del brief) | Non simulati: restano nel tutor CLI |
 | Hosting (deciso, implementato) | **Server di casa: Dell Wyse 5070** (Celeron J4105, 8 GB, eMMC 16 GB + SSD esterno per i dati), con **Ubuntu** e Node 22 (`/opt/node22/bin/node`), servizio systemd `learning-lab`. **Isolamento obbligatorio da PersonalHub e dagli altri progetti già presenti** (utente, cartelle, dati su SSD, porta 3100 e servizio dedicati; mai modificare altro). Accesso con **Tailscale** su porta HTTPS dedicata 8443 (`serve` per i dispositivi personali, `funnel` per il PC di lavoro) senza sostituire le regole esistenti + **password** (`LAB_PASSWORD`). Nessun servizio cloud (Vercel ecc.). Guida: `docs/INSTALLAZIONE-WYSE.md` |
-| Chiave API Anthropic (deciso, **da implementare**) | Solo lato server, variabile d'ambiente del servizio; mai nel browser né nel repo; tutor AI opzionale; l'app funziona senza |
+| AI nel lab (deciso, implementato) | **Nessuna chiave API**: i crediti dell'abbonamento Pro non valgono per l'API, che si paga a parte. Il lab prepara un riepilogo filtrato (`src/tutor/brief.ts`, `POST /api/brief`) con pulsanti "Copia riepilogo per Claude" (chat) e "Copia per Claude" (documenti), da incollare nella chat di Claude o nel tutor in terminale (abbonamento). `TutorAdapter` resta disponibile se un giorno si vorrà l'API (credito prepagato, ricarica automatica spenta) |
 
 ## Vincoli da rispettare
 
@@ -69,8 +69,8 @@ Regole di sviluppo:
 
 ## Lavori aperti (prossimi passi concordati)
 
-1. **Hosting sul Wyse**: pacchetto pronto (Dockerfile, compose, script, password); da fare sul dispositivo: installare Linux, Docker e Tailscale; da verificare se il PC di lavoro raggiunge `*.ts.net`.
-2. **Tutor AI**: adattatore `TutorAdapter` per l'API Anthropic dietro un endpoint server (chiave in variabile d'ambiente, limiti di costo e di richieste, contesto filtrato, modalità deterministica come fallback). Chat e commenti sulle risposte/documenti dello studente.
+1. **Hosting sul Wyse**: pacchetto pronto (script isolati, password); da fare sul dispositivo: raccogliere porte/servizi di PersonalHub via SSH (comandi di sola lettura), installare, configurare Tailscale su 8443; da verificare se il PC di lavoro raggiunge `*.ts.net`.
+2. ~~Tutor AI~~ fatto senza API (riepilogo da copiare, vedi decisioni). Eventuale API solo se richiesto.
 3. Test automatici dell'interfaccia (oggi solo prove manuali); prova su dispositivi mobili reali.
 
 ## Registro delle decisioni
@@ -86,3 +86,4 @@ Aggiungere in fondo una riga per ogni decisione importante: data (YYYY-MM-DD), d
 - 2026-10-26 — Chiave API Anthropic solo lato server, tutor AI opzionale. Motivo: sicurezza della chiave, l'app deve funzionare anche senza AI.
 - 2026-10-26 — Hosting: **server di casa Wyse 5070 + Tailscale (serve/funnel) + password**, al posto di app statica e servizi cloud. Motivo: il lab è già un server unico, nessuna riscrittura dei motori, progressi uguali su tutti i dispositivi, nessun costo; Tailscale non installabile sul PC di lavoro quindi Funnel + password. Sostituisce la decisione "entrambe".
 - 2026-10-26 — Sul Wyse esiste già PersonalHub: il lab va installato in modo **isolato** (utente `learninglab`, servizio `learning-lab`, porta 3100, dati separati, regola Tailscale su 8443, nessuna installazione globale; script con controlli preliminari e disinstallazione). Docker rimosso dal progetto. Motivo: richiesta esplicita di non interferire in alcun modo con PersonalHub.
+- 2026-10-26 — Tutor AI senza chiave API: riepilogo copiabile per la chat/tutor in terminale con l'abbonamento Pro. Motivo: i crediti Pro non coprono l'API e l'utente non vuole pagamenti extra.

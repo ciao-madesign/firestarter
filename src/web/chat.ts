@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { clear, h, renderMarkdown, toast } from './dom.ts';
+import { clear, copyText, h, renderMarkdown, toast } from './dom.ts';
 import { api, app, emit, loadLesson, on, shellName } from './state.ts';
 
 let log: HTMLElement;
@@ -56,8 +56,14 @@ export function initChat(root: HTMLElement): void {
   q('Soluzione completa', 'solution', 'Registrata come aiuto usato');
   const form = h('form', { class: 'chat-form', on: { submit: (e) => { e.preventDefault(); const t = input.value.trim(); if (!t) return; input.value = ''; void ask('chat', t); } } }, input, h('button', { class: 'btn primary', type: 'submit' }, 'Invia'));
   const note = h('p', { class: 'muted small' }, 'Tutor deterministico (nessun servizio AI esterno). Le soluzioni complete vengono registrate come aiuto usato e non valgono come svolgimento in autonomia.');
+  const brief = h('button', { type: 'button', class: 'btn small', title: 'Copia un riepilogo (esercizio, ultimi comandi, esito verifica) da incollare nella chat di Claude o nel tutor in terminale', on: { click: async () => {
+    try {
+      const r = await api<any>('POST', '/brief', { kind: 'lesson', question: input.value.trim(), shell: app.shell });
+      toast((await copyText(r.text)) ? 'Riepilogo copiato: incollalo nella chat di Claude' : 'Copia non riuscita', 'info');
+    } catch (e) { toast((e as Error).message, 'error'); }
+  } } }, 'Copia riepilogo per Claude');
   const clr = h('button', { type: 'button', class: 'btn small', on: { click: async () => { await api('POST', '/tutor/clear', {}); messages = []; draw(); } } }, 'Svuota conversazione');
-  root.append(h('h2', null, 'Tutor'), note, quick, log, form, h('div', { class: 'row' }, clr));
+  root.append(h('h2', null, 'Tutor'), note, quick, log, form, h('div', { class: 'row wrap' }, brief, clr));
   on('session', () => {
     if (app.session && !messages.length) messages = (app.session.chat as any[]).map((m) => ({ role: m.role, text: m.text }));
     draw();

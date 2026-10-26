@@ -21,7 +21,7 @@ Poi apri l'indirizzo nel browser. Lo stato (file, progressi, documenti) si salva
 - **Terminale** (pannello sinistro): Bash e PowerShell 5.1 con prompt, cronologia, completamento con Tab, copia di comandi e output, codici di uscita, tasti rapidi per tastiera virtuale. Le due shell condividono file e servizi ma hanno cwd, variabili e cronologia separate.
 - **Pannello guida** (destra), cinque schede:
   - **Istruzioni**: percorso a moduli, lezione con obiettivo, spiegazione, esempio guidato, **previsione obbligatoria prima dell'esecuzione**, test negativo e verifica automatica con elenco dei controlli in tempo reale.
-  - **Chat**: tutor deterministico (senza AI): indizi graduati, spiegazione dei comandi, analisi dell'ultimo errore reale, soluzione registrata come aiuto usato.
+  - **Chat**: tutor deterministico (senza AI): indizi graduati, spiegazione dei comandi, analisi dell'ultimo errore reale, soluzione registrata come aiuto usato. "Copia riepilogo per Claude" prepara il contesto da incollare nella chat di Claude (abbonamento), senza chiavi API.
   - **Ambiente**: ambienti development/testing/staging di un'API REST simulata (TaskFlow), endpoint con comandi pronti, dati e ultime richieste, ripristino dei dati.
   - **Documentazione**: editor Markdown con anteprima, versioni e confronto, e **controllo tecnico** che esegue gli esempi `curl` e li confronta con lo stato dichiarato; distingue errori verificabili e valutazioni editoriali.
   - **Risultati**: livello (1–4), competenze misurate separatamente, errori ricorrenti, test intermedi, REGISTRO importabile/esportabile, report di test, esportazione JSON/YAML/Markdown, cancellazione dei dati.

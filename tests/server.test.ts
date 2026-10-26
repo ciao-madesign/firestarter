@@ -162,3 +162,21 @@ describe('Protezione con password', () => {
     expect(last).toBe(429);
   });
 });
+
+describe('riepilogo per Claude (senza API)', () => {
+  it('lezione: contiene regole, comandi ed esito; nessuna chiamata esterna', async () => {
+    await call('POST', '/api/lessons/M1.L1/start', { shell: 'bash' }, 'brief-1');
+    await call('POST', '/api/exec', { shell: 'bash', command: 'ls /nonexistent' }, 'brief-1');
+    const r = await call('POST', '/api/brief', { kind: 'lesson', shell: 'bash', question: 'Perché fallisce?' }, 'brief-1');
+    expect(r.status).toBe(200);
+    expect(r.json.text).toContain('Non inventare output');
+    expect(r.json.text).toContain('Perché fallisce?');
+    expect(r.json.text).toContain('ls /nonexistent');
+  });
+  it('documento: include il testo e l\'esito del controllo', async () => {
+    const r = await call('POST', '/api/brief', { kind: 'doc', shell: 'bash', content: '# Titolo\n\nTesto.\n', path: 'a.md' }, 'brief-2');
+    expect(r.status).toBe(200);
+    expect(r.json.text).toContain('# Titolo');
+    expect(r.json.text).toContain('Esito del controllo automatico');
+  });
+});

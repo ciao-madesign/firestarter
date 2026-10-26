@@ -21,6 +21,7 @@ import { applyRegistro, buildRegistro, parseRegistro, RegistroError, renderProgr
 import { generateTest, inTest, recordTestProgress } from '../course/moduletest.ts';
 import { lintDocument } from '../docs/lint.ts';
 import { tutorRespond, type TutorMode } from '../tutor/tutor.ts';
+import { buildBrief } from '../tutor/brief.ts';
 import { ID_RE, type Store } from './store.ts';
 import { toYaml } from './yaml.ts';
 
@@ -392,6 +393,15 @@ export function createApp(cfg: AppConfig): Server {
       if (ws.tutorChat.length > 200) ws.tutorChat.splice(0, ws.tutorChat.length - 200);
       persist(id, c);
       return sendJson(res, 200, { reply, chat: ws.tutorChat.slice(-60) });
+    }
+    if (path === '/brief' && method === 'POST') {
+      const question = typeof body.question === 'string' ? body.question : '';
+      if (body.kind === 'doc') {
+        const doc = typeof body.content === 'string' ? body.content : '';
+        const docPath = typeof body.path === 'string' ? body.path.slice(0, 200) : undefined;
+        return sendJson(res, 200, { text: buildBrief(ws, sh, 'doc', { question, docPath, doc, lint: lintDocument(ws, doc) }) });
+      }
+      return sendJson(res, 200, { text: buildBrief(ws, sh, 'lesson', { question }) });
     }
     if (path === '/tutor/clear' && method === 'POST') {
       ws.tutorChat = [];
