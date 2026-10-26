@@ -201,6 +201,26 @@
             "bash",
             "pwsh"
           ]
+        },
+        {
+          "id": "M2.L5",
+          "title": "Scenario nuovo: analizzare un log",
+          "objective": "Applicare pipe, filtri e redirezione a un problema che non hai visto: riassumere un file di log.",
+          "concepts": [
+            "pipeline su un problema nuovo",
+            "sort + uniq -c",
+            "trasferimento"
+          ],
+          "skills": [
+            "comandi",
+            "autonomia",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
         }
       ]
     },
@@ -289,6 +309,26 @@
             "http",
             "diagnosi",
             "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M3.L5",
+          "title": "Scenario nuovo: leggere due risposte sconosciute",
+          "objective": "Confrontare una risposta di successo e una di errore di un endpoint mai usato e documentarne gli elementi essenziali con evidenze reali.",
+          "concepts": [
+            "lettura di una risposta HTTP",
+            "status vs codice applicativo",
+            "trasferimento"
+          ],
+          "skills": [
+            "http",
+            "autonomia",
+            "docs"
           ],
           "review": false,
           "shells": [
@@ -426,6 +466,26 @@
           "shells": [
             "pwsh"
           ]
+        },
+        {
+          "id": "M4.L7",
+          "title": "Scenario nuovo: documentare la creazione di un task",
+          "objective": "Partendo dalla sola specifica OpenAPI, ricavare le regole di un endpoint e provarle con una richiesta riuscita e una non valida.",
+          "concepts": [
+            "lettura della specifica",
+            "validazione 422",
+            "trasferimento"
+          ],
+          "skills": [
+            "http",
+            "testing",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
         }
       ]
     },
@@ -532,6 +592,26 @@
             "diagnosi",
             "comandi",
             "output",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M5.L6",
+          "title": "Scenario nuovo: il 401 su staging",
+          "objective": "Diagnosticare da soli un 401 in un ambiente diverso da quello usato finora e documentare causa e correzione.",
+          "concepts": [
+            "401 invalid_token",
+            "ambienti diversi",
+            "trasferimento"
+          ],
+          "skills": [
+            "diagnosi",
+            "http",
             "autonomia"
           ],
           "review": false,

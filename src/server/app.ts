@@ -19,6 +19,7 @@ import {
 import { CURRICULUM_VERSION, MODULES } from '../curriculum/lessons/index.ts';
 import { applyRegistro, buildRegistro, parseRegistro, RegistroError, renderProgressMd, type CourseProgress, addRecurring } from '../course/progress.ts';
 import { generateTest, inTest, recordTestProgress } from '../course/moduletest.ts';
+import { describeLevel, reviewDue } from '../course/levels.ts';
 import { lintDocument } from '../docs/lint.ts';
 import { tutorRespond, type TutorMode } from '../tutor/tutor.ts';
 import { buildBrief } from '../tutor/brief.ts';
@@ -137,6 +138,8 @@ export function createApp(cfg: AppConfig): Server {
     return {
       level: course.level,
       levelNote: course.levelNote,
+      levelDetail: describeLevel(course),
+      reviewDue: reviewDue(course, new Date().toISOString().slice(0, 10)),
       next: course.next,
       toConsolidate: course.toConsolidate,
       strengths: course.strengths,

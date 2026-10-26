@@ -70,4 +70,22 @@ describe('Tutor deterministico', () => {
     expect(t).toMatch(/Mancanti:/);
     expect(t).toMatch(/Non puoi ancora passare/);
   });
+
+  it('segnala le differenze con macOS e Windows reali', () => {
+    const s = fresh();
+    expect(tutorRespond(s, 'explain', 'bash', "sed -i 's/a/b/' f.txt").text).toMatch(/macOS.*sed -i ''/);
+    expect(tutorRespond(s, 'explain', 'pwsh', 'curl -s http://x').text).toMatch(/Windows.*curl\.exe/);
+    expect(tutorRespond(s, 'explain', 'pwsh', './verifica.ps1').text).toMatch(/Restricted/);
+    expect(tutorRespond(s, 'explain', 'bash', 'ls -la').text).not.toMatch(/Sul tuo ambiente reale/);
+    expect(tutorRespond(s, 'chat', 'bash', 'quali differenze ci sono con il mio Mac?').text).toMatch(/zsh/);
+    expect(tutorRespond(s, 'chat', 'pwsh', 'differenze con windows?').text).toMatch(/TLS 1\.2/);
+  });
+
+  it('avvisa quando un comando riuscito nel laboratorio fallirebbe sul Mac', () => {
+    const s = fresh();
+    execute(s, 'bash', 'echo ciao > f.txt');
+    execute(s, 'bash', "sed -i 's/ciao/mondo/' f.txt");
+    const t = tutorRespond(s, 'analyze', 'bash').text;
+    expect(t).toMatch(/potrebbe fallire/);
+  });
 });

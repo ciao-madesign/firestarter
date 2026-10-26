@@ -90,6 +90,12 @@ const SHELL_SYMBOLS: [RegExp, string][] = [
 ];
 
 export function explainCommand(line: string, shell: ShellId): string {
+  const base = explainCore(line, shell);
+  const env = envNotesText(line, shell);
+  return env ? `${base}\n\n${env}` : base;
+}
+
+function explainCore(line: string, shell: ShellId): string {
   // più comandi collegati da pipe: spiega ciascun segmento
   const segs = splitSegments(line);
   if (segs.length > 1) {
@@ -164,6 +170,52 @@ function explainSingle(line: string, shell: ShellId, withSymbols: boolean): stri
     if (n) lines.push(n);
   }
   return lines.join('\n');
+}
+
+
+// ---------------- differenze con l'ambiente reale (macOS al personale, Windows PowerShell 5.1 al lavoro) ----------------
+interface EnvNote {
+  shell: ShellId;
+  where: string;
+  match: RegExp;
+  note: string;
+  /** errore tipico che si incontra eseguendo il comando sull'ambiente reale */
+  typical?: string;
+}
+
+export const ENV_NOTES: EnvNote[] = [
+  { shell: 'bash', where: 'macOS', match: /\bsed\b.*\s-i\b/, note: 'Su macOS (BSD sed) `-i` richiede un suffisso, anche vuoto: `sed -i \'\' \'s/a/b/\' file`. Nel laboratorio (GNU) `sed -i \'s/a/b/\' file` funziona; sul Mac darebbe errore.', typical: "sed: 1: \"file\": invalid command code f" },
+  { shell: 'bash', where: 'macOS', match: /\bls\b.*--color/, note: 'Su macOS `ls --color` non esiste: si usa `ls -G` (o l\'alias del tuo profilo).', typical: 'ls: unrecognized option `--color\'' },
+  { shell: 'bash', where: 'macOS', match: /\bdate\b.*\s-d\b/, note: 'Su macOS (BSD date) `-d` non esiste: si usa `date -j -f formato valore` oppure `date -v+1d`.', typical: 'date: illegal time format' },
+  { shell: 'bash', where: 'macOS', match: /\bstat\b.*\s-c\b/, note: 'Su macOS `stat -c` non esiste: la sintassi BSD è `stat -f`.', typical: 'stat: illegal option -- c' },
+  { shell: 'bash', where: 'macOS', match: /\btac\b/, note: 'Su macOS `tac` non c\'è: si usa `tail -r`.', typical: 'tac: command not found' },
+  { shell: 'bash', where: 'macOS', match: /\bgrep\b.*\s-P\b/, note: 'Su macOS `grep -P` (Perl) non è disponibile: usa `-E`.', typical: 'grep: invalid option -- P' },
+  { shell: 'bash', where: 'macOS', match: /\bxargs\b.*\s-r\b/, note: 'Su macOS (BSD xargs) `-r` non esiste: BSD xargs non esegue se l\'input è vuoto.', typical: 'xargs: illegal option -- r' },
+  { shell: 'bash', where: 'macOS', match: /./, note: 'La shell predefinita del Mac è zsh, non Bash (il laboratorio simula Bash 5): per gli script usa `#!/bin/bash`, ma ricorda che /bin/bash del Mac è la 3.2 (niente array associativi con `declare -A`).' },
+  { shell: 'pwsh', where: 'Windows', match: /\bcurl\b(?!\.exe)/i, note: 'In Windows PowerShell 5.1 `curl` è un alias di Invoke-WebRequest: opzioni come `-s` o `-H` non funzionano. Per il vero curl usa `curl.exe`.', typical: "A parameter cannot be found that matches parameter name 's'." },
+  { shell: 'pwsh', where: 'Windows', match: /curl\.exe.*\s-d\b/i, note: 'In Windows PowerShell 5.1 le virgolette doppie dentro un argomento passato a un programma nativo (curl.exe) vengono perse: per un body JSON scrivi `-d \'{\\"title\\":\\"x\\"}\'` (barra rovesciata prima di ogni "), oppure usa Invoke-RestMethod con -Body. Il laboratorio NON simula questa perdita: lì `-d \'{"title":"x"}\'` funziona.', typical: 'invalid_json (400)' },
+  { shell: 'pwsh', where: 'Windows', match: /\.ps1\b|^\s*(\.\/|&)/, note: 'Su Windows l\'esecuzione degli script è spesso disabilitata (criterio `Restricted`): se compare "running scripts is disabled on this system", per la sola sessione usa `powershell -ExecutionPolicy Bypass -File script.ps1` oppure `Set-ExecutionPolicy -Scope Process Bypass`. Nel laboratorio il criterio non è simulato.', typical: 'File script.ps1 cannot be loaded because running scripts is disabled on this system.' },
+  { shell: 'pwsh', where: 'Windows', match: /\bSet-Content\b|\bOut-File\b|>\s*\S/, note: 'In Windows PowerShell 5.1 la codifica predefinita dei file non è UTF-8 puro: `Set-Content` usa la codepage ANSI, `Out-File` e `>` usano UTF-16. Per JSON e testo portabile indica `-Encoding UTF8` (in 5.1 aggiunge il BOM). Il laboratorio scrive sempre UTF-8 senza BOM.' },
+  { shell: 'pwsh', where: 'Windows', match: /Invoke-(RestMethod|WebRequest)|\bi(rm|wr)\b/i, note: 'Su Windows 5.1 le connessioni HTTPS verso server moderni possono richiedere TLS 1.2: `[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12`. Nel laboratorio non serve (nessuna rete reale).', typical: 'The request was aborted: Could not create SSL/TLS secure channel.' },
+  { shell: 'pwsh', where: 'Windows', match: /[~/]/, note: 'Su Windows i percorsi reali sono del tipo `C:\\Users\\nome\\...` (barra rovesciata, lettera di unità, maiuscole indifferenti). Il laboratorio usa percorsi Linux con `/` e distingue le maiuscole.' },
+  { shell: 'pwsh', where: 'Windows', match: /&&|\|\|/, note: 'In Windows PowerShell 5.1 `&&` e `||` non esistono (arrivano in PowerShell 7): usa `;` oppure `if ($?) { ... }`.', typical: "The token '&&' is not a valid statement separator in this version." },
+];
+
+/** Differenze con l'ambiente reale rilevanti per una riga di comando. */
+export function envNotesFor(line: string, shell: ShellId): EnvNote[] {
+  // le note generali (regex `.` e percorsi) compaiono solo nell'elenco completo, non per ogni comando
+  return ENV_NOTES.filter((n) => n.shell === shell && n.match.source !== '.' && n.match.source !== '[~/]' && n.match.test(line));
+}
+
+export function envNotesText(line: string, shell: ShellId): string {
+  const notes = envNotesFor(line, shell);
+  if (!notes.length) return '';
+  return ['Sul tuo ambiente reale (differenze dal laboratorio):', ...notes.map((n) => `- ${n.where}: ${n.note}`)].join('\n');
+}
+
+export function allEnvNotes(shell: ShellId): string {
+  const list = ENV_NOTES.filter((n) => n.shell === shell);
+  return [`Differenze tra il laboratorio e il tuo ambiente reale (${shell === 'bash' ? 'macOS / Bash' : 'Windows PowerShell 5.1'}):`, ...list.map((n) => `- ${n.note}`)].join('\n');
 }
 
 // ---------------- analisi degli errori ----------------
@@ -266,6 +318,8 @@ export function analyzeCommand(entry: CommandLogEntry | undefined, shell: ShellI
   }
   if (!found && entry.exit === 0) add('Il comando è terminato con successo (codice 0). Controlla comunque che l\'output corrisponda alla previsione: una variabile sbagliata o inesistente non dà errore.');
   else if (!found) add('Non riconosco questo errore. Leggi il messaggio da sinistra: shell, comando, argomento, causa. Poi chiedi un indizio.');
+  const envN = envNotesFor(entry.cmd, shell).filter((n) => n.typical);
+  if (envN.length && entry.exit === 0) add(`Attenzione: questo comando funziona nel laboratorio ma sul tuo ambiente reale potrebbe fallire — ${envN[0].where}: ${envN[0].note}`);
   add(`(Analisi basata sull'output reale registrato; shell: ${shell === 'bash' ? 'Bash' : 'PowerShell 5.1'}.)`);
   return lines.join('\n');
 }
@@ -287,6 +341,7 @@ export function tutorRespond(state: WorkspaceState, mode: TutorMode, shell: Shel
     if (/^esempio/.test(low)) return tutorRespond(state, 'example', shell);
     if (/soluzione/.test(low)) return tutorRespond(state, 'solution', shell);
     if (/(verific|risultat|superat|passat|posso (passare|andare|proseguire|avanzare)|ho finito|sono a posto)/.test(low)) return tutorRespond(state, 'status', shell);
+    if (/(differenz|diverso|uguale).*(mac|windows|reale)|(mac|windows).*(differenz|diverso)|ambiente reale/.test(low)) return { text: allEnvNotes(shell) };
     if (/^(help|\?|comandi)/.test(low)) return { text: renderHelp('', shell) };
     return {
       text: lesson

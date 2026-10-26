@@ -12,6 +12,8 @@ export interface LessonRecord {
   errors: string[];
   /** 'lab' | 'cli' | 'chat' */
   source?: string;
+  /** miglior modalità di completamento (autonomia, indizi, soluzione) */
+  mode?: 'autonomous' | 'hinted' | 'solution';
 }
 
 export interface RecurringError {

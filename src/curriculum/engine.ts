@@ -8,6 +8,7 @@ import { Vfs, HOME } from '../engine/vfs.ts';
 import type { CheckResult, Completion, EnvName, ExerciseProgress, ShellId, VerifyResult, WorkspaceState } from '../engine/types.ts';
 import { addRecurring, lessonIndex, type CourseProgress } from '../course/progress.ts';
 import { inTest } from '../course/moduletest.ts';
+import { promoteToLevel4 } from '../course/levels.ts';
 import { LESSONS, MODULES, getLesson } from './lessons/index.ts';
 import { SKILL_LABELS, type CheckCtx, type Lesson, type SetupCtx, type SkillTag } from './types.ts';
 
@@ -220,6 +221,8 @@ export function markLessonCompleted(course: CourseProgress, lesson: Lesson, mode
   rec.status = 'completed';
   rec.date = date;
   rec.source = 'lab';
+  const rank = { solution: 0, hinted: 1, autonomous: 2 } as const;
+  if (!rec.mode || rank[mode] > rank[rec.mode]) rec.mode = mode;
   for (const c of lesson.concepts) if (!rec.acquired.includes(c)) rec.acquired.push(c);
   if (mode === 'solution') {
     const note = 'completata con la soluzione mostrata: da riprovare in autonomia';
@@ -231,6 +234,7 @@ export function markLessonCompleted(course: CourseProgress, lesson: Lesson, mode
     if (next) course.next = { lesson: next.id, note: '' };
   }
   course.sessions.push({ date, lesson: lesson.id, level: course.level, env: 'Laboratorio web' });
+  promoteToLevel4(course);
 }
 
 export type HelpKind = 'example' | 'hint' | 'explanation' | 'solution';

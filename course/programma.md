@@ -84,6 +84,14 @@ Concetti: input validi e non validi; test negativi; risultato atteso ed effettiv
 
 Verifica (criterio): Lo storico mostra ≥2 esecuzioni riuscite (codice 0) e ≥2 fallite (codice ≠ 0) con argomenti diversi; piano-test.md contiene la tabella.
 
+### M2.L5 — Scenario nuovo: analizzare un log
+
+Obiettivo: Applicare pipe, filtri e redirezione a un problema che non hai visto: riassumere un file di log.
+
+Concetti: pipeline su un problema nuovo; sort + uniq -c; trasferimento.
+
+Verifica (criterio): report.txt ha i conteggi corretti in ordine decrescente; errori.txt contiene il percorso corretto; hai usato una pipeline.
+
 ## M3 — HTTP e API
 
 Client e server, URL, metodi, status code, header, body, JSON, parametri, errore HTTP ed errore applicativo.
@@ -119,6 +127,14 @@ Obiettivo: Distinguere lo status HTTP dal codice di errore del corpo (applicativ
 Concetti: errore HTTP vs errore applicativo; 404 route_not_found vs not_found; 422 validation_failed; 401 unauthorized.
 
 Verifica (criterio): Il server ha registrato 404, 422 e 401; errori.md contiene i tre codici applicativi (not_found, validation_failed, unauthorized).
+
+### M3.L5 — Scenario nuovo: leggere due risposte sconosciute
+
+Obiettivo: Confrontare una risposta di successo e una di errore di un endpoint mai usato e documentarne gli elementi essenziali con evidenze reali.
+
+Concetti: lettura di una risposta HTTP; status vs codice applicativo; trasferimento.
+
+Verifica (criterio): Le richieste reali esistono nel registro del server e il file cita i loro X-Request-Id reali, gli status e il codice di errore.
 
 ## M4 — Testing API REST + OpenAPI
 
@@ -172,6 +188,14 @@ Concetti: trasferire una procedura da Bash a PowerShell; alias curl vs curl.exe;
 
 Verifica (criterio): procedura.ps1 stampa bob, usa Invoke-RestMethod o curl.exe (non l'alias curl) e non contiene segreti.
 
+### M4.L7 — Scenario nuovo: documentare la creazione di un task
+
+Obiettivo: Partendo dalla sola specifica OpenAPI, ricavare le regole di un endpoint e provarle con una richiesta riuscita e una non valida.
+
+Concetti: lettura della specifica; validazione 422; trasferimento.
+
+Verifica (criterio): Il registro del server mostra POST /v1/tasks con 201 e 422; endpoint.md cita i due X-Request-Id e il campo obbligatorio; hai consultato la specifica; nessun token nei comandi.
+
 ## M5 — Integrazioni e diagnosi
 
 DNS, connessioni rifiutate, 4xx e 5xx, log, individuare il punto di rottura, retry e script elementari.
@@ -215,6 +239,14 @@ Obiettivo: Analizzare un log di accessi con filtri e conteggi per individuare l'
 Concetti: analisi di log; pipeline di conteggio; separatore --.
 
 Verifica (criterio): top-errori.txt contiene il percorso corretto; totale-5xx.txt contiene il numero corretto.
+
+### M5.L6 — Scenario nuovo: il 401 su staging
+
+Obiettivo: Diagnosticare da soli un 401 in un ambiente diverso da quello usato finora e documentare causa e correzione.
+
+Concetti: 401 invalid_token; ambienti diversi; trasferimento.
+
+Verifica (criterio): Il server ha registrato su staging un 401 e poi un 200 su /v1/tasks; hai letto app.log; diagnosi.md nomina la causa (token di un altro ambiente) e l'ambiente.
 
 ## M6 — Documentazione professionale + progetto finale
 

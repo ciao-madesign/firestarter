@@ -5,6 +5,7 @@
 import type { ModuleTestItem, ModuleTestState, VerifyResult, WorkspaceState } from '../engine/types.ts';
 import { LESSONS } from '../curriculum/lessons/index.ts';
 import type { CourseProgress, TestItem } from './progress.ts';
+import { applyTestToLevel } from './levels.ts';
 
 export function generateTest(course: CourseProgress, module: number, now: number): ModuleTestState {
   const weight = (l: (typeof LESSONS)[number]): { w: number; why: string[] } => {
@@ -73,13 +74,9 @@ export function recordTestProgress(state: WorkspaceState, course: CourseProgress
     const lesson = LESSONS.find((l) => l.id === i.lesson)!;
     return { n: n + 1, title: `${lesson.id} — ${lesson.title}`, outcome: i.outcome ?? 'failed', issue: i.reason };
   });
+  const previous = course.tests[`M${t.module}`];
   course.tests[`M${t.module}`] = { date, items };
   const clean = t.items.filter((i) => i.outcome === 'passed').length;
-  let note = '';
-  if (clean === 4 && t.module >= 3 && course.level < 3) {
-    course.level = (course.level + 1) as 1 | 2 | 3 | 4;
-    course.levelNote = `Livello ${course.level} (test M${t.module}: 4 su 4 in autonomia)`;
-    note = ` Livello portato a ${course.level}.`;
-  }
+  const note = applyTestToLevel(course, t.module, previous);
   return { finished: true, summary: `Test M${t.module} concluso: ${clean} su 4 superati in autonomia al primo tentativo.${note}` };
 }

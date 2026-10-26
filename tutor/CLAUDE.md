@@ -45,7 +45,7 @@ Ambiente del corso: macOS, shell **Bash** (`/bin/bash`, non zsh), tastiera itali
 
 ## Valutazione (4 livelli)
 
-1. Non autonomo. 2. Esegue con istruzioni dettagliate. 3. Esegue da solo le attività tipiche. 4. Adatta la procedura a problemi nuovi e motiva le scelte. Il livello intermedio è il livello 3 stabile su tutti i moduli.
+1. Non autonomo. 2. Esegue con istruzioni dettagliate. 3. Esegue da solo le attività tipiche. 4. Adatta la procedura a problemi nuovi e motiva le scelte. Il livello intermedio è il livello 3 stabile su tutti i moduli. Regole di evidenza (le stesse del laboratorio, `src/course/levels.ts`): il livello di un modulo dal test intermedio è 3 con 4 su 4 in autonomia al primo tentativo, 2 con almeno 3 superati, 1 altrimenti; il livello 3 è *stabile* solo quando M1–M6 hanno un test a livello 3 (prima è provvisorio); il livello 4 richiede il 3 stabile più le prove di trasferimento in autonomia (scenari nuovi M2.L5, M3.L5, M4.L7, M5.L6 e progetto finale M6.L5). Un test ripetuto a distanza (oltre 14 giorni) con esito peggiore abbassa il livello di uno.
 Un esercizio svolto con la soluzione mostrata non equivale a uno svolto in autonomia: registralo come tale.
 
 ## Persistenza dei progressi

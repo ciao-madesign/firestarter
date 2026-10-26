@@ -94,6 +94,8 @@ function draw(): void {
     h('section', { 'aria-label': 'Livello' },
       h('h3', null, `Livello attuale: ${c.level} su 4`),
       h('p', null, c.levelNote),
+      c.levelDetail ? h('p', { class: 'muted' }, c.levelDetail) : null,
+      c.reviewDue?.length ? h('p', { class: 'muted' }, `Ripasso a distanza consigliato (test più vecchio di 14 giorni): ${c.reviewDue.map((m: number) => 'M' + m).join(', ')}. Rifai il test del modulo: un esito peggiore può abbassare il livello.`) : null,
       h('ol', { class: 'levels', start: '1' }, ['Non autonomo', 'Esegue con istruzioni dettagliate', 'Esegue da solo le attività tipiche', 'Adatta la procedura a problemi nuovi e motiva le scelte'].map((t, i) => h('li', { class: i + 1 === c.level ? 'current' : '', 'aria-current': i + 1 === c.level ? 'true' : null }, t))),
       h('p', null, `Prossima lezione: ${c.next.lesson}${c.titles[c.next.lesson] ? ' — ' + c.titles[c.next.lesson] : ''}`),
       c.next.note ? h('p', { class: 'muted' }, c.next.note) : null,
