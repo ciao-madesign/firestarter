@@ -40,6 +40,7 @@ Specifica funzionale completa: la versione 0.1 fornita dall'utente (non è nel r
 
 ## Vincoli da rispettare
 
+- **Adapta e WizTrail (prodotti reali dello studente) sono solo riferimento in sola lettura**: né il laboratorio né il tutor devono mai modificarli, eseguirli o chiamarne i servizi. Il laboratorio web non contiene né legge il loro codice. Documentazione prodotta solo in `course/portfolio-reale/` (vedi `tutor/CLAUDE.md`).
 - **Sicurezza**: nessuna esecuzione di comandi arbitrari (solo motori di simulazione); credenziali solo simulate; nessun host esterno raggiungibile dagli esercizi; limiti su input, output, passi, file, dimensione del workspace; badge "AMBIENTE SIMULATO" sempre visibile.
 - **Tutor AI (quando verrà aggiunto)**: riceve solo il contesto filtrato (`buildTutorContext`), mai lo stato completo né credenziali; non deve inventare output né dichiarare superati test non eseguiti dal sistema; le soluzioni complete restano registrate come aiuto usato e non sono anticipate nelle verifiche autonome.
 - **Determinismo**: orologio simulato; id, token, rate limit e request id dipendono solo dallo stato.
@@ -90,3 +91,4 @@ Aggiungere in fondo una riga per ogni decisione importante: data (YYYY-MM-DD), d
 - 2026-10-26 — Tutor AI senza chiave API: riepilogo copiabile per la chat/tutor in terminale con l'abbonamento Pro. Motivo: i crediti Pro non coprono l'API e l'utente non vuole pagamenti extra.
 - 2026-10-26 — Test dell'interfaccia con Playwright in `tests/ui`, separati da `npm test` (richiedono un browser). Motivo: evitare regressioni senza rallentare i test veloci.
 - 2026-10-26 — Aggiunto M8 facoltativo "Portfolio" (4 lezioni: guida rapida, specifica OpenAPI in JSON, bug report + troubleshooting, script di test con report). Corretto il controllo documentale: niente avviso "manca il caso di errore" per endpoint che non hanno errori previsti. Motivo: richiesta di altri artefatti per il portfolio.
+- 2026-10-26 — Fase finale del corso: documentare Adapta e WizTrail (repo reali dello studente) con guida del tutor CLI. Vincolo: sola lettura, mai modifiche né chiamate ai servizi reali; output solo in `course/portfolio-reale/`. Motivo: richiesta esplicita dello studente di non toccare mai i due progetti.

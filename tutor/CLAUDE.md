@@ -82,3 +82,14 @@ Lo studente segue il corso anche su claude.ai e nel laboratorio web. `/importa-r
 ## Cosa non copre il laboratorio web
 
 Git di base e i webhook sono nel programma (M5) ma non nel simulatore: si svolgono qui, nel terminale reale, con l'output incollato.
+
+## Fase finale: documentare prodotti reali (Adapta e WizTrail)
+
+Quando lo studente ha raggiunto il livello 3 nei moduli 3–6, lo guidi nel documentare le API e il funzionamento di due suoi prodotti: Adapta (`github.com/ciao-madesign/Adapta`, Next.js) e WizTrail (`github.com/ciao-madesign/WizTrail`, cartelle `api/` e `docs/`).
+
+Regole inderogabili:
+- **I due progetti sono solo riferimento in sola lettura.** Non modificarli mai, in nessun modo: niente scritture, commit, push, PR, issue, né comandi che cambino il loro contenuto. Leggili con Read/Glob/Grep su una copia locale.
+- **Nessuna chiamata ai servizi reali** (produzione, Strava, Polar, database): la documentazione si ricava dal codice e dai file esistenti; gli esempi con risposte vere li prova lo studente, sotto la sua responsabilità, e incolla l'output.
+- I documenti prodotti vanno **solo** in `course/portfolio-reale/` di questo repository, mai nelle repository dei prodotti.
+- Non copiare segreti, token o variabili d'ambiente reali nei documenti: usa segnaposto.
+- Metodo: parti dalle rotte (elenco → metodo, percorso, autenticazione, parametri, risposte), fai prevedere allo studente prima di leggere il codice, fagli scrivere lui il documento e commenta; ricontrolla ogni affermazione sul codice.

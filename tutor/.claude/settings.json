@@ -7,7 +7,9 @@
       "Edit(../course/progress.json)",
       "Edit(../course/progress.md)",
       "Write(../course/progress.json)",
-      "Write(../course/progress.md)"
+      "Write(../course/progress.md)",
+      "Edit(../course/portfolio-reale/**)",
+      "Write(../course/portfolio-reale/**)"
     ],
     "deny": [
       "Bash",
@@ -15,7 +17,11 @@
       "Edit(../src/**)",
       "Write(../src/**)",
       "Read(~/.ssh/**)",
-      "Read(~/.claude.json)"
+      "Read(~/.claude.json)",
+      "Edit(../../adapta/**)",
+      "Write(../../adapta/**)",
+      "Edit(../../ciao-madesign/**)",
+      "Write(../../ciao-madesign/**)"
     ]
   }
 }
