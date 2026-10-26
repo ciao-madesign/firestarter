@@ -2,9 +2,10 @@
 
 export type Seg =
   | { t: 'text'; v: string; q: boolean }
-  | { t: 'var'; name: string; q: boolean; op?: string; arg?: Word }
+  | { t: 'var'; name: string; q: boolean; op?: string; arg?: Word; arg2?: Word; index?: Word }
   | { t: 'cmd'; src: string; q: boolean }
   | { t: 'arith'; expr: string; q: boolean }
+  | { t: 'proc'; src: string; q: boolean }
   | { t: 'tilde' };
 export type Word = Seg[];
 
@@ -17,7 +18,7 @@ export interface Redir {
 }
 
 export type Node =
-  | { type: 'simple'; assigns: { name: string; value: Word; append: boolean }[]; words: Word[]; redirs: Redir[]; src: string }
+  | { type: 'simple'; assigns: Assign[]; words: Word[]; redirs: Redir[]; src: string }
   | { type: 'pipeline'; cmds: Node[]; negate: boolean }
   | { type: 'andor'; first: Node; rest: { op: '&&' | '||'; node: Node }[] }
   | { type: 'list'; items: Node[] }
@@ -25,12 +26,27 @@ export type Node =
   | { type: 'for'; name: string; words: Word[] | null; body: Node }
   | { type: 'while'; cond: Node; body: Node; until: boolean }
   | { type: 'func'; name: string; body: Node; src: string }
-  | { type: 'group'; body: Node; subshell: boolean; redirs: Redir[] };
+  | { type: 'group'; body: Node; subshell: boolean; redirs: Redir[] }
+  | { type: 'arith'; expr: string }
+  | { type: 'cfor'; init: string; cond: string; step: string; body: Node }
+  | { type: 'case'; word: Word; items: { patterns: Word[]; body: Node }[] };
+
+export interface Assign {
+  name: string;
+  value: Word;
+  append: boolean;
+  /** name[idx]=valore */
+  index?: Word;
+  /** name=(a b c) oppure name=([k]=v ...) */
+  array?: { key?: Word; value: Word }[];
+  /** dopo il builtin (declare -A m=(...)) invece che come variabile temporanea del comando */
+  post?: boolean;
+}
 
 export class Incomplete extends Error {}
 export class BashSyntaxError extends Error {}
 
-const RESERVED = new Set(['if', 'then', 'elif', 'else', 'fi', 'for', 'in', 'do', 'done', 'while', 'until', '{', '}', '!', 'function']);
+const RESERVED = new Set(['if', 'then', 'elif', 'else', 'fi', 'for', 'in', 'do', 'done', 'while', 'until', '{', '}', '!', 'function', 'case', 'esac']);
 
 export class Parser {
   pos = 0;
@@ -60,13 +76,17 @@ export class Parser {
       this.skipBlank();
       const c = this.peekc();
       if (c === '\n' || c === ';') {
-        if (c === ';' && this.peekc(1) === ';') throw new BashSyntaxError("syntax error near unexpected token `;;'");
+        if (c === ';' && this.peekc(1) === ';') {
+          if (this.inCase > 0) break;
+          throw new BashSyntaxError("syntax error near unexpected token `;;'");
+        }
         this.pos++;
         this.readPendingHeredocs();
       } else break;
     }
   }
 
+  private inCase = 0;
   private pendingHeredocs: { redir: Redir; delim: string; strip: boolean }[] = [];
 
   private readPendingHeredocs(): void {
@@ -119,6 +139,7 @@ export class Parser {
       const w = this.peekWord();
       if (w && stop.includes(w)) break;
       if (this.peekc() === ')' && stop.includes(')')) break;
+      if (stop.includes(';;') && this.src.startsWith(';;', this.pos)) break;
       items.push(this.parseAndOr());
     }
     return { type: 'list', items };
@@ -198,6 +219,15 @@ export class Parser {
     const w = this.peekWord();
     if (w === 'if') return this.parseIf();
     if (w === 'for') return this.parseFor();
+    if (w === 'case') return this.parseCase();
+    if (this.peekc() === '(' && this.peekc(1) === '(') {
+      const end = this.findMatching(this.pos + 2, '(', ')', true);
+      if (this.src[end + 1] === ')') {
+        const expr = this.src.slice(this.pos + 2, end);
+        this.pos = end + 2;
+        return { type: 'arith', expr };
+      }
+    }
     if (w === 'while' || w === 'until') {
       this.pos += w.length;
       const cond = this.parseList(['do']);
@@ -306,9 +336,74 @@ export class Parser {
     }
   }
 
+  private parseCase(): Node {
+    this.pos += 4;
+    this.skipBlank();
+    const word = this.readWord();
+    if (!word.length) throw new BashSyntaxError("syntax error near unexpected token `in'");
+    this.skipBlank();
+    this.skipSeparatorsNewlineOnly();
+    if (this.peekWord() !== 'in') {
+      if (this.eof()) throw new Incomplete('esac');
+      throw new BashSyntaxError("syntax error: atteso 'in'");
+    }
+    this.pos += 2;
+    const items: { patterns: Word[]; body: Node }[] = [];
+    this.inCase++;
+    try {
+      for (;;) {
+        this.skipSeparators();
+        if (this.eof()) throw new Incomplete('esac');
+        if (this.peekWord() === 'esac') {
+          this.pos += 4;
+          break;
+        }
+        if (this.peekc() === '(') this.pos++;
+        const patterns: Word[] = [];
+        for (;;) {
+          this.skipBlank();
+          const pw = this.readWord();
+          if (!pw.length) throw new BashSyntaxError(`syntax error near unexpected token \`${this.peekc() || 'newline'}'`);
+          patterns.push(pw);
+          this.skipBlank();
+          if (this.peekc() === '|') {
+            this.pos++;
+            continue;
+          }
+          break;
+        }
+        if (this.peekc() !== ')') {
+          if (this.eof()) throw new Incomplete(')');
+          throw new BashSyntaxError(`syntax error near unexpected token \`${this.peekc()}'`);
+        }
+        this.pos++;
+        const body = this.parseList(['esac', ';;']);
+        items.push({ patterns, body });
+        this.skipBlank();
+        if (this.src.startsWith(';;', this.pos)) this.pos += 2;
+      }
+    } finally {
+      this.inCase--;
+    }
+    return { type: 'case', word, items };
+  }
+
   private parseFor(): Node {
     this.pos += 3;
     this.skipBlank();
+    if (this.peekc() === '(' && this.peekc(1) === '(') {
+      // for ((init; cond; step))
+      const end = this.findMatching(this.pos + 2, '(', ')', true);
+      if (this.src[end + 1] !== ')') throw new BashSyntaxError("syntax error near unexpected token `('");
+      const parts = this.src.slice(this.pos + 2, end).split(';');
+      if (parts.length !== 3) throw new BashSyntaxError("syntax error: attesi tre elementi in for ((;;))");
+      this.pos = end + 2;
+      this.skipSeparators();
+      this.expectWord('do');
+      const body = this.parseList(['done']);
+      this.expectWord('done');
+      return { type: 'cfor', init: parts[0], cond: parts[1], step: parts[2], body };
+    }
     const name = this.readName();
     this.skipBlank();
     let words: Word[] | null = null;
@@ -355,9 +450,41 @@ export class Parser {
     return { fd, op: op as Redir['op'], target };
   }
 
+  private wordText(w: Word): string {
+    return w.map((s) => (s.t === 'text' ? s.v : '')).join('');
+  }
+
+  /** (a b "c d" [k]=v ...) */
+  private readArrayLiteral(): { key?: Word; value: Word }[] {
+    this.pos++; // (
+    const out: { key?: Word; value: Word }[] = [];
+    for (;;) {
+      for (;;) {
+        this.skipBlank();
+        if (this.peekc() === '\n') this.pos++;
+        else break;
+      }
+      if (this.eof()) throw new Incomplete(')');
+      if (this.peekc() === ')') {
+        this.pos++;
+        return out;
+      }
+      const km = /^\[([^\]]*)\]=/.exec(this.src.slice(this.pos));
+      if (km) {
+        this.pos += km[0].length;
+        out.push({ key: new Parser(km[1]).readWordAllowSpaces(), value: this.readWord() });
+        continue;
+      }
+      const before = this.pos;
+      const w = this.readWord();
+      if (!w.length || this.pos === before) throw new BashSyntaxError(`syntax error near unexpected token \`${this.peekc()}'`);
+      out.push({ value: w });
+    }
+  }
+
   private parseSimple(): Node {
     const start = this.pos;
-    const assigns: { name: string; value: Word; append: boolean }[] = [];
+    const assigns: Assign[] = [];
     const words: Word[] = [];
     const redirs: Redir[] = [];
     let sawCommand = false;
@@ -371,21 +498,30 @@ export class Parser {
       if (c === ')' && !sawCommand && !words.length) throw new BashSyntaxError("syntax error near unexpected token `)'");
       if (c === ')') break;
       if (c === '(') throw new BashSyntaxError("syntax error near unexpected token `('");
-      const r = this.tryRedir();
+      const r = this.src.startsWith('<(', this.pos) ? null : this.tryRedir();
       if (r) {
         redirs.push(r);
         continue;
       }
-      if (!sawCommand) {
-        const am = /^([A-Za-z_][A-Za-z0-9_]*)(\+?)=/.exec(this.src.slice(this.pos));
-        if (am) {
+      if (!sawCommand || (words.length > 0 && /^(declare|local|typeset|readonly|export)$/.test(this.wordText(words[0])))) {
+        const am = /^([A-Za-z_][A-Za-z0-9_]*)(?:\[([^\]]*)\])?(\+?)=/.exec(this.src.slice(this.pos));
+        // dopo il comando (declare/local/...) solo name=( ... ) è un'assegnazione; name=valore resta un argomento
+        if (am && sawCommand && this.src[this.pos + am[0].length] !== '(') {
+          // argomento normale
+        } else if (am) {
+          const post = sawCommand;
           this.pos += am[0].length;
-          const value = this.readWord();
-          assigns.push({ name: am[1], value, append: am[2] === '+' });
+          const index = am[2] !== undefined ? new Parser(am[2]).readWordAllowSpaces() : undefined;
+          if (this.peekc() === '(' && index === undefined) {
+            assigns.push({ name: am[1], value: [], append: am[3] === '+', array: this.readArrayLiteral(), post });
+          } else {
+            const value = this.readWord();
+            assigns.push({ name: am[1], value, append: am[3] === '+', ...(index ? { index } : {}), ...(post ? { post } : {}) });
+          }
           continue;
         }
       }
-      if (c === '<' || c === '>') throw new BashSyntaxError("syntax error near unexpected token `newline'");
+      if ((c === '<' || c === '>') && !this.src.startsWith('<(', this.pos)) throw new BashSyntaxError("syntax error near unexpected token `newline'");
       const word = this.readWord(sawCommand ? false : false);
       if (!word.length) {
         throw new BashSyntaxError(`syntax error near unexpected token \`${this.peekc()}'`);
@@ -442,6 +578,14 @@ export class Parser {
     let first = true;
     while (!this.eof()) {
       const c = this.peekc();
+      if (c === '<' && this.peekc(1) === '(') {
+        flush();
+        const end = this.findMatching(this.pos + 2, '(', ')', false);
+        segs.push({ t: 'proc', src: this.src.slice(this.pos + 2, end), q: false });
+        this.pos = end + 1;
+        first = false;
+        continue;
+      }
       if (/[\s|&;<>()]/.test(c)) {
         break;
       }
@@ -586,20 +730,66 @@ export class Parser {
       const end = this.findMatching(this.pos + 2, '{', '}', false);
       const inner = this.src.slice(this.pos + 2, end);
       this.pos = end + 1;
-      const m = /^(#?)([A-Za-z_][A-Za-z0-9_]*|[0-9@*#?$!]+)(?:(:?[-=+?])(.*))?$/s.exec(inner);
-      if (!m) throw new BashSyntaxError(`\${${inner}}: bad substitution`);
-      if (m[1]) return { t: 'var', name: m[2], q, op: '#' };
-      if (m[3]) {
-        const sub = new Parser(m[4]);
-        const arg = sub.readWordAllowSpaces();
-        return { t: 'var', name: m[2], q, op: m[3], arg };
-      }
-      return { t: 'var', name: m[2], q };
+      return this.parseBraced(inner, q);
     }
     const m = /^([A-Za-z_][A-Za-z0-9_]*|[0-9@*#?$!-])/.exec(this.src.slice(this.pos + 1, this.pos + 40));
     if (!m) return null;
     this.pos += 1 + m[0].length;
     return { t: 'var', name: m[1], q };
+  }
+
+  /** `${...}`: sostituzioni di parametro, sottostringhe, taglio di prefissi/suffissi, sostituzione, maiuscole, array. */
+  private parseBraced(inner: string, q: boolean): Seg {
+    const bad = (): never => {
+      throw new BashSyntaxError(`\${${inner}}: bad substitution`);
+    };
+    const m = /^([#!]?)([A-Za-z_][A-Za-z0-9_]*|[0-9@*#?$!-]+)(?:\[([^\]]*)\])?(.*)$/s.exec(inner);
+    if (!m) return bad();
+    const [, prefix, name, subscript, rem] = m;
+    const word = (src: string): Word => new Parser(src).readWordAllowSpaces();
+    const index = subscript !== undefined ? word(subscript) : undefined;
+    const base = { t: 'var' as const, name, q, ...(index ? { index } : {}) };
+    if (prefix === '#') return rem === '' ? { ...base, op: '#len' } : bad();
+    if (prefix === '!') return rem === '' && subscript !== undefined && (subscript === '@' || subscript === '*') ? { ...base, op: '!' } : bad();
+    if (rem === '') return base;
+    let r = /^(:?[-=+?])(.*)$/s.exec(rem);
+    if (r) return { ...base, op: r[1], arg: word(r[2]) };
+    r = /^:(.*)$/s.exec(rem);
+    if (r) {
+      // ${v:off} oppure ${v:off:len}; un offset negativo richiede lo spazio (${v: -3})
+      let depth = 0;
+      let cut = -1;
+      for (let i = 0; i < r[1].length; i++) {
+        const ch = r[1][i];
+        if (ch === '(') depth++;
+        else if (ch === ')') depth--;
+        else if (ch === ':' && depth === 0) {
+          cut = i;
+          break;
+        }
+      }
+      const off = cut < 0 ? r[1] : r[1].slice(0, cut);
+      return { ...base, op: ':', arg: word(off), ...(cut >= 0 ? { arg2: word(r[1].slice(cut + 1)) } : {}) };
+    }
+    r = /^(%%|%|##|#)(.*)$/s.exec(rem);
+    if (r) return { ...base, op: r[1], arg: word(r[2]) };
+    r = /^(\/\/|\/#|\/%|\/)(.*)$/s.exec(rem);
+    if (r) {
+      let cut = -1;
+      for (let i = 0; i < r[2].length; i++) {
+        if (r[2][i] === '\\') i++;
+        else if (r[2][i] === '/') {
+          cut = i;
+          break;
+        }
+      }
+      const pat = cut < 0 ? r[2] : r[2].slice(0, cut);
+      const rep = cut < 0 ? '' : r[2].slice(cut + 1);
+      return { ...base, op: r[1], arg: word(pat), arg2: word(rep) };
+    }
+    r = /^(\^\^|\^|,,|,)(.*)$/s.exec(rem);
+    if (r) return { ...base, op: r[1] };
+    return bad();
   }
 
   readWordAllowSpaces(): Word {

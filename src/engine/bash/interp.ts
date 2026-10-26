@@ -1,5 +1,6 @@
 /** Interprete Bash: espansioni, redirezioni, pipeline, strutture di controllo. */
 import { findDoc, renderHelp } from '../catalog.ts';
+import { caseModify, replacePattern, sliceList, substring, trimPrefix, trimSuffix, patternRegExp } from './param.ts';
 import { LIMITS, type ShellState, type WorkspaceState } from '../types.ts';
 import { FsError, HOME, Vfs, basename, fsErrorMessage, glob, hasGlob, resolvePath } from '../vfs.ts';
 import { BashSyntaxError, Incomplete, Parser, parseBash, type Node, type Redir, type Seg, type Word } from './parser.ts';
@@ -29,12 +30,16 @@ export class LimitError extends Error {}
 
 interface Frame {
   args: string[];
-  locals: Record<string, string>;
+  locals: Record<string, unknown>;
   fn: string | null;
 }
 
 export const COMMANDS = new Map<string, CmdFn>();
 export const BUILTINS = new Set<string>();
+
+export function isAssoc(v: unknown): v is { __assoc: Record<string, string> } {
+  return !!v && typeof v === 'object' && !Array.isArray(v) && '__assoc' in (v as object);
+}
 
 const NO_HELP = new Set(['echo', 'true', 'false', ':', '[', 'test', 'printf', 'man', 'help']);
 
@@ -48,6 +53,8 @@ export class BashRuntime {
   errexit = false;
   pipefail = false;
   nounset = false;
+  /** codici di uscita degli stadi dell'ultima pipeline (PIPESTATUS) */
+  lastPipe: number[] | undefined;
   xtrace = false;
   traps: Record<string, string> = {};
   /** descrittori ≥ 3 aperti con `exec N>file` */
@@ -104,25 +111,120 @@ export class BashRuntime {
         return '1000';
     }
     if (/^\d+$/.test(name)) return top.args[parseInt(name, 10) - 1];
+    const raw = this.rawVar(name);
+    if (typeof raw === 'string') return raw;
+    if (Array.isArray(raw)) return raw.length ? (raw[0] ?? '') : undefined;
+    if (isAssoc(raw)) return raw.__assoc['0'];
+    if (raw === undefined && name === 'IFS') return ' \t\n';
+    return undefined;
+  }
+
+  // ---------- array e variabili composte ----------
+  /** valore grezzo di una variabile: stringa, array indicizzato (null = indice non definito) o associativo ({__assoc}) */
+  rawVar(name: string): unknown {
     for (let i = this.frames.length - 1; i >= 0; i--) {
       if (name in this.frames[i].locals) return this.frames[i].locals[name];
     }
-    const v = this.ss.vars[name];
-    if (typeof v === 'string') return v;
-    const e = this.ss.env[name];
-    if (e === undefined && name === 'IFS') return ' \t\n';
-    return e;
+    if (name in this.ss.vars) return this.ss.vars[name];
+    return this.ss.env[name];
+  }
+
+  private holderOf(name: string, forceLocal = false): Record<string, unknown> {
+    if (forceLocal) return this.frames[this.frames.length - 1].locals;
+    for (let i = this.frames.length - 1; i >= 0; i--) {
+      if (name in this.frames[i].locals) return this.frames[i].locals;
+    }
+    if (name in this.ss.env) return this.ss.env;
+    return this.ss.vars;
+  }
+
+  /** dichiara una variabile composta vuota (declare -a / -A) */
+  declareArray(name: string, assoc: boolean, local = false): void {
+    const h = this.holderOf(name, local);
+    const cur = h[name];
+    if (assoc ? isAssoc(cur) : Array.isArray(cur)) return;
+    h[name] = assoc ? { __assoc: {} } : typeof cur === 'string' ? [cur] : [];
+  }
+
+  private keyOf(name: string, index: Word, io: Io): string | number {
+    const raw = this.rawVar(name);
+    const text = this.expandStr(index, io);
+    if (isAssoc(raw)) return text;
+    let n = this.arith(text);
+    if (n < 0) n += Array.isArray(raw) ? raw.length : typeof raw === 'string' ? 1 : 0;
+    return n;
+  }
+
+  setElement(name: string, key: string | number, value: string, append = false, local = false): void {
+    const h = this.holderOf(name, local);
+    let cur = h[name];
+    if (isAssoc(cur)) {
+      cur.__assoc[String(key)] = (append ? (cur.__assoc[String(key)] ?? '') : '') + value;
+      return;
+    }
+    if (!Array.isArray(cur)) {
+      cur = typeof cur === 'string' ? [cur] : [];
+      h[name] = cur;
+    }
+    const arr = cur as (string | null)[];
+    const i = Number(key);
+    if (!Number.isInteger(i) || i < 0) throw new BashSyntaxError(`${name}[${key}]: bad array subscript`);
+    while (arr.length < i) arr.push(null);
+    arr[i] = (append ? (arr[i] ?? '') : '') + value;
+  }
+
+  /** name=(...) / name+=(...) */
+  assignArray(name: string, lit: { key?: Word; value: Word }[], append: boolean, io: Io, local = false, assoc?: boolean): void {
+    const h = this.holderOf(name, local);
+    const cur = h[name];
+    const isA = assoc ?? isAssoc(cur);
+    if (isA) {
+      const m: Record<string, string> = append && isAssoc(cur) ? cur.__assoc : {};
+      let pending: string | null = null;
+      for (const el of lit) {
+        if (el.key) m[this.expandStr(el.key, io)] = this.expandStr(el.value, io);
+        else if (pending === null) pending = this.expandStr(el.value, io);
+        else {
+          m[pending] = this.expandStr(el.value, io);
+          pending = null;
+        }
+      }
+      h[name] = { __assoc: m };
+      return;
+    }
+    const arr: (string | null)[] = append && Array.isArray(cur) ? cur : append && typeof cur === 'string' ? [cur] : [];
+    let next = arr.length;
+    for (const el of lit) {
+      if (el.key) {
+        const k = this.arith(this.expandStr(el.key, io));
+        while (arr.length < k) arr.push(null);
+        arr[k] = this.expandStr(el.value, io);
+        next = k + 1;
+      } else {
+        for (const f of this.expandFields(el.value, io)) {
+          while (arr.length < next) arr.push(null);
+          arr[next++] = f;
+        }
+      }
+    }
+    h[name] = arr;
   }
 
   set(name: string, value: string): void {
     if (name === 'IFS' && value !== ' \t\n') throw new BashSyntaxError('IFS personalizzato non supportato nel laboratorio');
     for (let i = this.frames.length - 1; i >= 0; i--) {
       if (name in this.frames[i].locals) {
-        this.frames[i].locals[name] = value;
+        const cur = this.frames[i].locals[name];
+        if (Array.isArray(cur)) cur[0] = value;
+        else if (isAssoc(cur)) cur.__assoc['0'] = value;
+        else this.frames[i].locals[name] = value;
         return;
       }
     }
-    if (name in this.ss.env) this.ss.env[name] = value;
+    const cur = this.ss.vars[name];
+    if (Array.isArray(cur)) cur[0] = value;
+    else if (isAssoc(cur)) cur.__assoc['0'] = value;
+    else if (name in this.ss.env) this.ss.env[name] = value;
     else this.ss.vars[name] = value;
   }
 
@@ -193,7 +295,9 @@ export class BashRuntime {
     return code;
   }
 
-  capture(src: string, io: Io): string {
+  private procN = 0;
+
+  capture(src: string, io: Io, keepNl = false): string {
     let buf = '';
     const sub: Io = { stdin: '', out: (t) => (buf += t), err: (t) => io.err(t), tty: false };
     const savedCwd = this.ss.cwd;
@@ -204,7 +308,7 @@ export class BashRuntime {
       this.ss.lastExit = e.code;
     }
     this.ss.cwd = savedCwd;
-    return buf.replace(/\n+$/, '');
+    return keepNl ? buf : buf.replace(/\n+$/, '');
   }
 
   // ---------- espansioni ----------
@@ -285,38 +389,112 @@ export class BashRuntime {
         const out = this.capture(seg.src, io);
         return { v: out };
       }
+      case 'proc': {
+        const text = this.capture(seg.src, io, true);
+        const path = `/tmp/.procsub/${this.procN++ % 20}`;
+        this.vfs.mkdir('/tmp/.procsub', true);
+        this.vfs.writeFile(path, text);
+        return { v: path };
+      }
       case 'arith':
         return { v: String(this.arith(this.expandStr(this.parseInner(seg.expr), io))) };
-      case 'var': {
-        if (seg.q && seg.name === '@') {
-          const args = this.frames[this.frames.length - 1].args;
-          return { v: args.join(' '), multi: args };
+      case 'var':
+        return this.varValue(seg, io);
+    }
+  }
+
+  /** Pattern di shell da una parola: le parti tra virgolette diventano letterali. */
+  patternOf(word: Word, io: Io): string {
+    const esc = (t: string): string => t.replace(/[\\*?[\]]/g, '\\$&');
+    let out = '';
+    for (let i = 0; i < word.length; i++) {
+      const seg = word[i];
+      const v = this.segValue(seg, io, word[i + 1]).v;
+      out += seg.t !== 'tilde' && seg.q ? esc(v) : v;
+    }
+    return out;
+  }
+
+  private varValue(seg: Extract<Seg, { t: 'var' }>, io: Io): { v: string; multi?: string[] } {
+    const name = seg.name;
+    const pos = this.frames[this.frames.length - 1].args;
+    // elenco di elementi (parametri posizionali o array) quando si usa @ / *
+    let all: '@' | '*' | null = null;
+    if (name === '@' || name === '*') all = name;
+    let list: string[] | null = null;
+    let single: string | undefined;
+    const raw = this.rawVar(name);
+    if (all) list = [...pos];
+    else if (seg.index) {
+      const idxTxt = seg.index.length === 1 && seg.index[0].t === 'text' ? seg.index[0].v : null;
+      if (idxTxt === '@' || idxTxt === '*') {
+        all = idxTxt;
+        list = isAssoc(raw) ? Object.values(raw.__assoc) : Array.isArray(raw) ? (raw.filter((x) => x !== null) as string[]) : typeof raw === 'string' ? [raw] : [];
+      } else {
+        const key = this.keyOf(name, seg.index, io);
+        single = isAssoc(raw) ? raw.__assoc[String(key)] : Array.isArray(raw) ? (raw[Number(key)] ?? undefined) : typeof raw === 'string' && Number(key) === 0 ? raw : undefined;
+      }
+    } else single = this.get(name);
+    const isList = list !== null;
+    const out = (vals: string[]): { v: string; multi?: string[] } => {
+      // "$@" / "${a[@]}": un campo per elemento; $@ senza virgolette e "$*": un solo testo (poi diviso dalla shell)
+      if (!seg.q || all === '*') return { v: vals.join(' ') };
+      return { v: vals.join(' '), multi: vals };
+    };
+    if (this.nounset && !seg.op && !isList && single === undefined && /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) throw new BashSyntaxError(`${name}: unbound variable`);
+    const op = seg.op;
+    if (op === '#len') return { v: String(isList ? list!.length : (single ?? '').length) };
+    if (op === '!') {
+      const keys = isAssoc(raw) ? Object.keys(raw.__assoc) : Array.isArray(raw) ? raw.map((x, i) => (x === null ? null : String(i))).filter((x): x is string => x !== null) : [];
+      return out(keys);
+    }
+    const arg = seg.arg ? this.expandStr(seg.arg, io) : '';
+    if (op === ':') {
+      const off = this.arith(arg || '0');
+      const len = seg.arg2 ? this.arith(this.expandStr(seg.arg2, io)) : undefined;
+      if (isList) {
+        // ${@:n} parte dal parametro n (1 = primo); sugli array l'offset è l'indice
+        const base = name === '@' || name === '*' ? (off > 0 ? off - 1 : off) : off;
+        return out(sliceList(list!, base, len));
+      }
+      return { v: substring(single ?? '', off, len) };
+    }
+    if (op && ['%', '%%', '#', '##', '/', '//', '/#', '/%', '^^', '^', ',,', ','].includes(op)) {
+      const apply = (t: string): string => {
+        switch (op) {
+          case '%': return trimSuffix(t, this.expandStr(seg.arg ?? [], io), false);
+          case '%%': return trimSuffix(t, this.expandStr(seg.arg ?? [], io), true);
+          case '#': return trimPrefix(t, this.expandStr(seg.arg ?? [], io), false);
+          case '##': return trimPrefix(t, this.expandStr(seg.arg ?? [], io), true);
+          case '/': case '//': case '/#': case '/%':
+            return replacePattern(t, this.expandStr(seg.arg ?? [], io), seg.arg2 ? this.expandStr(seg.arg2, io) : '', op);
+          default: return caseModify(t, op);
         }
-        const val = this.get(seg.name);
-        if (this.nounset && val === undefined && !seg.op && /^[A-Za-z_][A-Za-z0-9_]*$/.test(seg.name)) throw new BashSyntaxError(`${seg.name}: unbound variable`);
-        if (seg.op === '#') return { v: String((val ?? '').length) };
-        if (seg.op) {
-          const colon = seg.op.startsWith(':');
-          const kind = seg.op.replace(':', '');
-          const unset = val === undefined || (colon && val === '');
-          const arg = seg.arg ? this.expandStr(seg.arg, io) : '';
-          if (kind === '-') return { v: unset ? arg : val! };
-          if (kind === '=') {
-            if (unset) {
-              this.set(seg.name, arg);
-              return { v: arg };
-            }
-            return { v: val! };
-          }
-          if (kind === '+') return { v: unset ? '' : arg };
-          if (kind === '?') {
-            if (unset) throw new BashSyntaxError(`${seg.name}: ${arg || 'parameter null or not set'}`);
-            return { v: val! };
-          }
+      };
+      if (isList) return out(list!.map(apply));
+      return { v: apply(single ?? '') };
+    }
+    const val = isList ? (list!.length ? list!.join(' ') : undefined) : single;
+    if (op) {
+      const colon = op.startsWith(':');
+      const kind = op.replace(':', '');
+      const unset = val === undefined || (colon && val === '');
+      if (kind === '-') return { v: unset ? arg : val! };
+      if (kind === '=') {
+        if (unset) {
+          this.set(name, arg);
+          return { v: arg };
         }
-        return { v: val ?? '' };
+        return { v: val! };
+      }
+      if (kind === '+') return { v: unset ? '' : arg };
+      if (kind === '?') {
+        if (unset) throw new BashSyntaxError(`${name}: ${arg || 'parameter null or not set'}`);
+        return { v: val! };
       }
     }
+    if (isList) return out(list!);
+    return { v: val ?? '' };
   }
 
   private parseInner(src: string): Word {
@@ -520,7 +698,9 @@ export class BashRuntime {
       case 'list': {
         let code = this.ss.lastExit;
         for (const item of node.items) {
+          this.lastPipe = undefined;
           code = this.exec(item, io);
+          this.ss.vars.PIPESTATUS = (this.lastPipe ?? [code]).map(String);
           this.ss.lastExit = code;
           if (this.errexit && code !== 0 && this.inCond === 0) throw new ExitSignal(code);
         }
@@ -603,6 +783,35 @@ export class BashRuntime {
         }
         return code;
       }
+      case 'arith': {
+        const v = this.arith(this.expandStr(this.parseInner(node.expr), io));
+        return v === 0 ? 1 : 0;
+      }
+      case 'cfor': {
+        const ev = (e: string): number => (e.trim() === '' ? 1 : this.arith(this.expandStr(this.parseInner(e), io)));
+        ev(node.init);
+        let code = 0;
+        while (ev(node.cond) !== 0) {
+          this.tick();
+          try {
+            code = this.exec(node.body, io);
+          } catch (e) {
+            if (e instanceof LoopSignal) {
+              if (e.levels > 1) throw new LoopSignal(e.kind, e.levels - 1);
+              if (e.kind === 'break') break;
+            } else throw e;
+          }
+          ev(node.step);
+        }
+        return code;
+      }
+      case 'case': {
+        const subject = this.expandStr(node.word, io);
+        for (const item of node.items) {
+          if (item.patterns.some((p) => patternRegExp(this.patternOf(p, io)).test(subject))) return this.exec(item.body, io);
+        }
+        return 0;
+      }
       case 'func':
         this.ss.functions[node.name] = { body: node.src };
         return 0;
@@ -639,6 +848,7 @@ export class BashRuntime {
     let input = io.stdin;
     let code = 0;
     let failed = 0;
+    const codes: number[] = [];
     node.cmds.forEach((cmd, i) => {
       const last = i === node.cmds.length - 1;
       let buf = '';
@@ -652,8 +862,10 @@ export class BashRuntime {
         this.inCond--;
       }
       if (code !== 0) failed = code;
+      codes.push(code);
       input = buf;
     });
+    this.lastPipe = codes;
     if (this.pipefail && failed !== 0) code = failed;
     return node.negate ? (code === 0 ? 1 : 0) : code;
   }
@@ -773,7 +985,13 @@ export class BashRuntime {
 
   // ---------- comando semplice ----------
   private execSimple(node: Extract<Node, { type: 'simple' }>, io: Io): number {
-    const assigns = node.assigns.map((a) => ({ name: a.name, value: this.expandStr(a.value, io), append: a.append }));
+    const assigns = node.assigns.filter((a) => !a.index && !a.array).map((a) => ({ name: a.name, value: this.expandStr(a.value, io), append: a.append }));
+    // name[i]=v e name=(...): assegnazioni persistenti (non possono essere esportate nell'ambiente del comando)
+    for (const a of node.assigns) {
+      if (a.post) continue;
+      if (a.index) this.setElement(a.name, this.keyOf(a.name, a.index, io), this.expandStr(a.value, io), a.append);
+      else if (a.array) this.assignArray(a.name, a.array, a.append, io);
+    }
     const isDbl = node.words.length > 0 && node.words[0].length === 1 && node.words[0][0].t === 'text' && (node.words[0][0] as { v: string }).v === '[[';
     // dentro [[ ]] niente espansione di percorso né divisione in parole (a differenza di `[`)
     const words = isDbl ? node.words.map((w) => this.expandStr(w, io)) : node.words.flatMap((w) => this.expandFields(w, io));
@@ -825,6 +1043,15 @@ export class BashRuntime {
     }
     try {
       const code = this.runCommand(words[0], words.slice(1), ioX);
+      // declare -A m=(...) / local -a l=(...): il builtin ha già valutato le opzioni, ora si assegna
+      for (const a of node.assigns) {
+        if (!a.post) continue;
+        const flags = words.slice(1).filter((w) => /^-[A-Za-z]+$/.test(w)).join('');
+        const local = words[0] === 'local' || ((words[0] === 'declare' || words[0] === 'typeset') && this.frames.length > 1 && !flags.includes('g'));
+        const assoc = flags.includes('A');
+        this.declareArray(a.name, assoc, local);
+        this.assignArray(a.name, a.array ?? [], a.append, io, local, assoc || undefined);
+      }
       return code;
     } finally {
       finish();

@@ -3,7 +3,11 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { FILES, SNIPPETS } from '../tests/bash-compat-snippets.ts';
+import { readFileSync } from 'node:fs';
+import { FILES, SNIPPETS as BASE } from '../tests/bash-compat-snippets.ts';
+
+const P8 = readFileSync('tests/bash-compat-p8.txt', 'utf8').split('\n').filter(Boolean);
+const SNIPPETS = [...BASE, ...P8];
 
 const out: Record<string, { out: string; code: number }> = {};
 const base = mkdtempSync(join(tmpdir(), 'bashgen-'));

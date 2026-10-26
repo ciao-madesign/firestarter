@@ -579,23 +579,30 @@ Differenze rispetto al comando reale:
 
 ### `awk`
 
-Elabora campi di testo.
+Elabora testo a campi con un programma awk.
 
-Sintassi: `awk [-F sep] 'condizione {print $1, $2}' [file...]`
+Sintassi: `awk [-F sep] [-v var=valore] 'programma' [file...]`
 
-- `-F sep`: separatore
+- `-F sep`: separatore di campo
+- `-v var=valore`: imposta una variabile prima di BEGIN
+
+Esempio: `awk -F, '{s+=$2} END{print s}' dati.csv`
 
 Differenze rispetto al comando reale:
-- Sottoinsieme: solo print di campi/NR/NF, condizioni /re/, NR==N, $N==x e END{print NR}. Nessuna variabile, ciclo, concatenazione o aritmetica: le espressioni non supportate danno un errore esplicito (mai un risultato sbagliato).
+- Interprete awk del laboratorio (sottoinsieme POSIX): BEGIN/END, pattern e intervalli, variabili, array associativi, if/while/for, funzioni utente, printf/sprintf, length/substr/index/split/sub/gsub/match/toupper/tolower/int/sqrt/rand.
+- Non supportati (errore esplicito): getline, system(), redirezioni e pipe di print, RS diverso da newline, funzioni specifiche di gawk (gensub, strftime, asort...).
+- Differisce da gawk/macOS awk nei casi limite: stampa dei numeri non interi (%.6g), ordine di for-in (qui ordine di inserimento).
 
 ### `diff`
 
-Confronta due file riga per riga (formato unificato). Codice 1 se differiscono.
+Confronta due file riga per riga. Codice 1 se differiscono.
 
-Sintassi: `diff file1 file2`
+Sintassi: `diff [-u] file1 file2`
+
+- `-u`: formato unificato (@@ ... @@)
 
 Differenze rispetto al comando reale:
-- Produce sempre il formato unificato, con un solo blocco @@.
+- Formato normale (1c1, 2a3) di default, unificato con -u. Il formato unificato ha un solo blocco @@ e nessun contesto configurabile. Altre opzioni non sono supportate.
 
 ### `less`
 
@@ -617,12 +624,63 @@ Differenze rispetto al comando reale:
 
 ### `xargs`
 
-Costruisce un comando con gli argomenti letti da stdin.
+Costruisce comandi con gli argomenti letti da stdin.
 
-Sintassi: `xargs comando [argomenti]`
+Sintassi: `xargs [-n N] [-I {}] [-r] comando [argomenti]`
+
+- `-n N`: al massimo N argomenti per esecuzione
+- `-I {}`: sostituisce {} con ogni riga
+- `-r`: non esegue se stdin è vuoto
 
 Differenze rispetto al comando reale:
-- Nessuna opzione (-I, -n, -0) supportata.
+- Altre opzioni (-0, -P, -d) danno un errore esplicito. Il comando deve essere un comando del simulatore.
+
+### `tac`
+
+Stampa le righe in ordine inverso.
+
+Sintassi: `tac [file...]`
+
+Differenze rispetto al comando reale:
+- Equivalente a GNU tac (non esiste su macOS: lì si usa tail -r).
+
+### `rev`
+
+Inverte i caratteri di ogni riga.
+
+Sintassi: `rev [file...]`
+
+### `paste`
+
+Unisce righe di file diversi affiancate.
+
+Sintassi: `paste [-d sep] [-s] file...`
+
+- `-d sep`: delimitatore (default tab)
+- `-s`: unisce le righe di ogni file in una sola
+
+### `expr`
+
+Valuta un'espressione aritmetica o di stringa.
+
+Sintassi: `expr espressione`
+
+Differenze rispetto al comando reale:
+- Sottoinsieme: + - * / % confronti, & | e length/substr/index/match.
+
+### `typeset`
+
+Sinonimo di declare.
+
+Sintassi: `typeset [-aAxg] nome[=valore]`
+
+- `-a`: array indicizzato
+- `-A`: array associativo
+- `-x`: esporta
+- `-g`: globale
+
+Differenze rispetto al comando reale:
+- Come declare: solo i flag a A x g sono supportati.
 
 ### `ps`
 
@@ -914,6 +972,115 @@ Sintassi: `Get-Item <percorso> [-Force]`
 Rinomina un file o una cartella (alias: ren, rni).
 
 Sintassi: `Rename-Item <percorso> <nuovoNome>`
+
+### `Write-Verbose`
+
+Scrive un messaggio dettagliato (prefisso VERBOSE:).
+
+Sintassi: `Write-Verbose <messaggio> [-Verbose]`
+
+- `-Verbose`: mostra il messaggio
+
+Differenze rispetto al comando reale:
+- Il messaggio compare solo con -Verbose esplicito: $VerbosePreference e il parametro comune su funzioni non sono simulati.
+
+### `ConvertTo-Csv`
+
+Converte oggetti in righe CSV (tutti i valori tra virgolette, come in PowerShell 5.1).
+
+Sintassi: `ConvertTo-Csv [-Delimiter ,] [-NoTypeInformation]`
+
+- `-NoTypeInformation`: omette la riga #TYPE (in 5.1 compare di default)
+- `-Delimiter`: separatore
+
+### `ConvertFrom-Csv`
+
+Converte righe CSV in oggetti (tutti i valori sono stringhe).
+
+Sintassi: `ConvertFrom-Csv [-Delimiter ,] [-Header a,b]`
+
+- `-Delimiter`: separatore
+- `-Header`: nomi delle colonne se il testo non ha intestazione
+
+### `Import-Csv`
+
+Legge un file CSV e produce oggetti con una proprietà per colonna.
+
+Sintassi: `Import-Csv <file> [-Delimiter ,] [-Header a,b]`
+
+- `-Delimiter`: separatore
+- `-Header`: nomi delle colonne
+
+Differenze rispetto al comando reale:
+- Codifica non selezionabile: il file è letto come testo UTF-8.
+
+### `Export-Csv`
+
+Scrive oggetti in un file CSV.
+
+Sintassi: `Export-Csv <file> [-NoTypeInformation] [-Append]`
+
+- `-NoTypeInformation`: omette la riga #TYPE
+- `-Append`: aggiunge al file
+- `-Delimiter`: separatore
+
+Differenze rispetto al comando reale:
+- Con -Append non controlla che le colonne coincidano con quelle del file esistente.
+
+### `Tee-Object`
+
+Salva l'input in un file o in una variabile e lo passa avanti nella pipeline.
+
+Sintassi: `Tee-Object -FilePath <file> | -Variable <nome> [-Append]`
+
+- `-FilePath`: file di destinazione
+- `-Variable`: nome della variabile (senza $)
+- `-Append`: aggiunge al file
+
+### `Get-Random`
+
+Numero casuale o elementi scelti a caso da un elenco.
+
+Sintassi: `Get-Random [-Minimum n] [-Maximum n] | -InputObject <elenco> [-Count n]`
+
+- `-Minimum, -Maximum`: intervallo (il massimo è escluso)
+- `-Count`: quanti elementi scegliere
+
+Differenze rispetto al comando reale:
+- Nel laboratorio i valori sono deterministici (dipendono dall'orologio simulato): non usarli per sicurezza. -SetSeed non è supportato.
+
+### `New-Guid`
+
+Genera un identificatore (GUID) nel formato 8-4-4-4-12.
+
+Sintassi: `New-Guid`
+
+Differenze rispetto al comando reale:
+- Il valore è una stringa e non un oggetto System.Guid; è deterministico come tutto il laboratorio.
+
+### `Add-Member`
+
+Aggiunge una proprietà a un oggetto.
+
+Sintassi: `Add-Member -InputObject <oggetto> -NotePropertyName <nome> -NotePropertyValue <valore> [-PassThru]`
+
+- `-NotePropertyName/-NotePropertyValue`: nome e valore
+- `-PassThru`: restituisce l'oggetto
+
+Differenze rispetto al comando reale:
+- Solo proprietà NoteProperty: ScriptMethod, ScriptProperty e AliasProperty danno un errore esplicito.
+
+### `Get-Member`
+
+Elenca le proprietà di un oggetto.
+
+Sintassi: `Get-Member [-MemberType NoteProperty] [-Name <nome>]`
+
+- `-MemberType`: solo NoteProperty/Property
+- `-Name`: filtra per nome (con *)
+
+Differenze rispetto al comando reale:
+- Funziona su PSCustomObject, hashtable e risultati dei cmdlet; per tipi .NET e metodi dà un errore esplicito.
 
 ### `Write-Warning`
 

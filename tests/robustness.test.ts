@@ -49,4 +49,12 @@ describe('controllo documentale indipendente dalle variabili dello studente', ()
     const r = lintDocument(s, md);
     expect(r.examples.map((e) => e.status)).toEqual([200, 401]);
   });
+
+  it('awk con programma malformato dà un errore esplicito, mai un errore interno', () => {
+    for (const prog of ['function if while . {', '{', '{ print $', 'BEGIN { x = }', '/abc', '{ print "a }', 'BEGIN { for (;;', '{ a[ }']) {
+      const r = execute(createWorkspace('aw'), 'bash', `awk '${prog}' /dev/null`);
+      expect(r.exit, prog).toBe(2);
+      expect(r.out.map((o) => o.t).join(''), prog).toMatch(/^awk: /);
+    }
+  });
 });

@@ -458,7 +458,60 @@ export class PsRuntime {
         return this.execTry(s);
       case 'param':
         return [];
+      case 'named':
+        return this.execBlock(s.body);
+      case 'switch':
+        return this.execSwitch(s);
     }
+  }
+
+  private execSwitch(s: Extract<Stmt, { k: 'switch' }>): unknown[] {
+    const out: unknown[] = [];
+    for (const it of toArray(this.stmtValue(s.subject))) {
+      this.tick();
+      this.itemStack.push(it);
+      try {
+        let matched = false;
+        for (const c of s.clauses) {
+          if (c.cond === null) continue;
+          const cv = this.evalExpr(c.cond);
+          let hit: boolean;
+          if (cv instanceof PSScriptBlock) {
+            const r = this.execBlock(cv.block);
+            hit = truthy(r.length === 0 ? null : r.length === 1 ? r[0] : r);
+          } else if (s.mode === 'regex') hit = this.compare('match', it, cv, s.cs);
+          else if (s.mode === 'wildcard') hit = this.compare('like', it, cv, s.cs);
+          else hit = psEqual(it, cv, s.cs);
+          if (!hit) continue;
+          matched = true;
+          try {
+            out.push(...this.execBlock(c.body));
+          } catch (e) {
+            out.push(...partialOf(e));
+            (e as { partial?: unknown[] }).partial = undefined;
+            if (e instanceof BreakEx) return out;
+            if (e instanceof ContinueEx) break;
+            throw withPartial(e, out);
+          }
+        }
+        if (!matched) {
+          const d = s.clauses.find((c) => c.cond === null);
+          if (d) {
+            try {
+              out.push(...this.execBlock(d.body));
+            } catch (e) {
+              out.push(...partialOf(e));
+              (e as { partial?: unknown[] }).partial = undefined;
+              if (e instanceof BreakEx) return out;
+              if (!(e instanceof ContinueEx)) throw withPartial(e, out);
+            }
+          }
+        }
+      } finally {
+        this.itemStack.pop();
+      }
+    }
+    return out;
   }
 
   private execTry(s: Extract<Stmt, { k: 'try' }>): unknown[] {
@@ -728,7 +781,7 @@ export class PsRuntime {
           if (!p.has && ev.order[k + 1]?.t === 'a') k++;
           continue;
         }
-        if (['verbose', 'vb', 'debug', 'db'].includes(lname)) continue;
+        if (['verbose', 'vb', 'debug', 'db'].includes(lname) && !(lname === 'verbose' && cmdName.toLowerCase() === 'write-verbose')) continue;
         const def = find(p.name);
         if (!def) {
           rawParams.push(p);
@@ -856,7 +909,22 @@ export class PsRuntime {
       this.argsStack.push(extras);
       this.scopes[this.scopes.length - 1].set('input', input);
       try {
-        return this.execBlock({ ...f.body, stmts: f.body.stmts.filter((s) => s.k !== 'param') });
+        const body = f.body.stmts.filter((s) => s.k !== 'param');
+        if (body.some((s) => s.k === 'named')) {
+          const out: unknown[] = [];
+          for (const s of body) if (s.k === 'named' && s.name === 'begin') out.push(...this.execBlock(s.body));
+          for (const it of input) {
+            this.itemStack.push(it);
+            try {
+              for (const s of body) if (s.k === 'named' && s.name === 'process') out.push(...this.execBlock(s.body));
+            } finally {
+              this.itemStack.pop();
+            }
+          }
+          for (const s of body) if (s.k === 'named' && s.name === 'end') out.push(...this.execBlock(s.body));
+          return out;
+        }
+        return this.execBlock({ ...f.body, stmts: body });
       } catch (e) {
         if (e instanceof ReturnEx) return [...partialOf(e), ...e.value];
         throw e;

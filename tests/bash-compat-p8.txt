@@ -1,0 +1,116 @@
+v=hello; echo ${v:1:3}
+v=hello; echo ${v:2}
+v=hello; echo ${v: -3}
+v=hello; echo ${v:1:-1}
+v=hello; echo ${v^^}
+v=HELLO; echo ${v,,}
+v=hello; echo ${v^}
+v=HELLO; echo ${v,}
+v=file.tar.gz; echo ${v%.gz}
+v=file.tar.gz; echo ${v%%.*}
+v=file.tar.gz; echo ${v#*.}
+v=file.tar.gz; echo ${v##*.}
+v=/a/b/c.txt; echo ${v##*/} ${v%/*}
+v=banana; echo ${v/an/AN}
+v=banana; echo ${v//an/AN}
+v=banana; echo ${v/#ba/XX}
+v=banana; echo ${v/%na/YY}
+v=banana; echo ${v//a}
+v=hello; echo ${#v} ${v:0:0}x
+x=""; echo ${x:-vuoto} ${x-nodef} ${y:-undef}
+x=5; echo ${x:+yes} ${y:+yes}x
+arr=(a b c); echo ${arr[1]} ${#arr[@]}
+arr=(a b c); echo "${arr[@]}"
+arr=(a b c); echo "${arr[*]}"
+arr=(a b c); arr+=(d e); echo ${#arr[@]} ${arr[4]}
+arr=(x y z); for i in "${!arr[@]}"; do echo $i; done
+arr=(x y z); for e in "${arr[@]}"; do echo "[$e]"; done
+arr=(); arr[2]=c; arr[0]=a; echo ${arr[0]}${arr[2]} ${#arr[@]}
+arr=(a b c d); echo ${arr[@]:1:2}
+arr=(a "b c" d); echo ${#arr[@]} "${arr[1]}"
+arr=(one two); echo ${arr[-1]}
+arr=(3 1 2); echo $(printf '%s\n' "${arr[@]}" | sort | tr '\n' ' ')
+declare -A m; m[k]=v; m[z]=w; echo ${m[k]} ${#m[@]}
+declare -A m=([a]=1 [b]=2); echo ${m[a]}${m[b]}
+declare -A m; m[x]=1; m[y]=2; for k in "${!m[@]}"; do echo $k=${m[$k]}; done | sort
+case b in a) echo A;; b|c) echo BC;; *) echo other;; esac
+case "x.txt" in *.txt) echo testo;; *.md) echo md;; *) echo no;; esac
+case zzz in a*) echo A;; *) echo default;; esac
+x=2; case $x in 1) echo uno;; 2) echo due;; esac
+case "ab" in [a-c]*) echo range;; esac
+for ((i=0;i<3;i++)); do echo $i; done
+for ((i=3;i>0;i--)); do echo -n "$i "; done; echo
+for ((i=0,j=10;i<3;i++,j--)); do echo $i $j; done
+((x = 5 + 3)); echo $x
+x=5; ((x++)); echo $x
+x=5; ((x += 10)); echo $x
+if ((3 > 2)); then echo yes; fi
+if ((1 > 2)); then echo yes; else echo no; fi
+x=3; if (( x % 2 == 1 )); then echo odd; fi
+((0)); echo $?
+((5)); echo $?
+i=0; while ((i<3)); do echo $i; ((i++)); done
+n=5; echo $(( n > 3 ? n : 3 ))
+tac a.txt
+rev a.txt
+printf 'abc\n' | rev
+paste -d, a.txt nums.txt
+paste a.txt nums.txt
+paste -s -d, a.txt
+echo a b c | xargs -n1
+echo a b c | xargs
+printf 'x\ny\n' | xargs -I{} echo item-{}
+echo "1 2 3" | xargs -n2
+printf 'a\nb\n' | xargs echo
+expr 3 + 4
+expr 10 / 3
+expr 10 % 3
+expr 2 \* 5
+expr length hello
+expr substr hello 2 3
+expr 3 \> 2
+awk '{print $1}' log.txt
+awk '{print $2}' log.txt | sort | uniq -c
+awk -F, '{print $1}' data.csv
+awk -F, 'NR>1{s+=$2} END{print s}' data.csv
+awk 'END{print NR}' a.txt
+awk '/ERROR/{c++} END{print c}' log.txt
+awk '{print NR": "$0}' a.txt
+awk 'length($0)>4' a.txt
+awk -F, '$3=="Roma"{print $1}' data.csv
+awk '{print $1, $NF}' log.txt
+awk '{print NF}' sp.txt
+awk '{s=0; for(i=1;i<=NF;i++) s+=$i; print s}' nums.txt
+awk '{sum+=$1} END{print sum, NR, sum/NR}' nums.txt
+awk 'BEGIN{print "start"} {n++} END{print n " righe"}' a.txt
+awk '{print toupper($1)}' a.txt
+awk '{print substr($1,1,2)}' a.txt
+awk '$1>3' nums.txt
+awk '$1!=3{print}' nums.txt
+awk 'NR==2,NR==4' a.txt
+awk '{a[$2]++} END{for(k in a) print k, a[k]}' log.txt | sort
+awk -F, 'NR>1{printf "%-6s %3d\n", $1, $2}' data.csv
+awk '{gsub(/o/,"0"); print}' a.txt
+awk '/due/{next} {print}' a.txt
+awk 'BEGIN{x=3; if (x>2) print "big"; else print "small"}'
+awk 'BEGIN{for(i=1;i<=3;i++) printf "%d ", i; print ""}'
+awk -F, -v OFS=';' '{print $1,$2}' data.csv
+awk '{print length($0)}' a.txt
+awk 'BEGIN{print 1+2*3, 7%3, 2^3}'
+awk '{ $2 = "X"; print }' log.txt
+awk -v n=2 'NR==n' a.txt
+awk 'NR%2==1' a.txt
+awk '!seen[$2]++' log.txt
+awk '{print $1}' nonexist.txt; echo $?
+diff <(echo a) <(echo b); echo $?
+diff <(printf 'a\nb\n') <(printf 'a\nb\n'); echo $?
+cat <(echo x) <(echo y)
+sort <(printf '3\n1\n2\n')
+true | false | true; echo ${PIPESTATUS[@]}
+false | true; echo ${PIPESTATUS[0]} ${PIPESTATUS[1]}
+set -- a b c; echo "$#" "${@:2}"
+f() { local -a l=(1 2 3); echo ${#l[@]}; }; f
+f() { echo "${@:2:1}"; }; f a b c
+echo ${PWD##*/} | grep -c .
+read -ra parts <<< "a b c"; echo ${#parts[@]} ${parts[1]}
+echo "${arr[@]}" x

@@ -1354,5 +1354,381 @@
  "stat -c %a a.txt": {
   "out": "644\n",
   "code": 0
+ },
+ "v=hello; echo ${v: -3}": {
+  "out": "llo\n",
+  "code": 0
+ },
+ "v=hello; echo ${v:1:-1}": {
+  "out": "ell\n",
+  "code": 0
+ },
+ "v=hello; echo ${v^}": {
+  "out": "Hello\n",
+  "code": 0
+ },
+ "v=HELLO; echo ${v,}": {
+  "out": "hELLO\n",
+  "code": 0
+ },
+ "v=/a/b/c.txt; echo ${v##*/} ${v%/*}": {
+  "out": "c.txt /a/b\n",
+  "code": 0
+ },
+ "v=banana; echo ${v/#ba/XX}": {
+  "out": "XXnana\n",
+  "code": 0
+ },
+ "v=banana; echo ${v/%na/YY}": {
+  "out": "banaYY\n",
+  "code": 0
+ },
+ "v=banana; echo ${v//a}": {
+  "out": "bnn\n",
+  "code": 0
+ },
+ "v=hello; echo ${#v} ${v:0:0}x": {
+  "out": "5 x\n",
+  "code": 0
+ },
+ "x=\"\"; echo ${x:-vuoto} ${x-nodef} ${y:-undef}": {
+  "out": "vuoto undef\n",
+  "code": 0
+ },
+ "x=5; echo ${x:+yes} ${y:+yes}x": {
+  "out": "yes x\n",
+  "code": 0
+ },
+ "arr=(a b c); echo \"${arr[*]}\"": {
+  "out": "a b c\n",
+  "code": 0
+ },
+ "arr=(a b c); arr+=(d e); echo ${#arr[@]} ${arr[4]}": {
+  "out": "5 e\n",
+  "code": 0
+ },
+ "arr=(x y z); for e in \"${arr[@]}\"; do echo \"[$e]\"; done": {
+  "out": "[x]\n[y]\n[z]\n",
+  "code": 0
+ },
+ "arr=(); arr[2]=c; arr[0]=a; echo ${arr[0]}${arr[2]} ${#arr[@]}": {
+  "out": "ac 2\n",
+  "code": 0
+ },
+ "arr=(a b c d); echo ${arr[@]:1:2}": {
+  "out": "b c\n",
+  "code": 0
+ },
+ "arr=(a \"b c\" d); echo ${#arr[@]} \"${arr[1]}\"": {
+  "out": "3 b c\n",
+  "code": 0
+ },
+ "arr=(one two); echo ${arr[-1]}": {
+  "out": "two\n",
+  "code": 0
+ },
+ "arr=(3 1 2); echo $(printf '%s\\n' \"${arr[@]}\" | sort | tr '\\n' ' ')": {
+  "out": "1 2 3\n",
+  "code": 0
+ },
+ "declare -A m; m[k]=v; m[z]=w; echo ${m[k]} ${#m[@]}": {
+  "out": "v 2\n",
+  "code": 0
+ },
+ "declare -A m=([a]=1 [b]=2); echo ${m[a]}${m[b]}": {
+  "out": "12\n",
+  "code": 0
+ },
+ "declare -A m; m[x]=1; m[y]=2; for k in \"${!m[@]}\"; do echo $k=${m[$k]}; done | sort": {
+  "out": "x=1\ny=2\n",
+  "code": 0
+ },
+ "case \"x.txt\" in *.txt) echo testo;; *.md) echo md;; *) echo no;; esac": {
+  "out": "testo\n",
+  "code": 0
+ },
+ "case zzz in a*) echo A;; *) echo default;; esac": {
+  "out": "default\n",
+  "code": 0
+ },
+ "x=2; case $x in 1) echo uno;; 2) echo due;; esac": {
+  "out": "due\n",
+  "code": 0
+ },
+ "case \"ab\" in [a-c]*) echo range;; esac": {
+  "out": "range\n",
+  "code": 0
+ },
+ "for ((i=3;i>0;i--)); do echo -n \"$i \"; done; echo": {
+  "out": "3 2 1 \n",
+  "code": 0
+ },
+ "for ((i=0,j=10;i<3;i++,j--)); do echo $i $j; done": {
+  "out": "0 10\n1 9\n2 8\n",
+  "code": 0
+ },
+ "((x = 5 + 3)); echo $x": {
+  "out": "8\n",
+  "code": 0
+ },
+ "x=5; ((x += 10)); echo $x": {
+  "out": "15\n",
+  "code": 0
+ },
+ "if ((3 > 2)); then echo yes; fi": {
+  "out": "yes\n",
+  "code": 0
+ },
+ "if ((1 > 2)); then echo yes; else echo no; fi": {
+  "out": "no\n",
+  "code": 0
+ },
+ "x=3; if (( x % 2 == 1 )); then echo odd; fi": {
+  "out": "odd\n",
+  "code": 0
+ },
+ "((0)); echo $?": {
+  "out": "1\n",
+  "code": 0
+ },
+ "((5)); echo $?": {
+  "out": "0\n",
+  "code": 0
+ },
+ "i=0; while ((i<3)); do echo $i; ((i++)); done": {
+  "out": "0\n1\n2\n",
+  "code": 0
+ },
+ "n=5; echo $(( n > 3 ? n : 3 ))": {
+  "out": "5\n",
+  "code": 0
+ },
+ "printf 'abc\\n' | rev": {
+  "out": "cba\n",
+  "code": 0
+ },
+ "paste a.txt nums.txt": {
+  "out": "uno\t5\ndue\t3\ntre\t10\nquattro\t3\ncinque\t1\n",
+  "code": 0
+ },
+ "paste -s -d, a.txt": {
+  "out": "uno,due,tre,quattro,cinque\n",
+  "code": 0
+ },
+ "echo a b c | xargs": {
+  "out": "a b c\n",
+  "code": 0
+ },
+ "printf 'x\\ny\\n' | xargs -I{} echo item-{}": {
+  "out": "item-x\nitem-y\n",
+  "code": 0
+ },
+ "echo \"1 2 3\" | xargs -n2": {
+  "out": "1 2\n3\n",
+  "code": 0
+ },
+ "printf 'a\\nb\\n' | xargs echo": {
+  "out": "a b\n",
+  "code": 0
+ },
+ "expr 10 / 3": {
+  "out": "3\n",
+  "code": 0
+ },
+ "expr 10 % 3": {
+  "out": "1\n",
+  "code": 0
+ },
+ "expr 2 \\* 5": {
+  "out": "10\n",
+  "code": 0
+ },
+ "expr length hello": {
+  "out": "5\n",
+  "code": 0
+ },
+ "expr substr hello 2 3": {
+  "out": "ell\n",
+  "code": 0
+ },
+ "expr 3 \\> 2": {
+  "out": "1\n",
+  "code": 0
+ },
+ "awk '{print $1}' log.txt": {
+  "out": "2026-01-01\n2026-01-01\n2026-01-02\n2026-01-02\n2026-01-03\n2026-01-03\n",
+  "code": 0
+ },
+ "awk '{print $2}' log.txt | sort | uniq -c": {
+  "out": "      3 ERROR\n      2 INFO\n      1 WARN\n",
+  "code": 0
+ },
+ "awk -F, '{print $1}' data.csv": {
+  "out": "nome\nAnna\nLuca\nMaria\n",
+  "code": 0
+ },
+ "awk -F, 'NR>1{s+=$2} END{print s}' data.csv": {
+  "out": "90\n",
+  "code": 0
+ },
+ "awk 'END{print NR}' a.txt": {
+  "out": "5\n",
+  "code": 0
+ },
+ "awk '/ERROR/{c++} END{print c}' log.txt": {
+  "out": "3\n",
+  "code": 0
+ },
+ "awk '{print NR\": \"$0}' a.txt": {
+  "out": "1: uno\n2: due\n3: tre\n4: quattro\n5: cinque\n",
+  "code": 0
+ },
+ "awk 'length($0)>4' a.txt": {
+  "out": "quattro\ncinque\n",
+  "code": 0
+ },
+ "awk -F, '$3==\"Roma\"{print $1}' data.csv": {
+  "out": "Anna\nMaria\n",
+  "code": 0
+ },
+ "awk '{print $1, $NF}' log.txt": {
+  "out": "2026-01-01 start\n2026-01-01 boom\n2026-01-02 slow\n2026-01-02 bang\n2026-01-03 stop\n2026-01-03 boom\n",
+  "code": 0
+ },
+ "awk '{print NF}' sp.txt": {
+  "out": "3\n3\n",
+  "code": 0
+ },
+ "awk '{s=0; for(i=1;i<=NF;i++) s+=$i; print s}' nums.txt": {
+  "out": "5\n3\n10\n3\n1\n",
+  "code": 0
+ },
+ "awk '{sum+=$1} END{print sum, NR, sum/NR}' nums.txt": {
+  "out": "22 5 4.4\n",
+  "code": 0
+ },
+ "awk 'BEGIN{print \"start\"} {n++} END{print n \" righe\"}' a.txt": {
+  "out": "start\n5 righe\n",
+  "code": 0
+ },
+ "awk '{print toupper($1)}' a.txt": {
+  "out": "UNO\nDUE\nTRE\nQUATTRO\nCINQUE\n",
+  "code": 0
+ },
+ "awk '{print substr($1,1,2)}' a.txt": {
+  "out": "un\ndu\ntr\nqu\nci\n",
+  "code": 0
+ },
+ "awk '$1>3' nums.txt": {
+  "out": "5\n10\n",
+  "code": 0
+ },
+ "awk '$1!=3{print}' nums.txt": {
+  "out": "5\n10\n1\n",
+  "code": 0
+ },
+ "awk 'NR==2,NR==4' a.txt": {
+  "out": "due\ntre\nquattro\n",
+  "code": 0
+ },
+ "awk '{a[$2]++} END{for(k in a) print k, a[k]}' log.txt | sort": {
+  "out": "ERROR 3\nINFO 2\nWARN 1\n",
+  "code": 0
+ },
+ "awk -F, 'NR>1{printf \"%-6s %3d\\n\", $1, $2}' data.csv": {
+  "out": "Anna    30\nLuca    25\nMaria   35\n",
+  "code": 0
+ },
+ "awk '{gsub(/o/,\"0\"); print}' a.txt": {
+  "out": "un0\ndue\ntre\nquattr0\ncinque\n",
+  "code": 0
+ },
+ "awk '/due/{next} {print}' a.txt": {
+  "out": "uno\ntre\nquattro\ncinque\n",
+  "code": 0
+ },
+ "awk 'BEGIN{x=3; if (x>2) print \"big\"; else print \"small\"}'": {
+  "out": "big\n",
+  "code": 0
+ },
+ "awk 'BEGIN{for(i=1;i<=3;i++) printf \"%d \", i; print \"\"}'": {
+  "out": "1 2 3 \n",
+  "code": 0
+ },
+ "awk -F, -v OFS=';' '{print $1,$2}' data.csv": {
+  "out": "nome;eta\nAnna;30\nLuca;25\nMaria;35\n",
+  "code": 0
+ },
+ "awk '{print length($0)}' a.txt": {
+  "out": "3\n3\n3\n7\n6\n",
+  "code": 0
+ },
+ "awk 'BEGIN{print 1+2*3, 7%3, 2^3}'": {
+  "out": "7 1 8\n",
+  "code": 0
+ },
+ "awk '{ $2 = \"X\"; print }' log.txt": {
+  "out": "2026-01-01 X start\n2026-01-01 X boom\n2026-01-02 X slow\n2026-01-02 X bang\n2026-01-03 X stop\n2026-01-03 X boom\n",
+  "code": 0
+ },
+ "awk -v n=2 'NR==n' a.txt": {
+  "out": "due\n",
+  "code": 0
+ },
+ "awk 'NR%2==1' a.txt": {
+  "out": "uno\ntre\ncinque\n",
+  "code": 0
+ },
+ "awk '!seen[$2]++' log.txt": {
+  "out": "2026-01-01 INFO start\n2026-01-01 ERROR boom\n2026-01-02 WARN slow\n",
+  "code": 0
+ },
+ "awk '{print $1}' nonexist.txt; echo $?": {
+  "out": "2\n",
+  "code": 0
+ },
+ "diff <(printf 'a\\nb\\n') <(printf 'a\\nb\\n'); echo $?": {
+  "out": "0\n",
+  "code": 0
+ },
+ "cat <(echo x) <(echo y)": {
+  "out": "x\ny\n",
+  "code": 0
+ },
+ "sort <(printf '3\\n1\\n2\\n')": {
+  "out": "1\n2\n3\n",
+  "code": 0
+ },
+ "true | false | true; echo ${PIPESTATUS[@]}": {
+  "out": "0 1 0\n",
+  "code": 0
+ },
+ "false | true; echo ${PIPESTATUS[0]} ${PIPESTATUS[1]}": {
+  "out": "1 0\n",
+  "code": 0
+ },
+ "set -- a b c; echo \"$#\" \"${@:2}\"": {
+  "out": "3 b c\n",
+  "code": 0
+ },
+ "f() { local -a l=(1 2 3); echo ${#l[@]}; }; f": {
+  "out": "3\n",
+  "code": 0
+ },
+ "f() { echo \"${@:2:1}\"; }; f a b c": {
+  "out": "b\n",
+  "code": 0
+ },
+ "echo ${PWD##*/} | grep -c .": {
+  "out": "1\n",
+  "code": 0
+ },
+ "read -ra parts <<< \"a b c\"; echo ${#parts[@]} ${parts[1]}": {
+  "out": "3 b\n",
+  "code": 0
+ },
+ "echo \"${arr[@]}\" x": {
+  "out": "x\n",
+  "code": 0
  }
 }

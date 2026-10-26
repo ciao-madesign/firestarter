@@ -5,8 +5,9 @@ import {
   byteLen, columns, dateDefault, getopt, grepRegex, humanSize, joinLines, lsDate, modeString, splitLines, strftime, unifiedDiff,
 } from '../util.ts';
 import { CREDENTIALS } from '../api/server.ts';
-import { BUILTINS, COMMANDS, ExitSignal, LoopSignal, ReturnSignal, type BashRuntime, type CmdFn, type Io } from './interp.ts';
+import { BUILTINS, COMMANDS, ExitSignal, isAssoc, LoopSignal, ReturnSignal, type BashRuntime, type CmdFn, type Io } from './interp.ts';
 import { curl } from './curl.ts';
+import { AwkError, runAwk } from './awk.ts';
 import { renderHelp } from '../catalog.ts';
 import { BashSyntaxError } from './parser.ts';
 
@@ -140,6 +141,17 @@ reg('export', (args, io, rt) => {
 reg('unset', (args, io, rt) => {
   for (const a of args) {
     if (a === '-f' || a === '-v') continue;
+    const em = /^([A-Za-z_]\w*)\[(.*)\]$/.exec(a);
+    if (em) {
+      const cur = rt.rawVar(em[1]);
+      if (isAssoc(cur)) delete cur.__assoc[em[2]];
+      else if (Array.isArray(cur)) {
+        const idx = parseInt(em[2], 10);
+        if (idx >= 0 && idx < cur.length) cur[idx] = null;
+      }
+      continue;
+    }
+    for (const fr of rt.frames) delete fr.locals[a];
     delete rt.ss.vars[a];
     delete rt.ss.env[a];
     delete rt.ss.functions[a];
@@ -147,23 +159,64 @@ reg('unset', (args, io, rt) => {
   return 0;
 }, true);
 
-reg('local', (args, io, rt) => {
-  const top = rt.frames[rt.frames.length - 1];
+function declareFlags(cmd: string, args: string[], io: Io): { flags: string; names: string[] } | null {
+  let flags = '';
+  const names: string[] = [];
   for (const a of args) {
+    if (/^-[A-Za-z]+$/.test(a)) {
+      for (const ch of a.slice(1)) {
+        if (!'aAxg'.includes(ch)) {
+          io.err(`bash: ${cmd}: -${ch}: opzione non supportata nel laboratorio (disponibili: -a -A -x -g)\n`);
+          return null;
+        }
+      }
+      flags += a.slice(1);
+    } else names.push(a);
+  }
+  return { flags, names };
+}
+
+reg('local', (args, io, rt) => {
+  const f = declareFlags('local', args, io);
+  if (!f) return 2;
+  const top = rt.frames[rt.frames.length - 1];
+  for (const a of f.names) {
     const [k, v] = a.split(/=(.*)/s);
+    if (f.flags.includes('A') || f.flags.includes('a')) {
+      rt.declareArray(k, f.flags.includes('A'), true);
+      continue;
+    }
     top.locals[k] = v ?? '';
   }
   return 0;
 }, true);
 
-reg('declare', (args, io, rt) => {
-  for (const a of args) {
-    if (a.startsWith('-')) continue;
-    const [k, v] = a.split(/=(.*)/s);
-    rt.set(k, v ?? '');
-  }
-  return 0;
-}, true);
+function declareBuiltin(name: string): CmdFn {
+  return (args, io, rt) => {
+    const f = declareFlags(name, args, io);
+    if (!f) return 2;
+    const local = rt.frames.length > 1 && !f.flags.includes('g');
+    for (const a of f.names) {
+      const [k, v] = a.split(/=(.*)/s);
+      if (f.flags.includes('A') || f.flags.includes('a')) {
+        rt.declareArray(k, f.flags.includes('A'), local);
+        continue;
+      }
+      if (v !== undefined) {
+        if (local) rt.frames[rt.frames.length - 1].locals[k] = v;
+        else rt.set(k, v);
+      } else if (local && !(k in rt.frames[rt.frames.length - 1].locals)) rt.frames[rt.frames.length - 1].locals[k] = rt.get(k) ?? '';
+      if (f.flags.includes('x')) {
+        const val = rt.get(k) ?? '';
+        delete rt.ss.vars[k];
+        rt.ss.env[k] = val;
+      }
+    }
+    return 0;
+  };
+}
+reg('declare', declareBuiltin('declare'), true);
+reg('typeset', declareBuiltin('typeset'), true);
 
 reg('set', (args, io, rt) => {
   if (!args.length) {
@@ -295,11 +348,18 @@ reg('history', (args, io, rt) => {
 
 reg('read', (args, io, rt) => {
   const names: string[] = [];
+  let arrayName: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === '-p' || a === '-t') i++; // prompt e timeout: senza terminale non hanno effetto
     else if (a === '-r' || a === '-s') continue;
-    else if (/^-[nduNa]/.test(a)) {
+    else if (a === '-a' || a === '-ra' || a === '-ar') {
+      arrayName = args[++i];
+      if (!arrayName) {
+        io.err('bash: read: -a: richiede un nome di array\n');
+        return 2;
+      }
+    } else if (/^-[nduN]/.test(a)) {
       io.err(`bash: read: opzione ${a} non supportata nel laboratorio\n`);
       return 2;
     } else if (a.startsWith('-')) continue;
@@ -310,6 +370,12 @@ reg('read', (args, io, rt) => {
   const nl = rest.indexOf('\n');
   const line = nl < 0 ? rest : rest.slice(0, nl);
   io.stdin = nl < 0 ? '' : rest.slice(nl + 1);
+  if (arrayName) {
+    const parts = line.split(/[ \t]+/).filter(Boolean);
+    rt.declareArray(arrayName, false);
+    parts.forEach((p, i) => rt.setElement(arrayName!, i, p));
+    return nl < 0 ? 1 : 0;
+  }
   const vars = names.length ? names : ['REPLY'];
   const ifs = rt.ss.env.IFS ?? (rt.ss.vars.IFS as string | undefined) ?? ' \t\n';
   if (!names.length) rt.set('REPLY', ifs === '' ? line : line);
@@ -1496,86 +1562,259 @@ reg('sed', (args, io, rt) => {
   return failed ? 2 : 0;
 });
 
-class AwkUnsupported extends Error {}
+reg('tac', (args, io, rt) => {
+  const { inputs, failed } = readInputs(rt, io, 'tac', args);
+  for (const inp of inputs) {
+    const lines = splitLines(inp.text);
+    io.out(lines.reverse().map((l) => l + '\n').join(''));
+  }
+  return failed ? 1 : 0;
+});
+
+reg('rev', (args, io, rt) => {
+  const { inputs, failed } = readInputs(rt, io, 'rev', args);
+  for (const inp of inputs) io.out(splitLines(inp.text).map((l) => [...l].reverse().join('') + '\n').join(''));
+  return failed ? 1 : 0;
+});
+
+reg('paste', (args, io, rt) => {
+  const o = getopt(args, { flags: 's', values: 'd' });
+  if (o.error) return badOpt('paste', io, o.error.replace('opzione non valida', 'invalid option'));
+  const delims = (o.values.d?.[0] ?? '\t').replace(/\\t/g, '\t').replace(/\\n/g, '\n').split('');
+  const { inputs, failed } = readInputs(rt, io, 'paste', o.rest);
+  const cols = inputs.map((i) => splitLines(i.text));
+  if (o.flags.has('s')) {
+    for (const col of cols) io.out(col.reduce((acc, l, i) => acc + (i ? delims[(i - 1) % delims.length] : '') + l, '') + '\n');
+  } else {
+    const rows = Math.max(0, ...cols.map((c) => c.length));
+    for (let r = 0; r < rows; r++) io.out(cols.reduce((acc, c, i) => acc + (i ? delims[(i - 1) % delims.length] : '') + (c[r] ?? ''), '') + '\n');
+  }
+  return failed ? 1 : 0;
+});
+
+reg('xargs', (args, io, rt) => {
+  let n = 0;
+  let repl: string | null = null;
+  let i = 0;
+  for (; i < args.length; i++) {
+    const a = args[i];
+    if (a === '-n') n = parseInt(args[++i] ?? '0', 10);
+    else if (/^-n\d+$/.test(a)) n = parseInt(a.slice(2), 10);
+    else if (a === '-I') repl = args[++i] ?? '{}';
+    else if (a.startsWith('-I') && a.length > 2) repl = a.slice(2);
+    else if (a === '-r' || a === '--no-run-if-empty') continue;
+    else if (a.startsWith('-')) {
+      io.err(`xargs: opzione ${a} non supportata nel laboratorio (disponibili: -n -I -r)\n`);
+      return 1;
+    } else break;
+  }
+  const cmd = args.slice(i);
+  if (!cmd.length) cmd.push('echo');
+  let code = 0;
+  const run = (extra: string[], template?: string): void => {
+    const argv = repl !== null && template !== undefined ? cmd.slice(1).map((a) => a.split(repl!).join(template)) : [...cmd.slice(1), ...extra];
+    const c = rt.runCommand(cmd[0], argv, { stdin: '', out: (t) => io.out(t), err: (t) => io.err(t), tty: false });
+    if (c !== 0) code = 123;
+  };
+  if (repl !== null) {
+    for (const line of splitLines(io.stdin)) if (line.trim() !== '') run([], line.replace(/^\s+/, ''));
+    return code;
+  }
+  const items: string[] = [];
+  for (const m of io.stdin.matchAll(/"([^"]*)"|'([^']*)'|(\S+)/g)) items.push(m[1] ?? m[2] ?? m[3]);
+  if (!items.length) return 0;
+  if (n > 0) for (let k = 0; k < items.length; k += n) run(items.slice(k, k + n));
+  else run(items);
+  return code;
+});
+
+reg('expr', (args, io) => {
+  const num = (s: string): number | null => (/^-?\d+$/.test(s) ? parseInt(s, 10) : null);
+  const bad = (m: string): number => {
+    io.err(`expr: ${m}\n`);
+    return 2;
+  };
+  if (!args.length) return bad('missing operand');
+  const result = (v: string | number): number => {
+    io.out(`${v}\n`);
+    return String(v) === '0' || v === '' ? 1 : 0;
+  };
+  // forme con parola chiave: length, substr, index, match
+  if (args[0] === 'length' && args.length === 2) return result([...args[1]].length);
+  if (args[0] === 'substr' && args.length === 4) {
+    const s = [...args[1]];
+    const pos = parseInt(args[2], 10);
+    const len = parseInt(args[3], 10);
+    return result(pos < 1 || len < 1 ? '' : s.slice(pos - 1, pos - 1 + len).join(''));
+  }
+  if (args[0] === 'index' && args.length === 3) {
+    const k = [...args[2]].map((c) => args[1].indexOf(c)).filter((x) => x >= 0);
+    return result(k.length ? Math.min(...k) + 1 : 0);
+  }
+  // espressione infissa, con precedenza: | & confronti + - * / % :
+  let p = 0;
+  const peek = (): string | undefined => args[p];
+  const cmpOps = ['=', '==', '!=', '<', '<=', '>', '>='];
+  const regexMatch = (s: string, re: string): string | number => {
+    try {
+      const m = new RegExp('^' + re).exec(s);
+      if (!m) return /\\\(/.test(re) ? '' : 0;
+      return m[1] !== undefined ? m[1] : m[0].length;
+    } catch {
+      return 0;
+    }
+  };
+  const primary = (): string => {
+    const t = args[p++];
+    if (t === undefined) throw new Error('syntax error');
+    if (t === '(') {
+      const v = orExpr();
+      if (args[p++] !== ')') throw new Error('syntax error');
+      return v;
+    }
+    return t;
+  };
+  const colon = (): string => {
+    let v = primary();
+    while (peek() === ':') {
+      p++;
+      v = String(regexMatch(v, primary()));
+    }
+    return v;
+  };
+  const mul = (): string => {
+    let v = colon();
+    while (peek() === '*' || peek() === '/' || peek() === '%') {
+      const op = args[p++];
+      const a = num(v);
+      const b = num(colon());
+      if (a === null || b === null) throw new Error('non-integer argument');
+      if (op !== '*' && b === 0) throw new Error('division by zero');
+      v = String(op === '*' ? a * b : op === '/' ? Math.trunc(a / b) : a % b);
+    }
+    return v;
+  };
+  const add = (): string => {
+    let v = mul();
+    while (peek() === '+' || peek() === '-') {
+      const op = args[p++];
+      const a = num(v);
+      const b = num(mul());
+      if (a === null || b === null) throw new Error('non-integer argument');
+      v = String(op === '+' ? a + b : a - b);
+    }
+    return v;
+  };
+  const cmp = (): string => {
+    let v = add();
+    while (peek() !== undefined && cmpOps.includes(peek()!)) {
+      const op = args[p++];
+      const r = add();
+      const a = num(v);
+      const b = num(r);
+      const x = a !== null && b !== null ? a : v;
+      const y = a !== null && b !== null ? b : r;
+      const res = op === '=' || op === '==' ? x === y : op === '!=' ? x !== y : op === '<' ? x < y : op === '<=' ? x <= y : op === '>' ? x > y : x >= y;
+      v = res ? '1' : '0';
+    }
+    return v;
+  };
+  const andExpr = (): string => {
+    let v = cmp();
+    while (peek() === '&') {
+      p++;
+      const r = cmp();
+      v = v !== '' && v !== '0' && r !== '' && r !== '0' ? v : '0';
+    }
+    return v;
+  };
+  const orExpr = (): string => {
+    let v = andExpr();
+    while (peek() === '|') {
+      p++;
+      const r = andExpr();
+      v = v !== '' && v !== '0' ? v : r;
+    }
+    return v;
+  };
+  try {
+    const v = orExpr();
+    if (p < args.length) return bad('syntax error');
+    return result(v);
+  } catch (e) {
+    return bad((e as Error).message);
+  }
+});
 
 reg('awk', (args, io, rt) => {
-  const o = getopt(args, { flags: '', values: 'F' });
+  const o = getopt(args, { flags: '', values: 'Fv' });
   if (o.error) return badOpt('awk', io, o.error.replace('opzione non valida', 'invalid option'));
   const prog = o.rest.shift();
   if (!prog) {
-    io.err('usage: awk [-F fs] \'program\' [file ...]\n');
+    io.err('usage: awk [-F fs] [-v var=value] \'program\' [file ...]\n');
     return 2;
   }
-  const m = /^\s*(?:(\/.*?\/|NR\s*(?:==|>=|<=|>|<|!=)\s*\d+|\$\d+\s*(?:==|!=|~)\s*"?[^"{]*"?)\s*)?(?:\{\s*(.*?)\s*\})?\s*(?:END\s*\{\s*(.*?)\s*\})?\s*$/s.exec(prog);
-  if (!m) {
-    io.err(`awk: sintassi non supportata nel laboratorio: ${prog}\n`);
-    return 2;
+  const vars: Record<string, string> = {};
+  for (const v of o.values.v ?? []) {
+    const i = v.indexOf('=');
+    if (i < 1) {
+      io.err(`awk: invalid -v argument: ${v}\n`);
+      return 2;
+    }
+    vars[v.slice(0, i)] = v.slice(i + 1);
   }
-  const [, cond, action, end] = m;
-  const fs = o.values.F?.[0];
   const { inputs, failed } = readInputs(rt, io, 'awk', o.rest);
-  let nr = 0;
-  const evalExpr = (e: string, fields: string[], line: string): string =>
-    e
-      .split(/\s*,\s*/)
-      .map((t) => {
-        t = t.trim();
-        if (/^".*"$/.test(t)) return t.slice(1, -1).replace(/\\n/g, '\n').replace(/\\t/g, '\t');
-        if (t === '$0') return line;
-        if (/^\$\d+$/.test(t)) return fields[parseInt(t.slice(1), 10) - 1] ?? '';
-        if (t === 'NR') return String(nr);
-        if (t === 'NF') return String(fields.length);
-        if (t === '$NF') return fields[fields.length - 1] ?? '';
-        if (/^-?\d+(\.\d+)?$/.test(t)) return t;
-        // espressione composta (concatenazione, aritmetica, funzioni): non supportata. Mai stamparla "così com'è".
-        throw new AwkUnsupported(t);
-      })
-      .join(' ');
-  const test = (fields: string[], line: string): boolean => {
-    if (!cond) return true;
-    if (cond.startsWith('/')) return new RegExp(cond.slice(1, -1)).test(line);
-    const nm = /^NR\s*(==|>=|<=|>|<|!=)\s*(\d+)$/.exec(cond);
-    if (nm) {
-      const v = parseInt(nm[2], 10);
-      return nm[1] === '==' ? nr === v : nm[1] === '>=' ? nr >= v : nm[1] === '<=' ? nr <= v : nm[1] === '>' ? nr > v : nm[1] === '<' ? nr < v : nr !== v;
-    }
-    const fm = /^\$(\d+)\s*(==|!=|~)\s*"?([^"]*)"?$/.exec(cond);
-    if (fm) {
-      const f = fields[parseInt(fm[1], 10) - 1] ?? '';
-      return fm[2] === '==' ? f === fm[3] : fm[2] === '!=' ? f !== fm[3] : new RegExp(fm[3]).test(f);
-    }
-    throw new AwkUnsupported(cond);
-  };
+  let buf = '';
   try {
-  for (const inp of inputs) {
-    for (const line of splitLines(inp.text)) {
-      nr++;
-      const fields = fs ? line.split(fs) : line.trim().split(/\s+/).filter(Boolean);
-      if (!test(fields, line)) continue;
-      if (action === undefined && !cond) continue;
-      const act = action ?? 'print';
-      const pm = /^print(?:\s+(.*))?$/.exec(act.trim());
-      if (!pm) {
-        io.err(`awk: azione non supportata nel laboratorio: ${act}\n`);
-        return 2;
-      }
-      io.out((pm[1] ? evalExpr(pm[1], fields, line) : line) + '\n');
-    }
-  }
-  if (end) {
-    const pm = /^print\s+(.*)$/.exec(end.trim());
-    if (!pm) throw new AwkUnsupported(end);
-    io.out(evalExpr(pm[1], [], '') + '\n');
-  }
+    const code = runAwk(prog, inputs.map((i) => ({ name: i.name ?? '-', text: i.text })), { fs: o.values.F?.[0], vars }, (t) => {
+      buf += t;
+    });
+    io.out(buf);
+    return code || (failed ? 2 : 0);
   } catch (e) {
-    if (e instanceof AwkUnsupported) {
-      io.err(`awk: espressione non supportata nel laboratorio: ${e.message}\n`);
+    io.out(buf);
+    if (e instanceof AwkError) {
+      io.err(`awk: ${e.message}\n`);
       return 2;
     }
     throw e;
   }
-  return failed ? 2 : 0;
 });
+
+/** diff nel formato normale (default di diff): `1c1`, `2a3,4`, `5d4` con righe `<` e `>`. */
+function normalDiff(a: string[], b: string[]): string {
+  const n = a.length;
+  const m = b.length;
+  const L: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const rng = (s: number, c: number): string => (c <= 1 ? String(s + 1) : `${s + 1},${s + c}`);
+  let out = '';
+  let i = 0;
+  let j = 0;
+  while (i < n || j < m) {
+    if (i < n && j < m && a[i] === b[j]) {
+      i++;
+      j++;
+      continue;
+    }
+    const si = i;
+    const sj = j;
+    while ((i < n || j < m) && !(i < n && j < m && a[i] === b[j])) {
+      if (j >= m || (i < n && L[i + 1][j] >= L[i][j + 1])) i++;
+      else j++;
+    }
+    const dc = i - si;
+    const ac = j - sj;
+    const cmd = dc && ac ? 'c' : dc ? 'd' : 'a';
+    const left = dc ? rng(si, dc) : String(si);
+    const right = ac ? rng(sj, ac) : String(sj);
+    out += `${left}${cmd}${right}\n`;
+    for (let k = si; k < i; k++) out += `< ${a[k]}\n`;
+    if (dc && ac) out += '---\n';
+    for (let k = sj; k < j; k++) out += `> ${b[k]}\n`;
+  }
+  return out;
+}
 
 reg('diff', (args, io, rt) => {
   const files = args.filter((a) => !a.startsWith('-'));
@@ -1585,20 +1824,16 @@ reg('diff', (args, io, rt) => {
   }
   const { inputs, failed } = readInputs(rt, io, 'diff', files);
   if (failed || inputs.length < 2) return 2;
-  const out = unifiedDiff(splitLines(inputs[0].text), splitLines(inputs[1].text), files[0], files[1]);
+  const a = splitLines(inputs[0].text);
+  const b = splitLines(inputs[1].text);
+  const unified = args.some((x) => x === '-u' || /^-U\d*$/.test(x));
+  const out = unified ? unifiedDiff(a, b, files[0], files[1]) : normalDiff(a, b);
   io.out(out);
   return out ? 1 : 0;
 });
 
 reg('less', (args, io, rt) => COMMANDS.get('cat')!(args, io, rt));
 reg('more', (args, io, rt) => COMMANDS.get('cat')!(args, io, rt));
-
-reg('xargs', (args, io, rt) => {
-  if (!args.length) args = ['echo'];
-  const items = io.stdin.split(/\s+/).filter(Boolean);
-  if (!items.length) return 0;
-  return rt.runCommand(args[0], [...args.slice(1), ...items], io);
-});
 
 // ---------------- processi ----------------
 const PROCS = [

@@ -15,3 +15,16 @@ jobs:
       - run: npm run build:web
       - run: npx playwright install --with-deps chromium
       - run: npm run test:ui
+  compat:
+    # Rigenera i risultati di riferimento con il Bash reale: se cambiano, i test del simulatore non rispecchiano più la realtà.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: sudo apt-get install -y jq
+      - run: npx tsx scripts/gen-bash-compat.ts
+      - run: git diff --exit-code tests/bash-compat-expected.json

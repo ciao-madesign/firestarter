@@ -415,12 +415,31 @@ export function staticMember(rt: PsRuntime, type: string, member: string, args: 
       if (m === 'utf8' || m === 'ascii') return new PSObject('Encoding', {});
       break;
     case 'regex':
+    case 'text.regularexpressions.regex': {
+      const mk = (mm: RegExpExecArray): PSObject => {
+        const groups = Array.from(mm, (g, i) => custom({ Success: g !== undefined, Value: g ?? '', Name: String(i) }));
+        return custom({ Success: true, Value: mm[0], Index: mm.index, Length: mm[0].length, Groups: groups });
+      };
+      const mkRe = (flags: string): RegExp => {
+        try {
+          return new RegExp(s(1), flags);
+        } catch {
+          throw new PSError(`Exception calling "${member}" with "2" argument(s): "parsing \"${s(1)}\" - Invalid pattern."`, 'InvalidOperation', 'ArgumentException');
+        }
+      };
       switch (m) {
-        case 'escape': return s(0).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        case 'ismatch': return new RegExp(s(1), 'i').test(s(0));
-        case 'replace': return s(0).replace(new RegExp(s(1), 'gi'), s(2));
+        case 'ismatch': return mkRe('').test(s(0));
+        case 'match': {
+          const mm = mkRe('').exec(s(0));
+          return mm ? mk(mm) : custom({ Success: false, Value: '', Index: 0, Length: 0, Groups: [] });
+        }
+        case 'matches': return [...s(0).matchAll(mkRe('g'))].map(mk);
+        case 'replace': return s(0).replace(mkRe('g'), s(2).replace(/\$\{(\w+)\}/g, '$<$1>'));
+        case 'split': return s(0).split(mkRe(''));
+        case 'escape': return s(0).replace(/[\\^$.|?*+()[\]{}]/g, '\\$&').replace(/ /g, '\\ ');
       }
       break;
+    }
     case 'guid':
       if (m === 'newguid') {
         guidCounter++;

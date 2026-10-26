@@ -76,7 +76,9 @@ export type Stmt =
   | { k: 'throw'; value: Stmt | null; start: number; end: number }
   | { k: 'exit'; value: Stmt | null }
   | { k: 'try'; body: Block; catches: { types: string[]; body: Block }[]; fin: Block | null }
-  | { k: 'param'; params: Param[] };
+  | { k: 'param'; params: Param[] }
+  | { k: 'switch'; subject: Stmt; mode: 'exact' | 'regex' | 'wildcard'; cs: boolean; clauses: { cond: Expr | null; body: Block }[] }
+  | { k: 'named'; name: 'begin' | 'process' | 'end'; body: Block };
 
 export interface Block {
   stmts: Stmt[];
@@ -89,7 +91,7 @@ const CMP_OPS = [
   'ieq', 'ine', 'igt', 'ige', 'ilt', 'ile', 'ilike', 'imatch', 'creplace', 'ireplace', 'as',
 ];
 const LOGIC_OPS = ['and', 'or', 'xor'];
-const KEYWORDS = new Set(['if', 'foreach', 'for', 'while', 'do', 'function', 'filter', 'return', 'break', 'continue', 'throw', 'try', 'exit', 'param']);
+const KEYWORDS = new Set(['if', 'foreach', 'for', 'while', 'do', 'function', 'filter', 'return', 'break', 'continue', 'throw', 'try', 'exit', 'param', 'switch']);
 
 export class PsParser {
   pos = 0;
@@ -149,6 +151,7 @@ export class PsParser {
       stmts.push(this.parseStatement());
       this.ws();
       const c = this.ch();
+      if (stmts[stmts.length - 1].k === 'param') continue;
       if (c && c !== '\n' && c !== ';' && c !== close) {
         if (this.starts('&&') || this.starts('||')) {
           throw new PsSyntaxError(`The token '${this.src.slice(this.pos, this.pos + 2)}' is not a valid statement separator in this version.`, this.pos, this.src.slice(this.pos, this.pos + 2));
@@ -175,6 +178,17 @@ export class PsParser {
 
   parseStatement(): Stmt {
     this.ws();
+    // attributi della function ([CmdletBinding()], [OutputType(...)]) prima di param: ignorati
+    const at = /^\[(CmdletBinding|OutputType)\b/i.exec(this.src.slice(this.pos));
+    if (at) {
+      this.pos = this.matchBracket(this.pos) + 1;
+      this.ws(true);
+    }
+    const nb = /^(begin|process|end)\s*\{/i.exec(this.src.slice(this.pos));
+    if (nb) {
+      this.pos += nb[1].length;
+      return { k: 'named', name: nb[1].toLowerCase() as 'begin', body: this.block() };
+    }
     const kw = this.peekKeyword();
     if (kw) {
       const stmt = this.parseKeyword(kw);
@@ -326,6 +340,52 @@ export class PsParser {
         const first = body.stmts[0];
         if (first && first.k === 'param') params = first.params;
         return { k: 'func', name: m[0], params, body, src: this.src.slice(bodyStart, this.pos), full: this.src.slice(startPos, this.pos) };
+      }
+      case 'switch': {
+        this.ws();
+        let mode: 'exact' | 'regex' | 'wildcard' = 'exact';
+        let cs = false;
+        while (this.ch() === '-') {
+          const m = /^-(regex|wildcard|exact|casesensitive)\b/i.exec(this.src.slice(this.pos));
+          if (!m) throw new PsSyntaxError('Parametro di switch non supportato nel laboratorio (supportati: -Regex, -Wildcard, -Exact, -CaseSensitive).', this.pos);
+          const f = m[1].toLowerCase();
+          if (f === 'casesensitive') cs = true;
+          else mode = f as typeof mode;
+          this.pos += m[0].length;
+          this.ws();
+        }
+        const subject = this.parenStmt();
+        this.ws(true);
+        if (this.ch() !== '{') {
+          if (this.eof()) throw new PsIncomplete('{');
+          throw new PsSyntaxError("Missing '{' in switch statement.", this.pos);
+        }
+        this.pos++;
+        const clauses: { cond: Expr | null; body: Block }[] = [];
+        for (;;) {
+          this.ws(true);
+          while (this.ch() === ';') {
+            this.pos++;
+            this.ws(true);
+          }
+          if (this.eof()) throw new PsIncomplete('}');
+          if (this.ch() === '}') {
+            this.pos++;
+            break;
+          }
+          let cond: Expr | null;
+          const dm = /^default\b/i.exec(this.src.slice(this.pos));
+          const bw = /^[A-Za-z_][A-Za-z0-9_\-.]*/.exec(this.src.slice(this.pos));
+          if (dm) {
+            this.pos += 7;
+            cond = null;
+          } else if (bw) {
+            this.pos += bw[0].length;
+            cond = { k: 'str', v: bw[0] };
+          } else cond = this.parseOrNoComma();
+          clauses.push({ cond, body: this.block() });
+        }
+        return { k: 'switch', subject, mode, cs, clauses };
       }
       case 'param': {
         this.ws();

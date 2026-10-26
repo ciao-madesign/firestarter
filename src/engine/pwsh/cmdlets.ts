@@ -643,6 +643,165 @@ def('ConvertTo-Json', 'InputObject:0, Depth, Compress!', (c) => {
   return [jsonString(toJsonValue(v, depth), !!c.get('Compress'))];
 });
 
+// ---------- CSV, oggetti e utilità ----------
+function csvField(v: unknown, delim: string): string {
+  const t = v === null || v === undefined ? '' : psToString(v);
+  return /["\r\n]/.test(t) || t.includes(delim) ? '"' + t.replace(/"/g, '""') + '"' : t;
+}
+function csvQuote(v: unknown): string {
+  return '"' + (v === null || v === undefined ? '' : psToString(v)).replace(/"/g, '""') + '"';
+}
+function csvLines(items: unknown[], delim: string, typeInfo: boolean, quoteAll: boolean): string[] {
+  const rows = items.filter((x): x is PSObject => x instanceof PSObject);
+  if (!rows.length) return [];
+  const cols = rows[0].keys();
+  const q = (v: unknown): string => (quoteAll ? csvQuote(v) : csvField(v, delim));
+  const lines: string[] = [];
+  if (typeInfo) lines.push('#TYPE System.Management.Automation.PSCustomObject');
+  lines.push(cols.map((k) => q(k)).join(delim));
+  for (const r of rows) lines.push(cols.map((k) => q(r.props[k])).join(delim));
+  return lines;
+}
+function parseCsvText(text: string, delim: string, header?: string[]): PSObject[] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cur = '';
+  let inQ = false;
+  const t = text.replace(/\r\n/g, '\n');
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (inQ) {
+      if (ch === '"' && t[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else if (ch === '"') inQ = false;
+      else cur += ch;
+    } else if (ch === '"') inQ = true;
+    else if (ch === delim) {
+      row.push(cur);
+      cur = '';
+    } else if (ch === '\n') {
+      row.push(cur);
+      rows.push(row);
+      row = [];
+      cur = '';
+    } else cur += ch;
+  }
+  if (cur !== '' || row.length) {
+    row.push(cur);
+    rows.push(row);
+  }
+  const nonEmpty = rows.filter((r) => !(r.length === 1 && r[0] === ''));
+  const head = header ?? nonEmpty.shift() ?? [];
+  return nonEmpty.map((r) => {
+    const o = custom({});
+    head.forEach((h, i) => (o.props[h] = r[i] ?? ''));
+    return o;
+  });
+}
+const csvDelim = (c: CmdCtx): string => (c.has('Delimiter') ? psToString(c.get('Delimiter')) : ',');
+def('ConvertTo-Csv', 'InputObject:0, Delimiter, NoTypeInformation!', (c) => {
+  const items = c.has('InputObject') ? toArray(c.get('InputObject')) : c.input;
+  return csvLines(items, csvDelim(c), !c.get('NoTypeInformation'), true);
+});
+def('ConvertFrom-Csv', 'InputObject:0, Delimiter, Header', (c) => {
+  const src = c.has('InputObject') ? toArray(c.get('InputObject')) : c.input;
+  const hdr = c.has('Header') ? toArray(c.get('Header')).map(psToString) : undefined;
+  return parseCsvText(src.map(psToString).join('\n'), csvDelim(c), hdr);
+});
+def('Import-Csv', 'Path:0, Delimiter, Header', (c) => {
+  const path = psToString(c.get('Path'));
+  const abs = c.rt.rp(path);
+  if (!c.rt.vfs.isFile(abs)) {
+    fail(c, pathErr(c, abs, 'Import-Csv', 'ImportCsv'));
+    return [];
+  }
+  const hdr = c.has('Header') ? toArray(c.get('Header')).map(psToString) : undefined;
+  return parseCsvText(c.rt.vfs.readFile(abs), csvDelim(c), hdr);
+});
+def('Export-Csv', 'Path:0, Delimiter, NoTypeInformation!, Append!', (c) => {
+  const path = psToString(c.get('Path'));
+  const lines = csvLines(c.input, csvDelim(c), !c.get('NoTypeInformation'), true);
+  c.rt.vfs.writeFile(c.rt.rp(path), lines.join('\r\n') + (lines.length ? '\r\n' : ''), !!c.get('Append'));
+  return [];
+});
+def('Tee-Object', 'FilePath:0|Path, Variable, Append!', (c) => {
+  if (c.has('Variable')) c.rt.setVar(psToString(c.get('Variable')), c.input.length === 1 ? c.input[0] : c.input);
+  else if (c.has('FilePath')) c.rt.vfs.writeFile(c.rt.rp(psToString(c.get('FilePath'))), formatItems(c.input).replace(/^\n/, ''), !!c.get('Append'));
+  else {
+    fail(c, new PSError("Tee-Object richiede -FilePath o -Variable.", 'InvalidArgument', 'ParameterBindingException', 'FilePath', 'Tee-Object'));
+    return [];
+  }
+  return c.input;
+});
+def('Write-Verbose', 'Message:0, Verbose!', (c) => {
+  if (c.get('Verbose')) c.rt.io.out(`VERBOSE: ${psToString(c.get('Message'))}\n`);
+  return [];
+});
+const rndState = new WeakMap<object, number>();
+function nextRandom(rt: object, seed: number): number {
+  const n = (rndState.get(rt) ?? seed) * 1103515245 + 12345;
+  const v = Math.abs(n) % 2147483648;
+  rndState.set(rt, v);
+  return v;
+}
+def('Get-Random', 'Maximum:0, Minimum, InputObject, Count', (c) => {
+  const seed = (c.rt.state.clock | 0) + 7;
+  const pool = c.has('InputObject') ? toArray(c.get('InputObject')) : c.input;
+  if (pool.length) {
+    const count = c.has('Count') ? Number(c.get('Count')) : 1;
+    const left = [...pool];
+    const out: unknown[] = [];
+    while (out.length < count && left.length) out.push(left.splice(nextRandom(c.rt, seed) % left.length, 1)[0]);
+    return out;
+  }
+  const min = c.has('Minimum') ? Number(c.get('Minimum')) : 0;
+  const max = c.has('Maximum') ? Number(c.get('Maximum')) : 2147483647;
+  if (!(max > min)) {
+    fail(c, new PSError(`Cannot validate argument on parameter 'Maximum'. The Minimum value (${min}) is greater than or equal to the Maximum value (${max}).`, 'InvalidArgument', 'ParameterBindingValidationException', 'Maximum', 'Get-Random'));
+    return [];
+  }
+  return [min + (nextRandom(c.rt, seed) % (max - min))];
+});
+def('New-Guid', '', (c) => {
+  const a = nextRandom(c.rt, (c.rt.state.clock | 0) + 11);
+  const b = nextRandom(c.rt, 0);
+  const hex = (n: number, w: number): string => n.toString(16).padStart(w, '0').slice(-w);
+  return [`${hex(a, 8)}-${hex(b >> 8, 4)}-4${hex(b, 3)}-8${hex(a >> 4, 3)}-${hex(a ^ b, 12)}`];
+});
+def('Add-Member', 'InputObject, MemberType:0, Name:1, Value:2, NotePropertyName, NotePropertyValue, PassThru!', (c) => {
+  const target = c.has('InputObject') ? c.get('InputObject') : c.input[0];
+  const name = c.has('NotePropertyName') ? psToString(c.get('NotePropertyName')) : c.has('Name') ? psToString(c.get('Name')) : '';
+  const mt = c.has('MemberType') ? psToString(c.get('MemberType')).toLowerCase() : 'noteproperty';
+  if (!(target instanceof PSObject) || !name || (mt !== 'noteproperty' && c.has('MemberType'))) {
+    fail(c, new PSError('Add-Member nel laboratorio supporta solo proprietà NoteProperty su oggetti (PSCustomObject, hashtable).', 'InvalidOperation', 'NotSupported', name, 'Add-Member'));
+    return [];
+  }
+  target.props[name] = c.has('NotePropertyValue') ? c.get('NotePropertyValue') : c.get('Value');
+  return c.get('PassThru') ? [target] : [];
+});
+def('Get-Member', 'InputObject:0, MemberType, Name', (c) => {
+  const items = c.has('InputObject') ? toArray(c.get('InputObject')) : c.input;
+  const first = items[0];
+  if (!(first instanceof PSObject)) {
+    fail(c, new PSError('Get-Member nel laboratorio supporta solo oggetti con proprietà (PSCustomObject, hashtable, risultati dei cmdlet).', 'InvalidOperation', 'NotSupported', '', 'Get-Member'));
+    return [];
+  }
+  const want = c.has('MemberType') ? psToString(c.get('MemberType')).toLowerCase() : '';
+  if (want && want !== 'noteproperty' && want !== 'property' && want !== 'all') return [];
+  const nameLike = c.has('Name') ? new RegExp('^' + psToString(c.get('Name')).replace(/[.+^${}()|\\]/g, '\\$&').replace(/\*/g, '.*') + '$', 'i') : null;
+  const typeName = first.typeName === 'PSCustomObject' ? 'System.Management.Automation.PSCustomObject' : first.typeName;
+  return first
+    .keys()
+    .filter((k) => !nameLike || nameLike.test(k))
+    .sort((x, y) => x.toLowerCase().localeCompare(y.toLowerCase()))
+    .map((k) => {
+      const v = first.props[k];
+      const tn = typeof v === 'number' ? (Number.isInteger(v) ? 'int' : 'double') : typeof v === 'boolean' ? 'bool' : typeof v === 'string' ? 'string' : 'Object';
+      return custom({ TypeName: typeName, Name: k, MemberType: 'NoteProperty', Definition: `${tn} ${k}=${psToString(v)}` });
+    });
+});
+
 const STATUS_NAMES: Record<number, string> = {
   200: 'OK', 201: 'Created', 204: 'NoContent', 301: 'MovedPermanently', 400: 'BadRequest', 401: 'Unauthorized', 403: 'Forbidden', 404: 'NotFound',
   405: 'MethodNotAllowed', 409: 'Conflict', 415: 'UnsupportedMediaType', 422: 'UnprocessableEntity', 429: 'TooManyRequests', 500: 'InternalServerError',
