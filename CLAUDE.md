@@ -35,7 +35,7 @@ Specifica funzionale completa: la versione 0.1 fornita dall'utente (non è nel r
 | Verifica | Deterministica su file, log delle richieste e storico comandi; le verifiche autonome non hanno soluzione; ogni soluzione documentata è testata in entrambe le shell |
 | Valutazione | Livello 1–4; 7 competenze separate; soluzione mostrata ≠ autonomia |
 | Git e webhook (M5 del brief) | Non simulati: restano nel tutor CLI |
-| Hosting (installato 2026-10-26) | **Server di casa Dell Wyse 5070** (hostname `homehub`, Ubuntu 24.04, Node 22 di sistema in `/usr/bin/node`), **solo rete di casa, senza Tailscale** (non installato sul Wyse). Codice in `/opt/learning-lab` (fuori da `/home` per `ProtectHome=true`), dati in `/mnt/data/learning-lab` (cartella dedicata, proprietario `learninglab`, permessi 700, sullo stesso disco dell'hub), servizio systemd `learning-lab` su `192.168.1.8:3100` in http con password (`LAB_PASSWORD`, `/etc/learning-lab.env`), `LAB_TRUST_PROXY=0`. **Isolamento da PersonalHub/home-hub e dagli altri servizi** (utente, cartelle, porta e servizio dedicati; non toccare altro). Tailscale su 8443 resta un'evoluzione possibile (vedi `docs/INSTALLAZIONE-WYSE.md`). Nessun servizio cloud |
+| Hosting (installato 2026-10-26) | **Server di casa Dell Wyse 5070** (hostname `homehub`, Ubuntu 24.04, Node 22 di sistema in `/usr/bin/node`), **solo rete di casa, senza Tailscale** (non installato sul Wyse). Codice in `/opt/learning-lab` (fuori da `/home` per `ProtectHome=true`), dati in `/mnt/data/learning-lab` (cartella dedicata, proprietario `learninglab`, permessi 700, sullo stesso disco dell'hub), servizio systemd `learning-lab` su `192.168.1.8:3100` in http con password (`LAB_PASSWORD`, `/etc/learning-lab.env`), `LAB_TRUST_PROXY=0`. **Isolamento da PersonalHub/home-hub e dagli altri servizi** (utente, cartelle, porta e servizio dedicati; non toccare altro). Tailscale scartato per decisione dell'utente. Backup settimanale (`deploy/install-backup-wyse.sh`). Nessun servizio cloud |
 | AI nel lab (deciso, implementato) | **Nessuna chiave API**: i crediti dell'abbonamento Pro non valgono per l'API, che si paga a parte. Il lab prepara un riepilogo filtrato (`src/tutor/brief.ts`, `POST /api/brief`) con pulsanti "Copia riepilogo per Claude" (chat) e "Copia per Claude" (documenti), da incollare nella chat di Claude o nel tutor in terminale (abbonamento). `TutorAdapter` resta disponibile se un giorno si vorrà l'API (credito prepagato, ricarica automatica spenta) |
 
 ## Vincoli da rispettare
@@ -71,7 +71,7 @@ Regole di sviluppo:
 
 ## Lavori aperti (prossimi passi concordati)
 
-1. ~~Hosting sul Wyse~~ installato e verificato dal telefono (2026-10-26). Aperti: riservare l'IP `192.168.1.8` nel router; valutare Tailscale (serve/funnel su 8443) per l'accesso da fuori casa e dal PC di lavoro (da verificare se raggiunge `*.ts.net`); ~~backup~~ (vedi sotto).
+1. ~~Hosting sul Wyse~~ installato e verificato dal telefono (2026-10-26). IP `192.168.1.8` riservato nel router; Tailscale scartato (decisione dell'utente); backup settimanale configurato (vedi registro).
 2. ~~Tutor AI~~ fatto senza API (riepilogo da copiare, vedi decisioni). Eventuale API solo se richiesto.
 3. Test dell'interfaccia: base pronta (`tests/ui`, 5 test); da estendere ai flussi completi. Prova su dispositivi mobili reali.
 
