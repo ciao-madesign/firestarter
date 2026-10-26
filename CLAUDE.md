@@ -56,6 +56,7 @@ src/server/      backend e persistenza          src/web/     frontend       tuto
 
 ```bash
 npm run check          # typecheck + test (obbligatorio prima di ogni commit)
+npm run build:web && npm run test:ui   # test dell'interfaccia nel browser (Playwright, Chromium)
 npm run build:web && npm start     # http://127.0.0.1:3000
 npm run docs           # rigenera docs/COMANDI.md e course/programma.md
 npm run course:export | course:import   # REGISTRO da/verso lo stato
@@ -71,7 +72,7 @@ Regole di sviluppo:
 
 1. **Hosting sul Wyse**: pacchetto pronto (script isolati, password); da fare sul dispositivo: raccogliere porte/servizi di PersonalHub via SSH (comandi di sola lettura), installare, configurare Tailscale su 8443; da verificare se il PC di lavoro raggiunge `*.ts.net`.
 2. ~~Tutor AI~~ fatto senza API (riepilogo da copiare, vedi decisioni). Eventuale API solo se richiesto.
-3. Test automatici dell'interfaccia (oggi solo prove manuali); prova su dispositivi mobili reali.
+3. Test dell'interfaccia: base pronta (`tests/ui`, 5 test); da estendere ai flussi completi. Prova su dispositivi mobili reali.
 
 ## Registro delle decisioni
 
@@ -87,3 +88,4 @@ Aggiungere in fondo una riga per ogni decisione importante: data (YYYY-MM-DD), d
 - 2026-10-26 — Hosting: **server di casa Wyse 5070 + Tailscale (serve/funnel) + password**, al posto di app statica e servizi cloud. Motivo: il lab è già un server unico, nessuna riscrittura dei motori, progressi uguali su tutti i dispositivi, nessun costo; Tailscale non installabile sul PC di lavoro quindi Funnel + password. Sostituisce la decisione "entrambe".
 - 2026-10-26 — Sul Wyse esiste già PersonalHub: il lab va installato in modo **isolato** (utente `learninglab`, servizio `learning-lab`, porta 3100, dati separati, regola Tailscale su 8443, nessuna installazione globale; script con controlli preliminari e disinstallazione). Docker rimosso dal progetto. Motivo: richiesta esplicita di non interferire in alcun modo con PersonalHub.
 - 2026-10-26 — Tutor AI senza chiave API: riepilogo copiabile per la chat/tutor in terminale con l'abbonamento Pro. Motivo: i crediti Pro non coprono l'API e l'utente non vuole pagamenti extra.
+- 2026-10-26 — Test dell'interfaccia con Playwright in `tests/ui`, separati da `npm test` (richiedono un browser). Motivo: evitare regressioni senza rallentare i test veloci.
