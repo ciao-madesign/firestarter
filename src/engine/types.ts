@@ -168,6 +168,21 @@ export interface DocVersion {
   content: string;
 }
 
+export interface ModuleTestItem {
+  lesson: string;
+  reason: string;
+  fails: number;
+  done: boolean;
+  outcome?: 'passed' | 'passed_partial' | 'retry' | 'failed';
+}
+
+export interface ModuleTestState {
+  module: number;
+  startedAt: number;
+  items: ModuleTestItem[];
+  finished?: boolean;
+}
+
 export interface WorkspaceState {
   version: number;
   id: string;
@@ -185,6 +200,8 @@ export interface WorkspaceState {
   notes: string;
   prefs: Preferences;
   predictions: PredictionRecord[];
+  /** test intermedio in corso (4 esercizi misti) */
+  moduleTest?: ModuleTestState;
   tutorChat: { role: 'user' | 'tutor'; text: string; at: number }[];
   changeLog: { at: number; what: string }[];
 }

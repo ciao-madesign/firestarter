@@ -282,6 +282,7 @@ export class PsRuntime {
   clearFlag = false;
 
   emit(items: unknown[]): void {
+    if (items.length === 1 && (items[0] === null || items[0] === undefined)) return;
     const text = formatItems(items);
     if (text) this.io.out(text.endsWith('\n') ? text : text + '\n');
   }
@@ -487,7 +488,7 @@ export class PsRuntime {
       }
     } finally {
       this.tryDepth--;
-      if (s.fin) this.execBlock(s.fin);
+      if (s.fin) out.push(...this.execBlock(s.fin));
     }
     return out;
   }
@@ -671,7 +672,7 @@ export class PsRuntime {
       return def.run(ctx) ?? [];
     }
     // script o applicazione
-    if (/[\\/]/.test(name) || /\.ps1$/i.test(name)) return this.runScript(name, evald, input, cmd.dot);
+    if (/[\\/]/.test(name)) return this.runScript(name, evald, input, cmd.dot);
     const ext = this.nativeCommand(lower, evald, input);
     if (ext) return ext;
     const sug = this.vfs.isFile(this.rp(name)) && /\.ps1$/i.test(name) ? `\nSuggestion [3,General]: The command ${name} was not found, but does exist in the current location. Windows PowerShell does not load commands from the current location by default. If you trust this command, instead type: ".\\${name}". See "get-help about_Command_Precedence" for more details.` : '';

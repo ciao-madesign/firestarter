@@ -24,8 +24,9 @@ export function getMember(rt: PsRuntime, obj: unknown, name: string): unknown {
     if (l === 'length') return obj.length;
     return null;
   }
-  if (typeof obj === 'number' || typeof obj === 'boolean') return null;
+  if (typeof obj === 'number' || typeof obj === 'boolean') return l === 'count' || l === 'length' ? 1 : null;
   if (obj instanceof PSObject) {
+    if ((l === 'count' || l === 'length') && !obj.isHash && !obj.has(name)) return 1;
     if (obj.typeName === 'DateTime') {
       const d = simDate(obj.props.__sec as number);
       switch (l) {

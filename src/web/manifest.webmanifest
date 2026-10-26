@@ -1,0 +1,10 @@
+{
+  "name": "CLI & API Learning Lab",
+  "short_name": "Learning Lab",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1419",
+  "theme_color": "#0f1419",
+  "lang": "it",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

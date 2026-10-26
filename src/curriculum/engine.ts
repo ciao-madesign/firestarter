@@ -7,6 +7,7 @@ import { resetApiEnv } from '../engine/api/server.ts';
 import { Vfs, HOME } from '../engine/vfs.ts';
 import type { CheckResult, Completion, EnvName, ExerciseProgress, ShellId, VerifyResult, WorkspaceState } from '../engine/types.ts';
 import { addRecurring, lessonIndex, type CourseProgress } from '../course/progress.ts';
+import { inTest } from '../course/moduletest.ts';
 import { LESSONS, MODULES, getLesson } from './lessons/index.ts';
 import { SKILL_LABELS, type CheckCtx, type Lesson, type SetupCtx, type SkillTag } from './types.ts';
 
@@ -148,12 +149,12 @@ function modeFor(prog: ExerciseProgress, shell: ShellId): Completion['mode'] {
   return 'autonomous';
 }
 
-export function verifyLesson(state: WorkspaceState, id: string, shell: ShellId, course?: CourseProgress): VerifyResult {
+/** Valuta i controlli senza registrare nulla (feedback in tempo reale). */
+export function evaluateChecks(state: WorkspaceState, id: string, shell: ShellId): CheckResult[] {
   const lesson = getLesson(id);
-  if (!lesson) throw new Error(`Lezione sconosciuta: ${id}`);
-  const p = ensureProgress(state, id);
+  if (!lesson) return [];
   const ctx = buildCheckCtx(state, lesson, shell);
-  const checks: CheckResult[] = lesson.checks.map((c) => {
+  return lesson.checks.map((c) => {
     let r: { pass: boolean; actual: string };
     try {
       r = c.test(ctx);
@@ -162,6 +163,13 @@ export function verifyLesson(state: WorkspaceState, id: string, shell: ShellId, 
     }
     return { id: c.id, description: c.description, pass: r.pass, expected: c.expected, actual: r.actual, explanation: r.pass ? undefined : c.onFail };
   });
+}
+
+export function verifyLesson(state: WorkspaceState, id: string, shell: ShellId, course?: CourseProgress): VerifyResult {
+  const lesson = getLesson(id);
+  if (!lesson) throw new Error(`Lezione sconosciuta: ${id}`);
+  const p = ensureProgress(state, id);
+  const checks: CheckResult[] = evaluateChecks(state, id, shell);
   const pass = checks.every((c) => c.pass);
   const result: VerifyResult = { exerciseId: id, shell, at: state.clock, pass, checks };
   p.lastVerify = result;
@@ -184,7 +192,7 @@ export function verifyLesson(state: WorkspaceState, id: string, shell: ShellId, 
 }
 
 export function markLessonCompleted(course: CourseProgress, lesson: Lesson, mode: Completion['mode'], state: WorkspaceState): void {
-  const date = new Date(state.clock * 1000).toISOString().slice(0, 10);
+  const date = new Date().toISOString().slice(0, 10);
   const rec = (course.lessons[lesson.id] ??= { status: 'todo', acquired: [], errors: [] });
   rec.status = 'completed';
   rec.date = date;
@@ -217,6 +225,9 @@ export function useHelp(state: WorkspaceState, id: string, shell: ShellId, kind:
   const lesson = getLesson(id);
   if (!lesson) throw new Error(`Lezione sconosciuta: ${id}`);
   const p = ensureProgress(state, id);
+  if (inTest(state, id)) {
+    return { kind, text: '', remaining: 0, denied: 'Durante il test intermedio non sono disponibili aiuti: lavora in autonomia e usa la documentazione (man, --help, specifica OpenAPI).' };
+  }
   const h = (p.help[shell] ??= { hints: 0, explanation: 0, example: 0, solution: false });
   switch (kind) {
     case 'example':
