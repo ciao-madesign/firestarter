@@ -186,11 +186,33 @@ const APP_ERRORS: Record<string, string> = {
   internal_error: 'Errore interno del server (5xx): spesso transitorio; riprova poche volte con una pausa e conserva l\'X-Request-Id.',
 };
 
-export function analyzeCommand(entry: CommandLogEntry | undefined, shell: ShellId): string {
+const STATUS_NOTES: Record<string, string> = {
+  '400': 'Richiesta malformata: il server non l\'ha capita (body, parametri o query da correggere).',
+  '401': 'Non autenticato: manca il token o non è valido. Non è un problema di permessi.',
+  '403': 'Autenticato ma non autorizzato: serve un altro ruolo. Cambiare token non basta se il ruolo è lo stesso.',
+  '404': 'Risorsa o percorso inesistente: controlla ID e URL.',
+  '405': 'Metodo non consentito su quel percorso: guarda l\'header Allow.',
+  '409': 'Conflitto con lo stato attuale della risorsa (duplicato o transizione non valida).',
+  '415': 'Content-Type non supportato: aggiungi Content-Type: application/json.',
+  '422': 'Dati non validi: leggi l\'elenco degli errori di validazione.',
+  '429': 'Troppe richieste: attendi il tempo indicato da Retry-After.',
+  '500': 'Errore interno del server: non dipende dalla tua richiesta; riprova poche volte e conserva l\'X-Request-Id.',
+  '502': 'Il server a monte non ha risposto correttamente: problema lato infrastruttura.',
+  '503': 'Servizio non disponibile al momento: riprova con una pausa (Retry-After se presente).',
+  '504': 'Il server a monte non ha risposto in tempo: problema lato infrastruttura.',
+};
+
+/** Concetti del corso da richiamare quando l'errore ha una causa tipica. */
+const CONCEPT_NOTES: [RegExp, string][] = [
+  [/token_expired/, 'Concetto della lezione sull\'autenticazione: un token ha una scadenza. Riottienilo (POST /v1/auth/token) e riassegna la variabile; i comandi già scritti continuano a usare il valore vecchio finché non lo aggiorni.'],
+  [/invalid_token/, 'Concetto: i token sono legati all\'ambiente. Se hai cambiato ambiente (development, staging...) devi richiederne uno nuovo.'],
+];
+
+export function analyzeCommand(entry: CommandLogEntry | undefined, shell: ShellId, isLast = true): string {
   if (!entry) return 'Non ci sono ancora comandi eseguiti in questa shell da analizzare.';
   const err = entry.stderr;
   const out = entry.stdout;
-  const lines: string[] = [`Ultimo comando: \`${entry.cmd}\` (codice di uscita ${entry.exit}).`];
+  const lines: string[] = [`${isLast ? 'Ultimo comando' : 'Ultimo comando fallito (non è l\'ultimo eseguito)'}: \`${entry.cmd}\` (codice di uscita ${entry.exit}).`];
   const add = (t: string): void => void lines.push(t);
   let found = false;
   const text = `${err}\n${out}`;
@@ -221,9 +243,22 @@ export function analyzeCommand(entry: CommandLogEntry | undefined, shell: ShellI
       found = true;
     }
   }
-  const status = /HTTP\/1\.1 (\d{3})/.exec(text)?.[1];
+  const status =
+    /HTTP\/1\.1 (\d{3})/.exec(text)?.[1] ??
+    /\((\d{3})\) [A-Z]/.exec(text)?.[1] ??
+    /The remote server returned an error: \((\d{3})\)/.exec(text)?.[1] ??
+    (/^\s*([1-5]\d{2})\s*$/m.test(out) && /http_code|%\{/.test(entry.cmd) ? /^\s*([1-5]\d{2})\s*$/m.exec(out)?.[1] : undefined);
   if (status) {
-    add(`Status HTTP: ${status}. ${status.startsWith('4') ? 'Errore del client: la richiesta va corretta.' : status.startsWith('5') ? 'Errore del server.' : ''}`.trim());
+    const note = STATUS_NOTES[status] ?? (status.startsWith('4') ? 'Errore del client: la richiesta va corretta.' : status.startsWith('5') ? 'Errore del server.' : status.startsWith('3') ? 'Reindirizzamento: la risorsa si trova altrove (header Location).' : 'Richiesta riuscita.');
+    add(`Status HTTP: ${status}. ${note}`);
+    if (status.startsWith('4') || status.startsWith('5')) found = true;
+  }
+  if (status && status.startsWith('4') && mAll.length) add('Distingui sempre lo status (la categoria del problema) dal codice applicativo `error` nel corpo (la causa precisa): servono entrambi per documentare l\'errore.');
+  for (const [re, msg] of CONCEPT_NOTES) if (re.test(text)) add(msg);
+  // più nomi "inesistenti" in un solo errore: tipico di un percorso con spazi non quotato
+  const missing = [...text.matchAll(/(?:cannot access|cannot open|cannot stat|No such file[^']*|Cannot find path)\s*'([^']+)'/gi)].map((m) => m[1]);
+  if (missing.length >= 2 || (missing.length === 1 && /No such file/.test(text) && entry.cmd.split(/\s+/).length > 2 && !/["']/.test(entry.cmd) && /^[A-Za-z]/.test(missing[0]) && entry.cmd.includes(' ' + missing[0] + ' '))) {
+    add('Se il nome di un file o di una cartella contiene spazi, senza virgolette la shell lo divide in più argomenti. Quotalo: `"Mia cartella"`. Concetto della lezione sul quoting.');
   }
   if (/"errors"\s*:\s*\[/.test(text)) {
     const fields = [...text.matchAll(/"field"\s*:\s*"([^"]+)","message"\s*:\s*"([^"]+)"/g)].map((m) => `${m[1]}: ${m[2]}`);
@@ -251,7 +286,7 @@ export function tutorRespond(state: WorkspaceState, mode: TutorMode, shell: Shel
     if (/^(indizio|aiuto|suggerimento|non so)/.test(low)) return tutorRespond(state, 'hint', shell);
     if (/^esempio/.test(low)) return tutorRespond(state, 'example', shell);
     if (/soluzione/.test(low)) return tutorRespond(state, 'solution', shell);
-    if (/(verific|risultat|superat|passat)/.test(low)) return tutorRespond(state, 'status', shell);
+    if (/(verific|risultat|superat|passat|posso (passare|andare|proseguire|avanzare)|ho finito|sono a posto)/.test(low)) return tutorRespond(state, 'status', shell);
     if (/^(help|\?|comandi)/.test(low)) return { text: renderHelp('', shell) };
     return {
       text: lesson
@@ -264,7 +299,16 @@ export function tutorRespond(state: WorkspaceState, mode: TutorMode, shell: Shel
     const p = id ? state.progress[id] : undefined;
     if (!p?.lastVerify) return { text: 'Non ho ancora risultati: la verifica non è stata eseguita. Premi "Verifica" quando pensi di aver finito. Non posso dire che un test è superato se non è stato eseguito dal sistema.' };
     const v = p.lastVerify;
-    return { text: `${v.pass ? 'Ultima verifica superata' : 'Ultima verifica NON superata'} (${v.checks.filter((c) => c.pass).length}/${v.checks.length} controlli). ${v.checks.filter((c) => !c.pass).map((c) => `- ${c.description}: ${c.actual}`).join('\n')}` };
+    const ok = v.checks.filter((c) => c.pass);
+    const ko = v.checks.filter((c) => !c.pass);
+    const lines = [`${v.pass ? 'Ultima verifica superata' : 'Ultima verifica NON superata'} (${ok.length}/${v.checks.length} controlli).`];
+    if (ok.length) lines.push('Superati:', ...ok.map((c) => `- ${c.description}`));
+    if (ko.length) lines.push('Mancanti:', ...ko.map((c) => `- ${c.description}: ${c.actual}`));
+    const last = state.commandLog.filter((c) => c.shell === shell).slice(-1)[0];
+    if (v.pass) lines.push('Puoi passare alla lezione successiva.');
+    else lines.push('Non puoi ancora passare: correggi i controlli mancanti e premi "Verifica" di nuovo.');
+    if (last && last.at > (v.at ?? 0)) lines.push('Dopo l\'ultima verifica hai eseguito altri comandi: premi "Verifica" per aggiornare il risultato (non posso dire che sia ancora valido).');
+    return { text: lines.join('\n') };
   }
 
   if (mode === 'explain') {
@@ -282,7 +326,8 @@ export function tutorRespond(state: WorkspaceState, mode: TutorMode, shell: Shel
     const recent = state.commandLog.filter((c) => c.shell === shell).slice(-6);
     // si analizza l'ultimo comando FALLITO, se c'è tra quelli recenti
     const failed = [...recent].reverse().find((c) => c.exit !== 0);
-    return { text: analyzeCommand(failed ?? recent[recent.length - 1], shell) };
+    const target = failed ?? recent[recent.length - 1];
+    return { text: analyzeCommand(target, shell, target === recent[recent.length - 1]) };
   }
 
   if (!id || !lesson) return { text: 'Seleziona prima una lezione.' };
