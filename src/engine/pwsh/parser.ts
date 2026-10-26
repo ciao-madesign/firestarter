@@ -993,6 +993,8 @@ export class PsParser {
     return l;
   }
 
+  private bracketRetry = false;
+
   private parsePostfixChain(e: Expr): Expr {
     for (;;) {
       const c = this.ch();
@@ -1081,7 +1083,14 @@ export class PsParser {
     }
     if (/\d/.test(c) || (c === '.' && /\d/.test(this.ch(1)))) return this.parseNumber();
     if (c === '[') {
-      return this.parseUnary();
+      // `[` che non apre un cast riconosciuto: un solo tentativo, poi errore di sintassi (evita la ricorsione infinita)
+      if (this.bracketRetry) throw new PsSyntaxError(`Unexpected token '[' in expression or statement.`, this.pos, '[');
+      this.bracketRetry = true;
+      try {
+        return this.parseUnary();
+      } finally {
+        this.bracketRetry = false;
+      }
     }
     throw new PsSyntaxError(`Unexpected token '${this.readUntilSpace().slice(0, 20)}' in expression or statement.`, this.pos, this.readUntilSpace());
   }

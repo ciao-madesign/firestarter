@@ -1,4 +1,5 @@
 /** Interprete Bash: espansioni, redirezioni, pipeline, strutture di controllo. */
+import { findDoc, renderHelp } from '../catalog.ts';
 import { LIMITS, type ShellState, type WorkspaceState } from '../types.ts';
 import { FsError, HOME, Vfs, basename, fsErrorMessage, glob, hasGlob, resolvePath } from '../vfs.ts';
 import { BashSyntaxError, Incomplete, Parser, parseBash, type Node, type Redir, type Seg, type Word } from './parser.ts';
@@ -34,6 +35,8 @@ interface Frame {
 
 export const COMMANDS = new Map<string, CmdFn>();
 export const BUILTINS = new Set<string>();
+
+const NO_HELP = new Set(['echo', 'true', 'false', ':', '[', 'test', 'printf', 'man', 'help']);
 
 export class BashRuntime {
   vfs: Vfs;
@@ -704,6 +707,11 @@ export class BashRuntime {
     const fn = this.ss.functions[name];
     if (fn) return this.callFunction(name, fn.body, args, io);
     const cmd = COMMANDS.get(name);
+    // `comando --help`: guida dal catalogo (come i comandi reali; echo, true, false, [ e test non la prevedono)
+    if (cmd && args[0] === '--help' && !NO_HELP.has(name) && findDoc(name, 'bash')) {
+      io.out(renderHelp(name, 'bash'));
+      return 0;
+    }
     if (cmd) {
       try {
         return cmd(args, io, this);

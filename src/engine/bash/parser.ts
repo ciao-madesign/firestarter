@@ -396,7 +396,15 @@ export class Parser {
             w = [{ t: 'text', v: ch, q: false }];
             this.pos++;
           } else if (ch === '\n') throw new Incomplete(']]');
-          else w = this.readWord();
+          else if (ch === '<' || ch === '>') {
+            w = [{ t: 'text', v: ch, q: false }];
+            this.pos++;
+          } else {
+            const before = this.pos;
+            w = this.readWord();
+            // nessun avanzamento (es. `;`, `|`, `&` da soli): errore di sintassi invece di un ciclo infinito
+            if (!w.length || this.pos === before) throw new BashSyntaxError(`syntax error in conditional expression near unexpected token \`${ch}'`);
+          }
           words.push(w);
           if (w.length === 1 && w[0].t === 'text' && w[0].v === ']]' && !w[0].q) break;
         }
@@ -408,8 +416,11 @@ export class Parser {
     return { type: 'simple', assigns, words, redirs, src: this.src.slice(start, this.pos).trim() };
   }
 
+  private budget = 0;
+
   /** Legge una parola con quoting ed espansioni. */
   readWord(_cmdStart = false): Word {
+    if (++this.budget > 400_000) throw new BashSyntaxError('syntax error: riga troppo complessa');
     const segs: Word = [];
     let buf = '';
     const flush = (): void => {

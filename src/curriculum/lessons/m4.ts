@@ -193,10 +193,10 @@ export const m4: Lesson[] = [
       },
     ],
     example: { text: 'Esempio analogo: aggiornare la priorità di un task con PATCH.', cmd: { bash: `curl -s -X PATCH ${AUTH_H} ${JSON_H} -d '{"priority":1}' $TASKFLOW_URL/v1/tasks/3`, pwsh: 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks/3" -Method Patch -Headers $h -ContentType "application/json" -Body \'{"priority":1}\'' } },
-    hints: ['L\'id del nuovo task è nella risposta del POST (nel laboratorio il primo nuovo è 6).', 'PATCH invia solo i campi da cambiare: {"status":"done"}.'],
+    hints: ['L\'id del nuovo task è nella risposta del POST (campo `id`): salvalo, per esempio con jq -r .id, e usalo nelle richieste successive; se hai provato il passo guidato, esiste già un task di prova e l\'id sarà diverso.', 'PATCH invia solo i campi da cambiare: {"status":"done"}.'],
     solutions: {
-      bash: [`curl -s -X POST ${AUTH_H} ${JSON_H} -d '{"title":"Scrivere la guida API"}' $TASKFLOW_URL/v1/tasks`, `curl -s ${AUTH_H} $TASKFLOW_URL/v1/tasks/6`, `curl -s -X PATCH ${AUTH_H} ${JSON_H} -d '{"status":"done"}' $TASKFLOW_URL/v1/tasks/6`],
-      pwsh: ['$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Method Post -Headers $h -ContentType \'application/json\' -Body \'{"title":"Scrivere la guida API"}\'', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks/6" -Headers $h', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks/6" -Method Patch -Headers $h -ContentType \'application/json\' -Body \'{"status":"done"}\''],
+      bash: [`ID=$(curl -s -X POST ${AUTH_H} ${JSON_H} -d '{"title":"Scrivere la guida API"}' $TASKFLOW_URL/v1/tasks | jq -r .id)`, `curl -s ${AUTH_H} $TASKFLOW_URL/v1/tasks/$ID`, `curl -s -X PATCH ${AUTH_H} ${JSON_H} -d '{"status":"done"}' $TASKFLOW_URL/v1/tasks/$ID`],
+      pwsh: ['$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', '$id = (Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Method Post -Headers $h -ContentType \'application/json\' -Body \'{"title":"Scrivere la guida API"}\').id', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks/$id" -Headers $h', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks/$id" -Method Patch -Headers $h -ContentType \'application/json\' -Body \'{"status":"done"}\''],
     },
     summary: ['POST crea, GET legge, PATCH aggiorna in parte, PUT sostituisce, DELETE elimina', 'Content-Type / Accept', '409 = conflitto di stato', 'verifica sempre con una lettura'],
     skills: ['http', 'testing', 'comandi'],

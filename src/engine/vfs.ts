@@ -236,12 +236,17 @@ export function globToRegExp(pattern: string): RegExp {
     else if (c === '[') {
       const j = pattern.indexOf(']', i + 1);
       if (j > i) {
-        re += '[' + pattern.slice(i + 1, j).replace(/^!/, '^') + ']';
+        re += '[' + pattern.slice(i + 1, j).replace(/^!/, '^').replace(/[\\[]/g, '\\$&') + ']';
         i = j;
       } else re += '\\[';
     } else re += c.replace(/[.+^${}()|\\]/g, '\\$&');
   }
-  return new RegExp(re + '$');
+  try {
+    return new RegExp(re + '$');
+  } catch {
+    // classe non valida (es. [z-a]): la shell reale tratta il pattern come testo letterale
+    return new RegExp('^' + pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$');
+  }
 }
 
 export function hasGlob(s: string): boolean {

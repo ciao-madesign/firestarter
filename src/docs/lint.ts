@@ -169,6 +169,11 @@ export function lintDocument(state: WorkspaceState, md: string, opts: { env?: En
   const tag = env === 'development' ? 'dev' : env === 'testing' ? 'test' : 'stg';
   for (const sh of ['bash', 'pwsh'] as const) {
     const e = sandbox.shells[sh].env;
+    // il controllo usa le proprie credenziali: variabili e funzioni dello studente non devono oscurarle
+    for (const k of ['TOKEN', 'TASKFLOW_URL', 'TASKFLOW_TOKEN', 'TASKFLOW_CLIENT_ID', 'TASKFLOW_CLIENT_SECRET']) {
+      for (const name of Object.keys(sandbox.shells[sh].vars)) if (name.toLowerCase() === k.toLowerCase()) delete sandbox.shells[sh].vars[name];
+    }
+    sandbox.shells[sh].functions = {};
     e.TASKFLOW_URL = { development: 'http://localhost:8080', testing: 'https://test.api.taskflow.test', staging: 'https://staging.api.taskflow.test' }[env];
     e.TASKFLOW_CLIENT_ID = cred.id;
     e.TASKFLOW_CLIENT_SECRET = cred.secret;
