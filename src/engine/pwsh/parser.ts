@@ -417,7 +417,7 @@ export class PsParser {
       if (this.ch() === '=') {
         this.pos++;
         this.ws();
-        def = this.parseExpression();
+        def = this.parseOrNoComma();
       }
       params.push({ name, def, type, isSwitch: type?.toLowerCase() === 'switch' });
     }
@@ -1208,7 +1208,7 @@ export class PsParser {
           parts.push(this.parseVariable());
           continue;
         }
-        const m = /^\$((?:env:)?[A-Za-z_][A-Za-z0-9_]*|[?_$^])/i.exec(this.src.slice(this.pos));
+        const m = /^\$((?:(?:env|script|global|local|private):)?[A-Za-z_][A-Za-z0-9_]*|[?_$^])/i.exec(this.src.slice(this.pos));
         if (m) {
           if (buf) parts.push(buf);
           buf = '';

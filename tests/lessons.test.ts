@@ -6,7 +6,7 @@ import type { ShellId } from '../src/engine/types.ts';
 describe('le soluzioni documentate superano le verifiche', () => {
   for (const lesson of LESSONS) {
     for (const shell of ['bash', 'pwsh'] as ShellId[]) {
-      const sol = lesson.solutions?.[shell];
+      const sol = lesson.solutions?.[shell] ?? lesson.reference?.[shell];
       if (!sol) continue;
       it(`${lesson.id} (${shell})`, () => {
         const r = runSolution(lesson, shell, sol);

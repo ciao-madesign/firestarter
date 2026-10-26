@@ -21,6 +21,18 @@ function excClass(fqid: string): string {
   return map[f] ?? (f.endsWith('Exception') ? f : 'RuntimeException');
 }
 
+/** Aggiunge in testa ai risultati parziali di un'eccezione di controllo le uscite già prodotte. */
+function withPartial<T>(e: T, out: unknown[]): T {
+  if (out.length && e && typeof e === 'object') {
+    const x = e as { partial?: unknown[] };
+    x.partial = [...out, ...(x.partial ?? [])];
+  }
+  return e;
+}
+function partialOf(e: unknown): unknown[] {
+  return ((e as { partial?: unknown[] } | null)?.partial) ?? [];
+}
+
 export class ReturnEx {
   constructor(public value: unknown[]) {}
 }
@@ -139,7 +151,9 @@ export class PsRuntime {
   getVar(nameRaw: string): unknown {
     const name = nameRaw.toLowerCase();
     if (name.startsWith('env:')) return this.env(nameRaw.slice(4)) ?? null;
+    const scoped = /^script:/.test(name) ? this.scriptScope() : /^global:/.test(name) ? this.global : null;
     const n = name.replace(/^(global|script|local|private|using):/, '');
+    if (scoped && scoped.has(n)) return scoped.get(n);
     switch (n) {
       case '_':
       case 'psitem':
@@ -182,6 +196,13 @@ export class PsRuntime {
     return null;
   }
   scriptDir: string | null = null;
+  /** indici in `scopes` degli scope di script attivi (per `$script:`) */
+  scriptScopes: number[] = [];
+
+  private scriptScope(): Scope {
+    const i = this.scriptScopes[this.scriptScopes.length - 1];
+    return i === undefined ? this.global : (this.scopes[i] ?? this.global);
+  }
 
   setVar(nameRaw: string, v: unknown): void {
     const name = nameRaw.toLowerCase();
@@ -192,8 +213,9 @@ export class PsRuntime {
     let n = name.replace(/^(local|private):/, '');
     if (n === 'erroractionpreference') this.errorPref = psToString(v);
     if (/^(global|script):/.test(n)) {
+      const target = n.startsWith('script:') ? this.scriptScope() : this.global;
       n = n.replace(/^(global|script):/, '');
-      this.global.set(n, v);
+      target.set(n, v);
       return;
     }
     if (n === '_' || n === 'psitem') return;
@@ -225,6 +247,8 @@ export class PsRuntime {
         const out = this.execStmt(st);
         if (out.length) this.emit(out);
       } catch (e) {
+        const part = partialOf(e);
+        if (part.length) this.emit(part);
         if (e instanceof ExitEx) {
           exitCode = e.code;
           break;
@@ -316,10 +340,12 @@ export class PsRuntime {
   // ---------- istruzioni ----------
   execBlock(b: Block, scoped = false): unknown[] {
     if (scoped) this.scopes.push(new Map());
+    const out: unknown[] = [];
     try {
-      const out: unknown[] = [];
       for (const s of b.stmts) out.push(...this.execStmt(s));
       return out;
+    } catch (e) {
+      throw withPartial(e, out);
     } finally {
       if (scoped) this.scopes.pop();
     }
@@ -348,9 +374,11 @@ export class PsRuntime {
           try {
             out.push(...this.execBlock(s.body));
           } catch (e) {
+            out.push(...partialOf(e));
+            (e as { partial?: unknown[] }).partial = undefined;
             if (e instanceof BreakEx) break;
             if (e instanceof ContinueEx) continue;
-            throw e;
+            throw withPartial(e, out);
           }
         }
         return out;
@@ -364,8 +392,10 @@ export class PsRuntime {
           try {
             out.push(...this.execBlock(s.body));
           } catch (e) {
+            out.push(...partialOf(e));
+            (e as { partial?: unknown[] }).partial = undefined;
             if (e instanceof BreakEx) break;
-            if (!(e instanceof ContinueEx)) throw e;
+            if (!(e instanceof ContinueEx)) throw withPartial(e, out);
           }
           if (s.iter) this.execStmt(s.iter);
         }
@@ -384,8 +414,10 @@ export class PsRuntime {
           try {
             out.push(...this.execBlock(s.body));
           } catch (e) {
+            out.push(...partialOf(e));
+            (e as { partial?: unknown[] }).partial = undefined;
             if (e instanceof BreakEx) break;
-            if (!(e instanceof ContinueEx)) throw e;
+            if (!(e instanceof ContinueEx)) throw withPartial(e, out);
           }
           if (s.post) {
             const c = truthy(this.stmtValue(s.cond));
@@ -429,7 +461,9 @@ export class PsRuntime {
         out.push(...this.execBlock(s.body));
       } catch (e) {
         const err = e instanceof ThrowEx ? e.err : e instanceof PSError ? e : null;
-        if (!err) throw e;
+        if (!err) throw withPartial(e, out);
+        out.push(...partialOf(e));
+        (e as { partial?: unknown[] }).partial = undefined;
         this.tryDepth--;
         let handled = false;
         try {
@@ -449,7 +483,7 @@ export class PsRuntime {
         } finally {
           this.tryDepth++;
         }
-        if (!handled) throw e;
+        if (!handled) throw withPartial(e, out);
       }
     } finally {
       this.tryDepth--;
@@ -729,7 +763,7 @@ export class PsRuntime {
     try {
       return this.execBlock(sb.block);
     } catch (e) {
-      if (e instanceof ReturnEx) return e.value;
+      if (e instanceof ReturnEx) return [...partialOf(e), ...e.value];
       throw e;
     } finally {
       this.argsStack.pop();
@@ -811,7 +845,7 @@ export class PsRuntime {
       try {
         return this.execBlock({ ...f.body, stmts: f.body.stmts.filter((s) => s.k !== 'param') });
       } catch (e) {
-        if (e instanceof ReturnEx) return e.value;
+        if (e instanceof ReturnEx) return [...partialOf(e), ...e.value];
         throw e;
       } finally {
         this.argsStack.pop();
@@ -845,7 +879,10 @@ export class PsRuntime {
     const savedDir = this.scriptDir;
     this.src = src;
     this.scriptDir = abs.slice(0, abs.lastIndexOf('/')) || '/';
-    if (!dot) this.scopes.push(new Map());
+    if (!dot) {
+      this.scopes.push(new Map());
+      this.scriptScopes.push(this.scopes.length - 1);
+    }
     try {
       const first = prog.stmts[0];
       let extras: unknown[] = [];
@@ -867,6 +904,7 @@ export class PsRuntime {
           }
         }
       } catch (e) {
+        out.push(...partialOf(e));
         if (e instanceof ReturnEx) out.push(...e.value);
         else if (e instanceof ExitEx) {
           this.lastNative = e.code;
@@ -878,7 +916,10 @@ export class PsRuntime {
       void input;
       return out;
     } finally {
-      if (!dot) this.scopes.pop();
+      if (!dot) {
+        this.scopes.pop();
+        this.scriptScopes.pop();
+      }
       this.src = savedSrc;
       this.scriptDir = savedDir;
     }
@@ -1104,11 +1145,26 @@ export class PsRuntime {
       case 'split': {
         const pair = toArray(r);
         const s = psToString(l);
+        let parts: string[];
         try {
-          return s.split(new RegExp(psToString(pair[0])));
+          parts = s.split(new RegExp(psToString(pair[0])));
         } catch {
-          return s.split(psToString(pair[0]));
+          parts = s.split(psToString(pair[0]));
         }
+        const max = pair.length > 1 ? Number(pair[1]) : 0;
+        if (max > 0 && parts.length > max) {
+          const re = new RegExp(psToString(pair[0]));
+          const head: string[] = [];
+          let rest = s;
+          for (let i = 0; i < max - 1; i++) {
+            const m = re.exec(rest);
+            if (!m) break;
+            head.push(rest.slice(0, m.index));
+            rest = rest.slice(m.index + m[0].length);
+          }
+          parts = [...head, rest];
+        }
+        return parts;
       }
       case 'join':
         return toArray(l).map(psToString).join(psToString(r));

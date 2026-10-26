@@ -343,6 +343,10 @@ export function staticMember(rt: PsRuntime, type: string, member: string, args: 
       if (m === 'machinename') return 'LAB';
       if (m === 'username') return 'learner';
       if (m === 'getenvironmentvariable') return rt.env(s(0)) ?? null;
+      if (m === 'setenvironmentvariable') {
+        rt.setEnv(s(0), a[1] === null || a[1] === undefined ? null : s(1));
+        return null;
+      }
       break;
     case 'io.path':
     case 'path':

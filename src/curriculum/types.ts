@@ -117,6 +117,8 @@ export interface Lesson {
   hints: string[];
   /** soluzione per shell; assente per verifiche autonome */
   solutions?: { bash?: string[]; pwsh?: string[] };
+  /** soluzione di riferimento, MAI esposta: serve ai test automatici delle verifiche autonome */
+  reference?: { bash?: string[]; pwsh?: string[] };
   /** verifica autonoma: nessuna soluzione completa disponibile */
   autonomous?: boolean;
   summary: string[];
