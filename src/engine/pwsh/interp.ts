@@ -530,6 +530,11 @@ export class PsRuntime {
   }
 
   assignTo(t: Expr, v: unknown): void {
+    if (t.k === 'multi') {
+      const items = Array.isArray(v) ? v : v === null || v === undefined ? [] : [v];
+      t.list.forEach((x, i) => this.assignTo(x, i === t.list.length - 1 && items.length > t.list.length ? items.slice(i) : (items[i] ?? null)));
+      return;
+    }
     if (t.k === 'var') {
       this.setVar(t.name, v);
     } else if (t.k === 'member') {

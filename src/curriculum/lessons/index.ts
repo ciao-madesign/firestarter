@@ -8,6 +8,9 @@ import { m5 } from './m5.ts';
 import { m6 } from './m6.ts';
 import { m7 } from './m7.ts';
 import { m8 } from './m8.ts';
+import { guidedM12 } from './guided-m12.ts';
+import { guidedM34 } from './guided-m34.ts';
+import { guidedM5678 } from './guided-m5678.ts';
 
 const UNSORTED: ModuleInfo[] = [
   { n: 1, title: 'Fondamenti', summary: 'Terminale e shell, variabili, prompt, percorsi, quoting, opzioni, man, lettura file.' },
@@ -24,7 +27,10 @@ export const MODULES: ModuleInfo[] = [...UNSORTED].sort((a, b) => a.n - b.n);
 
 export const CURRICULUM_VERSION = '0.1.0';
 
-export const LESSONS: Lesson[] = [...m1, ...m2, ...m3, ...m4, ...m5, ...m6, ...m7, ...m8].sort((a, b) => lessonIndex(a.id) - lessonIndex(b.id) || (a.review ? -1 : 1));
+const EXTRA_GUIDED = { ...guidedM12, ...guidedM34, ...guidedM5678 };
+
+export const LESSONS: Lesson[] = [...m1, ...m2, ...m3, ...m4, ...m5, ...m6, ...m7, ...m8]
+  .map((l) => (EXTRA_GUIDED[l.id] ? { ...l, guided: [...l.guided, ...EXTRA_GUIDED[l.id]] } : l)).sort((a, b) => lessonIndex(a.id) - lessonIndex(b.id) || (a.review ? -1 : 1));
 
 export function getLesson(id: string): Lesson | undefined {
   return LESSONS.find((l) => l.id === id);

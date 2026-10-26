@@ -1200,7 +1200,8 @@ reg('tr', (args, io) => {
     } else if (idx >= 0 && b) out += b[Math.min(idx, b.length - 1)];
     else out += ch;
   }
-  if (o.flags.has('s') && b) out = out.replace(new RegExp(`([${b.replace(/[\]\\^-]/g, '\\$&')}])\\1+`, 'g'), '$1');
+  if (o.flags.has('s') && !b) out = out.replace(new RegExp(`([${a.replace(/[\]\\^-]/g, '\\$&')}])\\1+`, 'g'), '$1');
+  else if (o.flags.has('s') && b) out = out.replace(new RegExp(`([${b.replace(/[\]\\^-]/g, '\\$&')}])\\1+`, 'g'), '$1');
   io.out(out);
   return 0;
 });

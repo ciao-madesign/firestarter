@@ -26,6 +26,7 @@ export type Expr =
   | { k: 'bin'; op: string; l: Expr; r: Expr }
   | { k: 'un'; op: string; e: Expr }
   | { k: 'member'; obj: Expr; name: string | Expr; args: Expr[] | null }
+  | { k: 'multi'; list: Expr[] }
   | { k: 'index'; obj: Expr; idx: Expr }
   | { k: 'array'; items: Expr[] }
   | { k: 'postfix'; op: '++' | '--'; target: Expr }
@@ -461,8 +462,18 @@ export class PsParser {
             this.pos = e + 1;
           } else throw new Error('no-assign');
         }
-        const target = this.parseLValue();
+        let target = this.parseLValue();
         this.ws();
+        if (this.ch() === ',' && !castType) {
+          const list: Expr[] = [target];
+          while (this.ch() === ',') {
+            this.pos++;
+            this.ws();
+            list.push(this.parseLValue());
+            this.ws();
+          }
+          target = { k: 'multi', list };
+        }
         const m = /^(\+=|-=|\*=|\/=|%=|=)(?!=)/.exec(this.src.slice(this.pos, this.pos + 2));
         if (m) {
           this.pos += m[0].length;
@@ -985,7 +996,7 @@ export class PsParser {
   private parsePostfixChain(e: Expr): Expr {
     for (;;) {
       const c = this.ch();
-      if (c === '.' && this.ch(1) !== '.' && /[A-Za-z_$({]/.test(this.ch(1))) {
+      if (c === '.' && this.ch(1) !== '.' && /[A-Za-z_$({'"]/.test(this.ch(1))) {
         this.pos++;
         let name: string | Expr;
         if (this.ch() === '$') {
@@ -996,6 +1007,10 @@ export class PsParser {
           this.ws(true);
           this.pos++;
           name = { k: 'paren', stmt: s };
+        } else if (this.ch() === "'") {
+          name = this.parseSingleString();
+        } else if (this.ch() === '"') {
+          name = this.parseDoubleString();
         } else if (this.ch() === '{') {
           throw new PsSyntaxError('Unexpected token in member access.', this.pos);
         } else {

@@ -657,7 +657,7 @@ Sintassi: `Set-Location [-Path] <percorso>`
 
 ### `Get-ChildItem`
 
-Elenca file e directory (alias: ls, dir, gci).
+Elenca file e directory (alias: ls, dir, gci). `Get-ChildItem env:` elenca le variabili d'ambiente.
 
 Sintassi: `Get-ChildItem [-Path] <percorso> [-Recurse] [-Force] [-Filter <glob>] [-Name]`
 
@@ -949,6 +949,15 @@ Sintassi: `Start-Sleep -Seconds <n>`
 Pulisce lo schermo (alias: clear, cls).
 
 Sintassi: `Clear-Host`
+
+### `Set-Item`
+
+Imposta una variabile d'ambiente (alternativa a `$env:NOME = valore`).
+
+Sintassi: `Set-Item env:<NOME> <valore>`
+
+Differenze rispetto al comando reale:
+- Nel laboratorio funziona solo per l'unità Env:; sugli altri percorsi segnala che non è supportato.
 
 ### `Set-Variable`
 

@@ -141,6 +141,15 @@ def('Get-ChildItem', 'Path|LiteralPath:0, Filter:1, Recurse|r!, Force!, Name!, F
     return true;
   };
   for (const t of targets) {
+    const envDrive = /^env:[\\/]?(.*)$/i.exec(t);
+    if (envDrive) {
+      const pat = envDrive[1];
+      const pre = pat ? new RegExp('^' + pat.replace(/[.+^${}()|\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$', 'i') : null;
+      const vars = Object.keys(c.rt.ss.env).filter((k) => !pre || pre.test(k)).sort((x, y) => x.toLowerCase().localeCompare(y.toLowerCase()));
+      if (pre && !vars.length && !/[*?]/.test(pat)) fail(c, new PSError(`Cannot find path 'Env:\\${pat}' because it does not exist.`, 'ObjectNotFound', 'PathNotFound,Microsoft.PowerShell.Commands.GetChildItemCommand', `Env:\\${pat}`, 'Get-ChildItem'));
+      for (const k of vars) out.push(names ? k : custom({ Name: k, Value: c.rt.ss.env[k] }));
+      continue;
+    }
     const hasGlob = /[*?]/.test(t);
     const base = hasGlob ? c.rt.rp(t.replace(/[^/\\]*$/, '') || '.') : c.rt.rp(t);
     const gre = hasGlob ? new RegExp('^' + (t.split(/[\\/]/).pop() ?? '').replace(/[.+^${}()|\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$', 'i') : null;
@@ -460,13 +469,14 @@ function globPs(c: CmdCtx, pattern: string): string[] {
   }
 }
 
-def('Where-Object', 'FilterScript:0, Property:0, Value:2', (c) => {
+def('Where-Object', 'FilterScript:0, Property, Value:1', (c) => {
   const fs = c.get('FilterScript');
   if (fs instanceof PSScriptBlock) return c.input.filter((it) => truthy(unwrapAll(c.rt.invokeWithItem(fs, it))));
-  // sintassi semplificata: Where-Object Proprieta -eq valore
-  const prop = psToString(c.get('FilterScript') ?? c.get('Property'));
+  // sintassi semplificata: Where-Object Proprieta -eq valore  oppure  Where-Object -Property Proprieta -eq -Value valore
+  const explicitProp = c.has('Property');
+  const prop = psToString(explicitProp ? c.get('Property') : fs);
   const opParam = c.raw.find((r) => /^(eq|ne|gt|ge|lt|le|like|notlike|match|notmatch|contains|notcontains|in|notin|is|isnot|ceq|cne)$/i.test(r.name));
-  const val = c.extra.length ? c.extra[0] : c.has('Value') ? c.get('Value') : opParam?.value;
+  const val = c.has('Value') ? c.get('Value') : explicitProp && fs !== undefined ? fs : c.extra.length ? c.extra[0] : opParam?.value;
   return c.input.filter((it) => {
     const left = it instanceof PSObject ? it.get(prop) : null;
     if (!opParam) return truthy(left);
@@ -710,6 +720,17 @@ def('Get-Variable', 'Name:0', (c) => {
   const names = c.has('Name') ? asStrings(c.get('Name')) : [...c.rt.global.keys()];
   return names.map((n) => custom({ Name: n, Value: c.rt.getVar(n) }));
 });
+def('Set-Item', 'Path|LiteralPath:0, Value:1', (c) => {
+  const path = psToString(c.get('Path') ?? '');
+  const m = /^env:[\\/]?(.+)$/i.exec(path);
+  if (!m) {
+    fail(c, new PSError(`Set-Item is supported in this lab only for the Env: drive (Set-Item env:NAME value).`, 'NotImplemented', 'NotSupported,Microsoft.PowerShell.Commands.SetItemCommand', path, 'Set-Item'));
+    return [];
+  }
+  c.rt.setEnv(m[1], c.has('Value') ? psToString(c.get('Value')) : '');
+  return [];
+});
+
 def('Set-Variable', 'Name:0, Value:1', (c) => {
   c.rt.setVar(psToString(c.get('Name')), c.get('Value'));
   return [];

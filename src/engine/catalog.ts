@@ -125,7 +125,7 @@ export const CATALOG: CommandDoc[] = [
   // ---- PowerShell
   c('Get-Location', P, 'cmdlet', 'Get-Location', 'Directory corrente (alias: pwd, gl).'),
   c('Set-Location', P, 'cmdlet', 'Set-Location [-Path] <percorso>', 'Cambia directory (alias: cd, sl).'),
-  c('Get-ChildItem', P, 'cmdlet', 'Get-ChildItem [-Path] <percorso> [-Recurse] [-Force] [-Filter <glob>] [-Name]', 'Elenca file e directory (alias: ls, dir, gci).', ['-Recurse|ricorsivo', '-Force|include i file nascosti', '-Filter|filtro per nome (glob)', '-Name|solo i nomi', '-File / -Directory|solo file o cartelle']),
+  c('Get-ChildItem', P, 'cmdlet', 'Get-ChildItem [-Path] <percorso> [-Recurse] [-Force] [-Filter <glob>] [-Name]', 'Elenca file e directory (alias: ls, dir, gci). `Get-ChildItem env:` elenca le variabili d\'ambiente.', ['-Recurse|ricorsivo', '-Force|include i file nascosti', '-Filter|filtro per nome (glob)', '-Name|solo i nomi', '-File / -Directory|solo file o cartelle']),
   c('Get-Content', P, 'cmdlet', 'Get-Content [-Path] <file> [-TotalCount n] [-Tail n] [-Raw]', 'Legge un file, una riga alla volta (alias: cat, type, gc).', ['-TotalCount|prime n righe', '-Tail|ultime n righe', '-Raw|tutto il testo in una stringa']),
   c('Set-Content', P, 'cmdlet', 'Set-Content [-Path] <file> -Value <testo>', 'Scrive un file sovrascrivendolo (alias: sc).'),
   c('Add-Content', P, 'cmdlet', 'Add-Content [-Path] <file> -Value <testo>', 'Aggiunge testo a un file (alias: ac).'),
@@ -166,6 +166,7 @@ export const CATALOG: CommandDoc[] = [
   c('Get-Process', P, 'cmdlet', 'Get-Process [nome]', 'Elenca i processi (simulati) (alias: ps, gps).'),
   c('Start-Sleep', P, 'cmdlet', 'Start-Sleep -Seconds <n>', "Attende (orologio simulato)."),
   c('Clear-Host', P, 'cmdlet', 'Clear-Host', 'Pulisce lo schermo (alias: clear, cls).'),
+  c('Set-Item', P, 'cmdlet', 'Set-Item env:<NOME> <valore>', 'Imposta una variabile d\'ambiente (alternativa a `$env:NOME = valore`).', [], ['Nel laboratorio funziona solo per l\'unità Env:; sugli altri percorsi segnala che non è supportato.']),
   c('Set-Variable', P, 'cmdlet', 'Set-Variable <nome> <valore>', 'Imposta una variabile.'),
   c('Get-Alias', P, 'cmdlet', 'Get-Alias [nome]', 'Mostra gli alias (alias: gal).'),
   c('Compare-Object', P, 'cmdlet', 'Compare-Object <riferimento> <differenza>', 'Confronta due insiemi di oggetti (alias: diff, compare).'),
