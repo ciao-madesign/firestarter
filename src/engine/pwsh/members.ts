@@ -247,7 +247,7 @@ export function castValue(rt: PsRuntime, type: string, v: unknown): unknown {
     case 'switch':
       return truthy(v);
     case 'char':
-      return psToString(v)[0] ?? '';
+      return typeof v === 'number' ? String.fromCodePoint(v) : (psToString(v)[0] ?? '');
     case 'array':
     case 'object[]':
       return toArray(v);
@@ -389,8 +389,25 @@ export function staticMember(rt: PsRuntime, type: string, member: string, args: 
       if (m === 'getcurrentdirectory') return rt.cwd;
       break;
     case 'convert':
-      if (m === 'toint32') return castValue(rt, 'int', a[0]);
-      if (m === 'tostring') return psToString(a[0]);
+      if (m === 'toint32') {
+        if (a.length >= 2) {
+          const base = n(1);
+          if (![2, 8, 10, 16].includes(base)) throw new PSError('Exception calling "ToInt32": "Invalid base."', 'InvalidOperation', 'ArgumentException');
+          const str = s(0).trim().replace(base === 16 ? /^0x/i : /^$/, '');
+          const re = { 2: /^[01]+$/, 8: /^[0-7]+$/, 10: /^[-+]?\d+$/, 16: /^[0-9a-f]+$/i }[base as 2 | 8 | 10 | 16];
+          if (!re.test(str)) throw new PSError('Exception calling "ToInt32": "Could not find any recognizable digits."', 'InvalidOperation', 'FormatException');
+          return parseInt(str, base);
+        }
+        return castValue(rt, 'int', a[0]);
+      }
+      if (m === 'tostring') {
+        if (a.length >= 2) {
+          const base = n(1);
+          if (![2, 8, 10, 16].includes(base)) throw new PSError('Exception calling "ToString": "Invalid base."', 'InvalidOperation', 'ArgumentException');
+          return Number(a[0]).toString(base);
+        }
+        return psToString(a[0]);
+      }
       if (m === 'tobase64string') return Buffer.from(toArray(a[0]).map((x) => Number(x))).toString('base64');
       if (m === 'frombase64string') return [...Buffer.from(s(0), 'base64')];
       break;

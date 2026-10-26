@@ -13,7 +13,7 @@ export class JqError extends Error {
 }
 
 interface Tok {
-  t: 'punct' | 'str' | 'num' | 'id' | 'field';
+  t: 'punct' | 'str' | 'istr' | 'num' | 'id' | 'field';
   v: string;
 }
 
@@ -29,17 +29,56 @@ function tokenize(src: string): Tok[] {
     if (c === '"') {
       let j = i + 1;
       let s = '';
+      const parts: (string | { e: string })[] = [];
+      let interp = false;
       while (j < src.length && src[j] !== '"') {
         if (src[j] === '\\') {
           j++;
           const n = src[j];
-          s += n === 'n' ? '\n' : n === 't' ? '\t' : n;
+          if (n === '(') {
+            // interpolazione \( espressione )
+            let depth = 1;
+            let k = j + 1;
+            let inStr = false;
+            while (k < src.length && depth > 0) {
+              const ch = src[k];
+              if (inStr) {
+                if (ch === '\\') k++;
+                else if (ch === '"') inStr = false;
+              } else if (ch === '"') inStr = true;
+              else if (ch === '(') depth++;
+              else if (ch === ')') depth--;
+              k++;
+            }
+            if (depth > 0) throw new JqError('syntax error: interpolazione non chiusa', 3);
+            parts.push(s);
+            s = '';
+            parts.push({ e: src.slice(j + 1, k - 1) });
+            interp = true;
+            j = k;
+            continue;
+          }
+          if (n === 'u' && /^[0-9a-fA-F]{4}$/.test(src.slice(j + 1, j + 5))) {
+            s += String.fromCharCode(parseInt(src.slice(j + 1, j + 5), 16));
+            j += 5;
+            continue;
+          }
+          s += n === 'n' ? '\n' : n === 't' ? '\t' : n === 'r' ? '\r' : n;
         } else s += src[j];
         j++;
       }
       if (j >= src.length) throw new JqError('syntax error: stringa non chiusa', 3);
-      toks.push({ t: 'str', v: s });
+      if (interp) {
+        parts.push(s);
+        toks.push({ t: 'istr', v: JSON.stringify(parts) });
+      } else toks.push({ t: 'str', v: s });
       i = j + 1;
+      continue;
+    }
+    if (c === '@' && /[a-z]/.test(src[i + 1] ?? '')) {
+      const m = /^@[a-z0-9]+/.exec(src.slice(i))!;
+      toks.push({ t: 'id', v: m[0] });
+      i += m[0].length;
       continue;
     }
     if (/\d/.test(c)) {
@@ -273,6 +312,19 @@ class Parser {
       this.p++;
       return () => [t.v];
     }
+    if (t.t === 'istr') {
+      this.p++;
+      const parts = (JSON.parse(t.v) as (string | { e: string })[]).map((p) => (typeof p === 'string' ? p : compileJq(p.e)));
+      return (x) => {
+        // prodotto cartesiano delle uscite delle espressioni interpolate
+        let acc: string[] = [''];
+        for (const p of parts) {
+          if (typeof p === 'string') acc = acc.map((a) => a + p);
+          else acc = acc.flatMap((a) => p(x).map((v) => a + (typeof v === 'string' ? v : JSON.stringify(v))));
+        }
+        return acc;
+      };
+    }
     if (t.t === 'num') {
       this.p++;
       return () => [parseFloat(t.v)];
@@ -427,6 +479,105 @@ class Parser {
         };
       case 'tostring':
         return (x) => [typeof x === 'string' ? x : JSON.stringify(x)];
+      case 'tojson':
+        return (x) => [JSON.stringify(x)];
+      case 'fromjson':
+        return (x) => {
+          try {
+            return [JSON.parse(String(x))];
+          } catch (e) {
+            throw new JqError(`${String(x)} (while parsing '${String(x)}')`);
+          }
+        };
+      case 'reverse':
+        return (x) => {
+          if (typeof x === 'string') return [[...x].reverse().join('')];
+          if (x === null) return [[]];
+          if (!Array.isArray(x)) throw new JqError(`Cannot reverse ${typeName(x)}`);
+          return [[...x].reverse()];
+        };
+      case 'min':
+      case 'max':
+        return (x) => {
+          if (!Array.isArray(x)) throw new JqError(`Cannot iterate over ${typeName(x)}`);
+          if (!x.length) return [null];
+          const s = [...x].sort(cmp);
+          return [name === 'min' ? s[0] : s[s.length - 1]];
+        };
+      case 'flatten':
+        return (x) => {
+          if (!Array.isArray(x)) throw new JqError(`Cannot iterate over ${typeName(x)}`);
+          return [x.flat(Infinity)];
+        };
+      case 'floor':
+        return (x) => [Math.floor(Number(x))];
+      case 'any':
+        return (x) => [Array.isArray(x) ? x.some(truthy) : false];
+      case 'all':
+        return (x) => [Array.isArray(x) ? x.every(truthy) : true];
+      case 'paths':
+        return (x) => {
+          const out: J[] = [];
+          const walk = (v: J, path: J[]): void => {
+            if (Array.isArray(v)) v.forEach((e, i) => { out.push([...path, i]); walk(e, [...path, i]); });
+            else if (v && typeof v === 'object') for (const k of Object.keys(v)) { out.push([...path, k]); walk((v as Record<string, J>)[k], [...path, k]); }
+          };
+          walk(x, []);
+          return out;
+        };
+      case 'group_by':
+      case 'unique_by':
+      case 'min_by':
+      case 'max_by': {
+        const f = this.arg();
+        return (x) => {
+          if (!Array.isArray(x)) throw new JqError(`Cannot iterate over ${typeName(x)}`);
+          const keyed = x.map((v) => ({ v, k: f(v)[0] }));
+          keyed.sort((a, b) => cmp(a.k, b.k));
+          if (name === 'min_by') return [keyed.length ? keyed[0].v : null];
+          if (name === 'max_by') return [keyed.length ? keyed[keyed.length - 1].v : null];
+          const groups: { v: J; k: J }[][] = [];
+          for (const e of keyed) {
+            const g = groups[groups.length - 1];
+            if (g && cmp(g[0].k, e.k) === 0) g.push(e);
+            else groups.push([e]);
+          }
+          return [name === 'group_by' ? groups.map((g) => g.map((e) => e.v)) : groups.map((g) => g[0].v)];
+        };
+      }
+      case 'index': {
+        const f = this.arg();
+        return (x) =>
+          f(x).map((needle) => {
+            if (typeof x === 'string') {
+              const i = x.indexOf(String(needle));
+              return i < 0 ? null : i;
+            }
+            if (Array.isArray(x)) {
+              const i = x.findIndex((e) => cmp(e, needle) === 0);
+              return i < 0 ? null : i;
+            }
+            return null;
+          });
+      }
+      case '@csv':
+      case '@tsv':
+        return (x) => {
+          if (!Array.isArray(x)) throw new JqError(`${typeName(x)} cannot be ${name === '@csv' ? 'csv' : 'tsv'}-formatted, only an array can be`);
+          const cell = (v: J): string => {
+            if (v === null) return '';
+            if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+            if (typeof v === 'string') return name === '@csv' ? `"${v.replace(/"/g, '""')}"` : v.replace(/\\/g, '\\\\').replace(/\t/g, '\\t').replace(/\n/g, '\\n');
+            throw new JqError(`${typeName(v)} (${JSON.stringify(v)}) is not valid in a csv row`);
+          };
+          return [x.map(cell).join(name === '@csv' ? ',' : '\t')];
+        };
+      case '@json':
+        return (x) => [JSON.stringify(x)];
+      case '@text':
+        return (x) => [typeof x === 'string' ? x : JSON.stringify(x)];
+      case '@sh':
+        return (x) => [(Array.isArray(x) ? x : [x]).map((v) => (typeof v === 'string' ? `'${v.replace(/'/g, "'\\''")}'` : String(v))).join(' ')];
       case 'tonumber':
         return (x) => {
           const n = Number(x);

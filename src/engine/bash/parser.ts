@@ -183,6 +183,16 @@ export class Parser {
   }
 
   private parseCommand(): Node {
+    const node = this.parseCommandInner();
+    // redirezioni dopo `done` / `fi` (es. `while read l; do ...; done < file`): applicate a tutto il costrutto
+    if (node.type === 'while' || node.type === 'for' || node.type === 'if') {
+      const redirs = this.parseTrailingRedirs();
+      if (redirs.length) return { type: 'group', body: node, subshell: false, redirs };
+    }
+    return node;
+  }
+
+  private parseCommandInner(): Node {
     this.skipBlank();
     if (this.eof()) throw new Incomplete('comando');
     const w = this.peekWord();

@@ -138,6 +138,8 @@ export function psToString(v: unknown): string {
         return v.props.Path ? `${v.props.RelPath ?? v.props.Path}:${v.props.LineNumber}:${v.props.Line}` : String(v.props.Line);
       case 'HttpStatusCode':
         return String(v.props.__name);
+      case 'Version':
+        return [v.props.Major, v.props.Minor, v.props.Build, v.props.Revision].filter((x) => x !== undefined && x !== null).join('.');
       case 'DateTime':
         return fmtDateTime(v.props.__sec as number);
       case 'ErrorRecord':

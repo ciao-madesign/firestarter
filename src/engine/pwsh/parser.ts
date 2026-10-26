@@ -301,8 +301,9 @@ export class PsParser {
         const cond = this.parenStmt();
         return { k: 'while', cond, body, until: k[0].toLowerCase() === 'until', post: true };
       }
-      case 'function':
-      case 'filter': {
+      case 'filter':
+        throw new PsSyntaxError('Il costrutto filter non è supportato nel laboratorio: usa una function con ForEach-Object.', this.pos, 'filter');
+      case 'function': {
         this.ws();
         const m = /^[A-Za-z_][A-Za-z0-9_\-.:]*/.exec(this.src.slice(this.pos));
         if (!m) throw new PsSyntaxError('Missing function name after function keyword.', this.pos);

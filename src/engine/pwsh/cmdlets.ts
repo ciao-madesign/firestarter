@@ -8,6 +8,7 @@ import { psAliases, renderHelp, findDoc, commandsFor } from '../catalog.ts';
 import type { HttpRequest } from '../api/server.ts';
 import type { PsRuntime } from './interp.ts';
 import { PsParser } from './parser.ts';
+import { getMember } from './members.ts';
 import {
   PSError, PSFormatted, PSObject, PSScriptBlock, custom, enumValue, formatItems, formatList, formatTable, fromJsonValue, hash, jsonString, psCompare, psEqual, psToString,
   toArray, toJsonValue, truthy, fmtDateTime,
@@ -509,8 +510,13 @@ def('Select-Object', 'Property:0, First, Last, Skip, ExpandProperty, Unique!', (
   if (c.has('ExpandProperty')) {
     const p = psToString(c.get('ExpandProperty'));
     return items.flatMap((it) => {
-      const v = it instanceof PSObject ? it.get(p) : null;
-      return Array.isArray(v) ? v : v === null ? [] : [v];
+      const v = getMember(c.rt, it, p);
+      if ((v === null || v === undefined) && !(it instanceof PSObject && it.keys().some((k) => k.toLowerCase() === p.toLowerCase()))) {
+        // la proprietà non esiste (diverso da "esiste ed è $null")
+        fail(c, new PSError(`Property "${p}" cannot be found.`, 'InvalidArgument', 'ExpandPropertyNotFound,Microsoft.PowerShell.Commands.SelectObjectCommand', p, 'Select-Object'));
+        return [];
+      }
+      return Array.isArray(v) ? v : v === null || v === undefined ? [] : [v];
     });
   }
   if (c.has('Property')) {
@@ -575,7 +581,7 @@ def('Measure-Object', 'Property:0, Sum!, Average!, Maximum!, Minimum!, Line!, Wo
     if (c.get('Maximum')) o.props.Maximum = Math.max(...vals);
     if (c.get('Minimum')) o.props.Minimum = Math.min(...vals);
   }
-  return [new PSFormatted(formatList([o]))];
+  return [o];
 });
 
 def('Group-Object', 'Property:0, NoElement!', (c) => {
@@ -708,12 +714,16 @@ function webRequest(c: CmdCtx, cmd: 'Invoke-RestMethod' | 'Invoke-WebRequest'): 
   const hdr = hash();
   for (const [k, v] of Object.entries(res.headers)) hdr.props[k] = v;
   const raw = `${res.httpVersion} ${res.status} ${res.statusText}\r\n` + Object.entries(res.headers).map(([k, v]) => `${k}: ${v}`).join('\r\n') + '\r\n\r\n' + res.body;
-  if (c.has('OutFile')) c.rt.writeFile(c.rt.rp(psToString(c.get('OutFile'))), res.body, false);
+  if (c.has('OutFile')) {
+    c.rt.writeFile(c.rt.rp(psToString(c.get('OutFile'))), res.body, false);
+    // con -OutFile la risposta non viene restituita, salvo -PassThru
+    if (!c.get('PassThru')) return [];
+  }
   return [new PSObject('WebResponseObject', { StatusCode: res.status, StatusDescription: res.statusText, Content: res.body, RawContent: raw, RawContentLength: byteLen(res.body), Headers: hdr })];
 }
 
-def('Invoke-RestMethod', 'Uri:0, Method:1, Headers, Body, ContentType, TimeoutSec, UseBasicParsing!, OutFile, Credential', (c) => webRequest(c, 'Invoke-RestMethod'));
-def('Invoke-WebRequest', 'Uri:0, Method:1, Headers, Body, ContentType, TimeoutSec, UseBasicParsing!, OutFile, Credential', (c) => webRequest(c, 'Invoke-WebRequest'));
+def('Invoke-RestMethod', 'Uri:0, Method:1, Headers, Body, ContentType, TimeoutSec, UseBasicParsing!, OutFile, Credential, PassThru!', (c) => webRequest(c, 'Invoke-RestMethod'));
+def('Invoke-WebRequest', 'Uri:0, Method:1, Headers, Body, ContentType, TimeoutSec, UseBasicParsing!, OutFile, Credential, PassThru!', (c) => webRequest(c, 'Invoke-WebRequest'));
 
 // ---------------- varie ----------------
 def('Get-Variable', 'Name:0', (c) => {

@@ -39,7 +39,7 @@ function readInputs(rt: BashRuntime, io: Io, cmd: string, files: string[]): { in
       }
       inputs.push({ name: f, text: rt.vfs.readFile(abs) });
     } catch (e) {
-      io.err(`${cmd}: ${f}: ${e instanceof FsError ? fsErrorMessage(e, f) : String(e)}\n`);
+      io.err(cmd === 'jq' ? `jq: error: Could not open ${f}: ${e instanceof FsError ? fsErrorMessage(e, f) : String(e)}\n` : `${cmd}: ${f}: ${e instanceof FsError ? fsErrorMessage(e, f) : String(e)}\n`);
       failed = true;
     }
   }
@@ -170,14 +170,84 @@ reg('set', (args, io, rt) => {
     for (const k of Object.keys({ ...rt.ss.env, ...rt.ss.vars }).sort()) io.out(`${k}=${rt.get(k)}\n`);
     return 0;
   }
-  for (const a of args) {
-    if (a === '-e') rt.errexit = true;
-    else if (a === '+e') rt.errexit = false;
-    else if (a === '-o' || a === 'pipefail' || a === '-u' || a === '+u' || a === '-x' || a === '+x' || a === '-eu' || a === '-euo') {
-      if (a === '-eu' || a === '-euo') rt.errexit = true;
+  const setOpt = (name: string, on: boolean): boolean => {
+    if (name === 'errexit') rt.errexit = on;
+    else if (name === 'pipefail') rt.pipefail = on;
+    else if (name === 'nounset') rt.nounset = on;
+    else if (name === 'xtrace') rt.xtrace = on;
+    else {
+      io.err(`bash: set: ${name}: opzione non supportata nel laboratorio\n`);
+      return false;
+    }
+    return true;
+  };
+  const LONG: Record<string, string> = { e: 'errexit', u: 'nounset', x: 'xtrace' };
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--') {
+      rt.frames[rt.frames.length - 1].args = args.slice(i + 1);
+      return 0;
+    }
+    if (!/^[-+]/.test(a)) {
+      // set a b c: parametri posizionali
+      rt.frames[rt.frames.length - 1].args = args.slice(i);
+      return 0;
+    }
+    const on = a[0] === '-';
+    for (const ch of a.slice(1)) {
+      if (ch === 'o') {
+        const name = args[++i];
+        if (!name) {
+          io.err('bash: set: -o: richiede un argomento\n');
+          return 2;
+        }
+        if (!setOpt(name, on)) return 1;
+      } else if (LONG[ch]) setOpt(LONG[ch], on);
+      else {
+        io.err(`bash: set: ${a}: opzione non supportata nel laboratorio\n`);
+        return 2;
+      }
     }
   }
   return 0;
+}, true);
+
+reg('let', (args, io, rt) => {
+  if (!args.length) {
+    io.err('bash: let: espressione richiesta\n');
+    return 1;
+  }
+  let v = 0;
+  for (const a of args) v = rt.arith(a);
+  return v === 0 ? 1 : 0;
+}, true);
+
+reg('trap', (args, io, rt) => {
+  if (!args.length || args[0] === '-p') {
+    for (const [sig, cmd] of Object.entries(rt.traps)) io.out(`trap -- '${cmd}' ${sig}\n`);
+    return 0;
+  }
+  const [cmd, ...sigs] = args;
+  if (!sigs.length) {
+    io.err('bash: trap: uso: trap [-lp] [[arg] segnale ...]\n');
+    return 2;
+  }
+  for (const raw of sigs) {
+    const sig = raw.toUpperCase().replace(/^SIG/, '');
+    if (sig !== 'EXIT' && sig !== '0') {
+      io.err(`bash: trap: ${raw}: segnale non supportato nel laboratorio (solo EXIT)\n`);
+      return 1;
+    }
+    if (cmd === '-' || cmd === '') delete rt.traps.EXIT;
+    else rt.traps.EXIT = cmd;
+  }
+  return 0;
+}, true);
+
+reg('exec', (args, io, rt) => {
+  if (!args.length) return 0;
+  const code = rt.runCommand(args[0], args.slice(1), io);
+  throw new ExitSignal(code);
 }, true);
 
 reg('shift', (args, io, rt) => {
@@ -224,14 +294,44 @@ reg('history', (args, io, rt) => {
 }, true);
 
 reg('read', (args, io, rt) => {
-  const names = args.filter((a) => !a.startsWith('-'));
-  const lines = io.stdin.split('\n');
-  if (!io.stdin) return 1;
-  const line = lines[0];
-  const parts = line.split(/\s+/).filter(Boolean);
+  const names: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '-p' || a === '-t') i++; // prompt e timeout: senza terminale non hanno effetto
+    else if (a === '-r' || a === '-s') continue;
+    else if (/^-[nduNa]/.test(a)) {
+      io.err(`bash: read: opzione ${a} non supportata nel laboratorio\n`);
+      return 2;
+    } else if (a.startsWith('-')) continue;
+    else names.push(a);
+  }
+  const rest = io.stdin;
+  if (rest === '') return 1;
+  const nl = rest.indexOf('\n');
+  const line = nl < 0 ? rest : rest.slice(0, nl);
+  io.stdin = nl < 0 ? '' : rest.slice(nl + 1);
   const vars = names.length ? names : ['REPLY'];
-  vars.forEach((v, i) => rt.set(v, i === vars.length - 1 ? parts.slice(i).join(' ') : (parts[i] ?? '')));
-  return 0;
+  const ifs = rt.ss.env.IFS ?? (rt.ss.vars.IFS as string | undefined) ?? ' \t\n';
+  if (!names.length) rt.set('REPLY', ifs === '' ? line : line);
+  else if (ifs === '') {
+    // IFS vuoto: nessuna divisione né rimozione degli spazi (es. `IFS= read -r riga`)
+    rt.set(vars[0], line);
+    for (const v of vars.slice(1)) rt.set(v, '');
+  } else {
+    const white = ifs.split('').filter((c) => /\s/.test(c)).join('');
+    const delim = ifs.split('').filter((c) => !/\s/.test(c)).join('');
+    const esc = (t: string): string => t.replace(/[\]\\^-]/g, '\\$&');
+    let r = white ? line.replace(new RegExp(`^[${esc(white)}]+`), '') : line;
+    vars.forEach((v, i) => {
+      if (i === vars.length - 1) rt.set(v, white ? r.replace(new RegExp(`[${esc(white)}]+$`), '') : r);
+      else {
+        const m = new RegExp(`^([^${esc(ifs)}]*)(?:[${esc(white)}]*[${esc(delim)}][${esc(white)}]*|[${esc(white)}]+)?`).exec(r)!;
+        rt.set(v, m[1]);
+        r = r.slice(m[0].length);
+      }
+    });
+  }
+  return nl < 0 ? 1 : 0;
 }, true);
 
 function runTest(args: string[], rt: BashRuntime, io: Io): boolean {
@@ -497,27 +597,88 @@ reg('printf', (args, io) => {
   const fmt = args[0];
   const vals = args.slice(1);
   let vi = 0;
+  let code = 0;
   let out = '';
-  do {
+  const num = (raw: string): number => {
+    if (raw === '') return 0;
+    if (/^['"].$/s.test(raw)) return raw.charCodeAt(1);
+    if (/^[-+]?(0[xX][0-9a-fA-F]+|\d+)$/.test(raw)) return /^[-+]?0[xX]/.test(raw) ? parseInt(raw, 16) : /^[-+]?0\d/.test(raw) ? parseInt(raw, 8) : parseInt(raw, 10);
+    io.err(`printf: ${raw}: invalid number\n`);
+    code = 1;
+    return 0;
+  };
+  const fnum = (raw: string): number => {
+    if (raw === '') return 0;
+    const n = Number(raw);
+    if (Number.isNaN(n)) {
+      io.err(`printf: ${raw}: invalid number\n`);
+      code = 1;
+      return 0;
+    }
+    return n;
+  };
+  const SPEC = /^%([-+ 0#]*)(\d*)(?:\.(\d*))?([a-zA-Z%])/;
+  let consumedAny = true;
+  while (consumedAny) {
+    consumedAny = false;
     const startVi = vi;
-    out += unescape(
-      fmt.replace(/%([-+ 0]*)(\d*)(?:\.(\d+))?([sdifxXb%])/g, (_, flags: string, width: string, prec: string, c: string) => {
-        if (c === '%') return '%';
+    for (let p = 0; p < fmt.length; ) {
+      const ch = fmt[p];
+      if (ch === '%') {
+        const m = SPEC.exec(fmt.slice(p));
+        if (!m) {
+          io.err(`printf: \`${fmt.slice(p, p + 2)}': invalid format character\n`);
+          io.out(out);
+          return 1;
+        }
+        p += m[0].length;
+        const [, flags, width, prec, c] = m;
+        if (c === '%') {
+          out += '%';
+          continue;
+        }
         const raw = vals[vi++] ?? '';
-        let s: string;
-        if (c === 's' || c === 'b') s = prec ? raw.slice(0, parseInt(prec, 10)) : raw;
-        else if (c === 'd' || c === 'i') s = String(parseInt(raw, 10) || 0);
-        else if (c === 'f') s = (parseFloat(raw) || 0).toFixed(prec ? parseInt(prec, 10) : 6);
-        else s = (parseInt(raw, 10) || 0).toString(16)[c === 'X' ? 'toUpperCase' : 'toString']();
         const w = parseInt(width || '0', 10);
-        if (flags.includes('-')) return s.padEnd(w);
-        return flags.includes('0') && c !== 's' ? s.padStart(w, '0') : s.padStart(w);
-      }),
-    );
-    if (vi === startVi) break;
-  } while (vi < vals.length);
+        let s2: string;
+        switch (c) {
+          case 's': s2 = prec !== undefined && prec !== '' ? raw.slice(0, parseInt(prec, 10)) : raw; break;
+          case 'b': s2 = unescape(raw); break;
+          case 'q': s2 = raw === '' ? "''" : raw.replace(/[^A-Za-z0-9_./:@%+=,-]/g, '\\$&'); break;
+          case 'c': s2 = raw.slice(0, 1); break;
+          case 'd': case 'i': s2 = String(num(raw)); if (flags.includes('+') && !s2.startsWith('-')) s2 = '+' + s2; break;
+          case 'u': s2 = String(num(raw) >>> 0); break;
+          case 'o': s2 = (num(raw) >>> 0).toString(8); if (flags.includes('#') && s2 !== '0') s2 = '0' + s2; break;
+          case 'x': s2 = (num(raw) >>> 0).toString(16); if (flags.includes('#') && s2 !== '0') s2 = '0x' + s2; break;
+          case 'X': s2 = (num(raw) >>> 0).toString(16).toUpperCase(); if (flags.includes('#') && s2 !== '0') s2 = '0X' + s2; break;
+          case 'f': case 'F': s2 = fnum(raw).toFixed(prec !== undefined && prec !== '' ? parseInt(prec, 10) : 6); break;
+          case 'e': case 'E': {
+            s2 = fnum(raw).toExponential(prec !== undefined && prec !== '' ? parseInt(prec, 10) : 6).replace(/e([+-])(\d)$/, 'e$10$2');
+            if (c === 'E') s2 = s2.toUpperCase();
+            break;
+          }
+          case 'g': case 'G': s2 = String(Number(fnum(raw).toPrecision(prec !== undefined && prec !== '' ? Math.max(1, parseInt(prec, 10)) : 6))); break;
+          default:
+            io.err(`printf: \`${c}': invalid format character\n`);
+            io.out(out);
+            return 1;
+        }
+        if (w > s2.length) {
+          if (flags.includes('-')) s2 = s2.padEnd(w);
+          else if (flags.includes('0') && !'scbq'.includes(c)) s2 = /^[-+]/.test(s2) ? s2[0] + s2.slice(1).padStart(w - 1, '0') : s2.padStart(w, '0');
+          else s2 = s2.padStart(w);
+        }
+        out += s2;
+        continue;
+      }
+      // testo letterale con sequenze di escape
+      let lit = '';
+      while (p < fmt.length && fmt[p] !== '%') lit += fmt[p++];
+      out += unescape(lit);
+    }
+    consumedAny = vi > startVi && vi < vals.length;
+  }
   io.out(out);
-  return 0;
+  return code;
 }, true);
 
 reg('sleep', (args, io, rt) => {
@@ -703,6 +864,7 @@ reg('wc', (args, io, rt) => {
     if (none || o.flags.has('l')) cols.push(v.l);
     if (none || o.flags.has('w')) cols.push(v.w);
     if (none || o.flags.has('c') || o.flags.has('m')) cols.push(v.c);
+    if (cols.length === 1 && inputs.length === 1) return String(cols[0]) + (name ? ' ' + name : '');
     const width = inputs.length > 1 || o.rest.length ? Math.max(1, ...cols.map((c) => String(c).length), 1) : 0;
     const w = o.rest.length ? Math.max(width, 1) : none ? 7 : 0;
     const parts = cols.map((c) => String(c).padStart(o.rest.length ? Math.max(...[tot.l, tot.w, tot.c].map((x) => String(x).length), 1) : w));
@@ -952,7 +1114,46 @@ reg('tee', (args, io, rt) => {
 
 reg('stat', (args, io, rt) => {
   let code = 0;
-  for (const p of args) {
+  let fmt: string | null = null;
+  const files: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '-c' || args[i] === '--format') fmt = args[++i] ?? '';
+    else if (args[i].startsWith('--format=')) fmt = args[i].slice(9);
+    else if (args[i].startsWith('-') && args[i] !== '-') {
+      io.err(`stat: invalid option -- '${args[i].replace(/^-+/, '')}'\nTry 'stat --help' for more information.\n`);
+      return 1;
+    } else files.push(args[i]);
+  }
+  for (const p of files) {
+    if (fmt !== null) {
+      const n0 = rt.vfs.get(rt.resolve(p));
+      if (!n0) {
+        io.err(`stat: cannot statx '${p}': No such file or directory\n`);
+        code = 1;
+        continue;
+      }
+      const size = n0.type === 'dir' ? 4096 : byteLen(n0.content);
+      let bad = false;
+      const outLine = fmt.replace(/%([a-zA-Z%])/g, (_m, c: string) => {
+        switch (c) {
+          case 's': return String(size);
+          case 'n': return p;
+          case 'a': return n0.mode.toString(8);
+          case 'A': return modeString(n0.mode, n0.type === 'dir');
+          case 'F': return n0.type === 'dir' ? 'directory' : size === 0 ? 'regular empty file' : 'regular file';
+          case 'U': return n0.owner;
+          case 'Y': return String(n0.mtime);
+          case '%': return '%';
+          default: bad = true; return '';
+        }
+      });
+      if (bad) {
+        io.err(`stat: formato non supportato nel laboratorio: ${fmt} (disponibili: %s %n %a %A %F %U %Y)\n`);
+        return 1;
+      }
+      io.out(outLine + '\n');
+      continue;
+    }
     const n = rt.vfs.get(rt.resolve(p));
     if (!n) {
       io.err(`stat: cannot statx '${p}': No such file or directory\n`);
@@ -1010,7 +1211,7 @@ reg('find', (args, io, rt) => {
 
 // ---------------- testo ----------------
 reg('grep', (args, io, rt) => {
-  const o = getopt(args, { flags: 'ivncrRElFwoqHhs', values: 'eABCm', alias: {} });
+  const o = getopt(args, { flags: 'ivncrRElFwoqHhsx', values: 'eABCm', alias: {} });
   if (o.error) return badOpt('grep', io, o.error.replace('opzione non valida', 'invalid option'));
   const rest = [...o.rest];
   const patterns = o.values.e ? [...o.values.e] : rest.length ? [rest.shift()!] : [];
@@ -1018,7 +1219,16 @@ reg('grep', (args, io, rt) => {
     io.err('Usage: grep [OPTION]... PATTERNS [FILE]...\nTry \'grep --help\' for more information.\n');
     return 2;
   }
-  const res = patterns.map((p) => grepRegex(p, { extended: o.flags.has('E'), fixed: o.flags.has('F'), ignoreCase: o.flags.has('i'), word: o.flags.has('w') }));
+  const res = patterns.map((p) => {
+    const r = grepRegex(p, { extended: o.flags.has('E'), fixed: o.flags.has('F'), ignoreCase: o.flags.has('i'), word: o.flags.has('w') });
+    // -x: la riga deve coincidere per intero con il pattern
+    return r && o.flags.has('x') ? new RegExp('^(?:' + r.source + ')$', r.flags) : r;
+  });
+  const maxCount = o.values.m ? parseInt(o.values.m[0], 10) : Infinity;
+  if (Number.isNaN(maxCount)) {
+    io.err(`grep: ${o.values.m![0]}: invalid max count\n`);
+    return 2;
+  }
   if (res.some((r) => !r)) {
     io.err('grep: Invalid regular expression\n');
     return 2;
@@ -1073,6 +1283,7 @@ reg('grep', (args, io, rt) => {
     let count = 0;
     const printed = new Set<number>();
     lines.forEach((line, idx) => {
+      if (count >= maxCount) return;
       const hit = res.some((r) => r!.test(line));
       if (hit === o.flags.has('v')) return;
       count++;
@@ -1285,6 +1496,8 @@ reg('sed', (args, io, rt) => {
   return failed ? 2 : 0;
 });
 
+class AwkUnsupported extends Error {}
+
 reg('awk', (args, io, rt) => {
   const o = getopt(args, { flags: '', values: 'F' });
   if (o.error) return badOpt('awk', io, o.error.replace('opzione non valida', 'invalid option'));
@@ -1313,7 +1526,9 @@ reg('awk', (args, io, rt) => {
         if (t === 'NR') return String(nr);
         if (t === 'NF') return String(fields.length);
         if (t === '$NF') return fields[fields.length - 1] ?? '';
-        return t;
+        if (/^-?\d+(\.\d+)?$/.test(t)) return t;
+        // espressione composta (concatenazione, aritmetica, funzioni): non supportata. Mai stamparla "così com'è".
+        throw new AwkUnsupported(t);
       })
       .join(' ');
   const test = (fields: string[], line: string): boolean => {
@@ -1329,8 +1544,9 @@ reg('awk', (args, io, rt) => {
       const f = fields[parseInt(fm[1], 10) - 1] ?? '';
       return fm[2] === '==' ? f === fm[3] : fm[2] === '!=' ? f !== fm[3] : new RegExp(fm[3]).test(f);
     }
-    return true;
+    throw new AwkUnsupported(cond);
   };
+  try {
   for (const inp of inputs) {
     for (const line of splitLines(inp.text)) {
       nr++;
@@ -1348,7 +1564,15 @@ reg('awk', (args, io, rt) => {
   }
   if (end) {
     const pm = /^print\s+(.*)$/.exec(end.trim());
-    if (pm) io.out(evalExpr(pm[1], [], '') + '\n');
+    if (!pm) throw new AwkUnsupported(end);
+    io.out(evalExpr(pm[1], [], '') + '\n');
+  }
+  } catch (e) {
+    if (e instanceof AwkUnsupported) {
+      io.err(`awk: espressione non supportata nel laboratorio: ${e.message}\n`);
+      return 2;
+    }
+    throw e;
   }
   return failed ? 2 : 0;
 });
@@ -1427,19 +1651,29 @@ reg('jq', (args, io, rt) => {
     return 2;
   }
   const { inputs, failed } = readInputs(rt, io, 'jq', o.rest);
+  let lastOut: unknown;
+  let anyOut = false;
   try {
-    for (const inp of inputs) {
-      let docs = parseJsonStream(inp.text);
-      if (o.flags.has('s')) docs = [docs];
-      for (const d of docs) {
-        for (const r of runJq(filter, d)) {
-          io.out((o.flags.has('r') && typeof r === 'string' ? r : formatJson(r, o.flags.has('c'))) + '\n');
-        }
+    const emit = (r: unknown): void => {
+      anyOut = true;
+      lastOut = r;
+      const raw = (o.flags.has('r') || o.flags.has('j')) && typeof r === 'string';
+      io.out((raw ? (r as string) : formatJson(r, o.flags.has('c'))) + (o.flags.has('j') ? '' : '\n'));
+    };
+    if (o.flags.has('n')) {
+      for (const r of runJq(filter, null)) emit(r);
+    } else {
+      for (const inp of inputs) {
+        let docs = parseJsonStream(inp.text);
+        if (o.flags.has('s')) docs = [docs];
+        for (const d of docs) for (const r of runJq(filter, d)) emit(r);
       }
     }
+    // -e: stato di uscita in base all'ultimo valore (1 se false o null, 4 se nessun output)
+    if (o.flags.has('e') && !failed) return !anyOut ? 4 : lastOut === false || lastOut === null ? 1 : 0;
   } catch (e) {
     if (e instanceof JqError) {
-      io.err(e.code === 3 ? `jq: error: ${e.message}\njq: 1 compile error\n` : `jq: error (at <stdin>:0): ${e.message}\n`);
+      io.err(e.code === 3 ? `jq: error: ${e.message}\njq: 1 compile error\n` : e.message.startsWith('parse error') ? `jq: ${e.message}\n` : `jq: error (at <stdin>:0): ${e.message}\n`);
       return e.code;
     }
     throw e;

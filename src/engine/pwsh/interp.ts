@@ -183,7 +183,7 @@ export class PsRuntime {
       case 'error':
         return this.errors;
       case 'psversiontable':
-        return custom({ PSVersion: custom({ Major: 5, Minor: 1, Build: 19041, Revision: 1 }), PSEdition: 'Desktop', Platform: 'Win32NT (emulato)' });
+        return custom({ PSVersion: new PSObject('Version', { Major: 5, Minor: 1, Build: 19041, Revision: 1 }), PSEdition: 'Desktop', Platform: 'Win32NT (emulato)' });
       case 'host':
         return custom({ Name: 'ConsoleHost', Version: '5.1.19041.1' });
       case 'pscommandpath':
@@ -244,7 +244,7 @@ export class PsRuntime {
     this.lastOk = true;
     for (const st of prog.stmts) {
       try {
-        const out = this.execStmt(st);
+        const out = this.execListStmt(st);
         if (out.length) this.emit(out);
       } catch (e) {
         const part = partialOf(e);
@@ -343,13 +343,20 @@ export class PsRuntime {
     if (scoped) this.scopes.push(new Map());
     const out: unknown[] = [];
     try {
-      for (const s of b.stmts) out.push(...this.execStmt(s));
+      for (const s of b.stmts) out.push(...this.execListStmt(s));
       return out;
     } catch (e) {
       throw withPartial(e, out);
     } finally {
       if (scoped) this.scopes.pop();
     }
+  }
+
+  /** `$i++` e `++$i` come istruzione a sé non producono output (solo `($i++)` o l'uso in un'espressione lo fanno). */
+  private execListStmt(s: Stmt): unknown[] {
+    const out = this.execStmt(s);
+    if (s.k === 'pipeline' && s.elems.length === 1 && s.elems[0].k === 'expr' && s.elems[0].e && ['postfix', 'prefix'].includes(s.elems[0].e.k)) return [];
+    return out;
   }
 
   private execStmt(s: Stmt): unknown[] {
@@ -899,7 +906,7 @@ export class PsRuntime {
       try {
         for (const s of prog.stmts) {
           try {
-            out.push(...this.execStmt(s));
+            out.push(...this.execListStmt(s));
           } catch (e) {
             if (e instanceof PSError && !(e instanceof ThrowEx) && this.tryDepth === 0) {
               this.reportError(e, s);
@@ -978,8 +985,14 @@ export class PsRuntime {
           const v = this.evalExpr(i);
           return [v];
         });
-      case 'cast':
+      case 'cast': {
+        // [int][char]"A" → 65: i caratteri sono stringhe di un carattere, il doppio cast restituisce il codice
+        if (e.e.k === 'cast' && /^(int|int32|long|int64|byte)$/i.test(e.type) && /^char$/i.test(e.e.type)) {
+          const inner = this.evalExpr(e.e.e);
+          return typeof inner === 'number' ? inner : (psToString(inner).codePointAt(0) ?? 0);
+        }
         return castValue(this, e.type, this.evalExpr(e.e));
+      }
       case 'static':
         return staticMember(this, e.type, e.member, e.args ? e.args.map((a) => this.evalExpr(a)) : null);
       case 'un':

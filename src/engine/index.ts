@@ -26,6 +26,7 @@ export function newShell(shell: ShellId): ShellState {
       LANG: 'it_IT.UTF-8',
       PWD: HOME,
       TERM: 'xterm-256color',
+      ...(shell === 'pwsh' ? { OS: 'Windows_NT', USERNAME: USER, COMPUTERNAME: 'LAB' } : {}),
     },
     vars: {},
     functions: {},

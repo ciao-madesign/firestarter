@@ -46,6 +46,12 @@ export class BashRuntime {
   steps = 0;
   outBytes = 0;
   errexit = false;
+  pipefail = false;
+  nounset = false;
+  xtrace = false;
+  traps: Record<string, string> = {};
+  /** descrittori ≥ 3 aperti con `exec N>file` */
+  fds: Record<number, string> = {};
   inCond = 0;
   depth = 0;
   clearRequested = false;
@@ -103,10 +109,13 @@ export class BashRuntime {
     }
     const v = this.ss.vars[name];
     if (typeof v === 'string') return v;
-    return this.ss.env[name];
+    const e = this.ss.env[name];
+    if (e === undefined && name === 'IFS') return ' \t\n';
+    return e;
   }
 
   set(name: string, value: string): void {
+    if (name === 'IFS' && value !== ' \t\n') throw new BashSyntaxError('IFS personalizzato non supportato nel laboratorio');
     for (let i = this.frames.length - 1; i >= 0; i--) {
       if (name in this.frames[i].locals) {
         this.frames[i].locals[name] = value;
@@ -149,14 +158,29 @@ export class BashRuntime {
     this.frames.push({ args, locals: {}, fn: null });
     this.scriptName = name;
     this.errexit = false;
+    const savedTraps = this.traps;
+    this.traps = {};
     let code: number;
     try {
-      code = this.runSource(src, io);
-    } catch (e) {
-      if (e instanceof ExitSignal) code = e.code;
-      else if (e instanceof ReturnSignal) code = e.code;
-      else throw e;
+      try {
+        code = this.runSource(src, io);
+      } catch (e) {
+        if (e instanceof ExitSignal) code = e.code;
+        else if (e instanceof ReturnSignal) code = e.code;
+        else throw e;
+      }
+      // trap ... EXIT: eseguito alla fine dello script, anche dopo `exit`
+      const onExit = this.traps.EXIT;
+      if (onExit) {
+        this.traps = {};
+        try {
+          this.runSource(onExit, io);
+        } catch (e) {
+          if (!(e instanceof ExitSignal)) throw e;
+        }
+      }
     } finally {
+      this.traps = savedTraps;
       this.frames.pop();
       this.ss.cwd = saved.cwd;
       this.ss.vars = saved.vars;
@@ -269,6 +293,7 @@ export class BashRuntime {
           return { v: args.join(' '), multi: args };
         }
         const val = this.get(seg.name);
+        if (this.nounset && val === undefined && !seg.op && /^[A-Za-z_][A-Za-z0-9_]*$/.test(seg.name)) throw new BashSyntaxError(`${seg.name}: unbound variable`);
         if (seg.op === '#') return { v: String((val ?? '').length) };
         if (seg.op) {
           const colon = seg.op.startsWith(':');
@@ -359,68 +384,133 @@ export class BashRuntime {
     return results;
   }
 
+  /** Aritmetica di shell ($((...)), let): interi, precedenza completa, assegnazioni e ++/-- su variabili. */
   arith(expr: string): number {
-    const toks = expr.match(/\d+|[A-Za-z_][A-Za-z0-9_]*|==|!=|<=|>=|&&|\|\||[-+*/%()<>!]/g) ?? [];
+    const toks = expr.match(/0[xX][0-9a-fA-F]+|\d+|[A-Za-z_][A-Za-z0-9_]*|\*\*=?|<<=?|>>=?|\+\+|--|&&|\|\||[=!<>]=|[-+*/%&|^]=|[-+*/%()<>!~&|^?:=,]/g) ?? [];
     let p = 0;
-    const val = (): number => {
-      const t = toks[p++];
-      if (t === undefined) throw new BashSyntaxError('syntax error in expression');
-      if (t === '(') {
-        const v = or();
-        p++;
-        return v;
-      }
-      if (t === '-') return -val();
-      if (t === '+') return val();
-      if (t === '!') return val() ? 0 : 1;
-      if (/^\d+$/.test(t)) return parseInt(t, 10);
-      const raw = this.get(t);
+    const peek = (): string | undefined => toks[p];
+    const num = (name: string): number => {
+      const raw = this.get(name);
       const n = parseInt(raw ?? '0', 10);
       return Number.isNaN(n) ? 0 : n;
     };
-    const mul = (): number => {
-      let v = val();
-      while (toks[p] === '*' || toks[p] === '/' || toks[p] === '%') {
-        const op = toks[p++];
-        const r = val();
-        if ((op === '/' || op === '%') && r === 0) throw new BashSyntaxError('division by 0');
-        v = op === '*' ? v * r : op === '/' ? Math.trunc(v / r) : v % r;
+    const bad = (): never => {
+      throw new BashSyntaxError(`syntax error in expression (error token is "${toks[p] ?? ''}")`);
+    };
+    const isVar = (t: string | undefined): boolean => !!t && /^[A-Za-z_]/.test(t);
+    const binPrec: Record<string, number> = { '||': 1, '&&': 2, '|': 3, '^': 4, '&': 5, '==': 6, '!=': 6, '<': 7, '>': 7, '<=': 7, '>=': 7, '<<': 8, '>>': 8, '+': 9, '-': 9, '*': 10, '/': 10, '%': 10 };
+    const apply = (op: string, a: number, b: number): number => {
+      switch (op) {
+        case '||': return Number(!!a || !!b);
+        case '&&': return Number(!!a && !!b);
+        case '|': return a | b;
+        case '^': return a ^ b;
+        case '&': return a & b;
+        case '==': return Number(a === b);
+        case '!=': return Number(a !== b);
+        case '<': return Number(a < b);
+        case '>': return Number(a > b);
+        case '<=': return Number(a <= b);
+        case '>=': return Number(a >= b);
+        case '<<': return a << b;
+        case '>>': return a >> b;
+        case '+': return a + b;
+        case '-': return a - b;
+        case '*': return a * b;
+        case '**': return b < 0 ? bad() : Math.pow(a, b);
+        case '/':
+        case '%':
+          if (b === 0) throw new BashSyntaxError('division by 0 (error token is "0")');
+          return op === '/' ? Math.trunc(a / b) : a % b;
       }
-      return v;
+      return bad();
     };
-    const add = (): number => {
-      let v = mul();
-      while (toks[p] === '+' || toks[p] === '-') v = toks[p++] === '+' ? v + mul() : v - mul();
-      return v;
-    };
-    const rel = (): number => {
-      let v = add();
-      while (['<', '>', '<=', '>=', '==', '!='].includes(toks[p])) {
-        const op = toks[p++];
-        const r = add();
-        v = Number(op === '<' ? v < r : op === '>' ? v > r : op === '<=' ? v <= r : op === '>=' ? v >= r : op === '==' ? v === r : v !== r);
+    const unary = (): number => {
+      const t = toks[p++];
+      if (t === undefined) return bad();
+      if (t === '(') {
+        const v = comma();
+        if (toks[p++] !== ')') bad();
+        return power(v);
       }
-      return v;
+      if (t === '-') return -unary();
+      if (t === '+') return unary();
+      if (t === '!') return unary() ? 0 : 1;
+      if (t === '~') return ~unary();
+      if (t === '++' || t === '--') {
+        const name = toks[p++];
+        if (!isVar(name)) return bad();
+        const v = num(name) + (t === '++' ? 1 : -1);
+        this.set(name, String(v));
+        return v;
+      }
+      if (/^0[xX]/.test(t)) return power(parseInt(t, 16));
+      if (/^\d+$/.test(t)) return power(/^0\d/.test(t) ? parseInt(t, 8) : parseInt(t, 10));
+      if (isVar(t)) {
+        if (toks[p] === '++' || toks[p] === '--') {
+          const old = num(t);
+          this.set(t, String(old + (toks[p++] === '++' ? 1 : -1)));
+          return old;
+        }
+        return power(num(t));
+      }
+      return bad();
     };
-    const and = (): number => {
-      let v = rel();
-      while (toks[p] === '&&') {
+    // `**` associativa a destra e con precedenza maggiore degli operatori unari
+    const power = (base: number): number => {
+      if (toks[p] === '**') {
         p++;
-        const r = rel();
-        v = Number(!!v && !!r);
+        return apply('**', base, unary());
       }
-      return v;
+      return base;
     };
-    const or = (): number => {
-      let v = and();
-      while (toks[p] === '||') {
+    const binary = (minPrec: number): number => {
+      let left = unary();
+      for (;;) {
+        const op = peek();
+        const prec = op ? binPrec[op] : undefined;
+        if (prec === undefined || prec < minPrec) return left;
         p++;
-        const r = and();
-        v = Number(!!v || !!r);
+        const right = binary(prec + 1);
+        left = apply(op!, left, right);
+      }
+    };
+    const ternary = (): number => {
+      const c = binary(1);
+      if (peek() === '?') {
+        p++;
+        const a = assign();
+        if (toks[p++] !== ':') bad();
+        const b = assign();
+        return c ? a : b;
+      }
+      return c;
+    };
+    const assign = (): number => {
+      // variabile seguita da un operatore di assegnazione
+      if (isVar(toks[p]) && /^([-+*/%&|^]|<<|>>|\*\*)?=$/.test(toks[p + 1] ?? '') && toks[p + 1] !== '==') {
+        const name = toks[p];
+        const op = toks[p + 1].slice(0, -1);
+        p += 2;
+        const r = assign();
+        const v = op ? apply(op, num(name), r) : r;
+        this.set(name, String(v));
+        return v;
+      }
+      return ternary();
+    };
+    const comma = (): number => {
+      let v = assign();
+      while (peek() === ',') {
+        p++;
+        v = assign();
       }
       return v;
     };
-    return or();
+    if (!toks.length) return 0;
+    const v = comma();
+    if (p < toks.length) bad();
+    return v;
   }
 
   // ---------- esecuzione dei nodi ----------
@@ -548,6 +638,7 @@ export class BashRuntime {
   private execPipeline(node: Extract<Node, { type: 'pipeline' }>, io: Io): number {
     let input = io.stdin;
     let code = 0;
+    let failed = 0;
     node.cmds.forEach((cmd, i) => {
       const last = i === node.cmds.length - 1;
       let buf = '';
@@ -560,8 +651,10 @@ export class BashRuntime {
       } finally {
         this.inCond--;
       }
+      if (code !== 0) failed = code;
       input = buf;
     });
+    if (this.pipefail && failed !== 0) code = failed;
     return node.negate ? (code === 0 ? 1 : 0) : code;
   }
 
@@ -573,6 +666,22 @@ export class BashRuntime {
     let stdin = io.stdin;
     const files: Target[] = [];
     for (const r of redirs) {
+      if (r.fd > 2 && (r.op === '>' || r.op === '>>')) {
+        // N>file con N ≥ 3: il file viene creato, ma nessun comando semplice scrive su quel descrittore
+        const p3 = this.expandStr(r.target, io);
+        try {
+          const abs3 = this.resolve(p3);
+          if (r.op === '>' || !this.vfs.exists(abs3)) this.vfs.writeFile(abs3, '');
+        } catch (e) {
+          io.err(`bash: ${p3}: ${e instanceof FsError ? fsErrorMessage(e, p3) : String(e)}\n`);
+          return null;
+        }
+        continue;
+      }
+      if (r.fd > 2 && r.op !== '<<' && r.op !== '<<<') {
+        io.err(`bash: redirezione sul descrittore ${r.fd} non supportata nel laboratorio (usa solo 0, 1 e 2)\n`);
+        return null;
+      }
       if (r.op === '<<') {
         stdin = r.heredocQuoted ? (r.heredoc ?? '') : this.expandStr(this.parseInner(r.heredoc ?? ''), io);
         continue;
@@ -589,6 +698,11 @@ export class BashRuntime {
           if (r.fd === 1) stdout = stderr;
         } else if (t === '-') {
           /* chiusura */
+        } else if (/^\d+$/.test(t) && this.fds[Number(t)] !== undefined) {
+          const target: Target = { kind: 'file', path: this.fds[Number(t)], buf: '' };
+          files.push(target);
+          if (r.fd === 2) stderr = target;
+          else stdout = target;
         } else {
           io.err(`bash: ${t}: ambiguous redirect\n`);
           return null;
@@ -660,7 +774,31 @@ export class BashRuntime {
   // ---------- comando semplice ----------
   private execSimple(node: Extract<Node, { type: 'simple' }>, io: Io): number {
     const assigns = node.assigns.map((a) => ({ name: a.name, value: this.expandStr(a.value, io), append: a.append }));
-    const words = node.words.flatMap((w) => this.expandFields(w, io));
+    const isDbl = node.words.length > 0 && node.words[0].length === 1 && node.words[0][0].t === 'text' && (node.words[0][0] as { v: string }).v === '[[';
+    // dentro [[ ]] niente espansione di percorso né divisione in parole (a differenza di `[`)
+    const words = isDbl ? node.words.map((w) => this.expandStr(w, io)) : node.words.flatMap((w) => this.expandFields(w, io));
+    if (this.xtrace && words.length) io.err(`+ ${words.join(' ')}\n`);
+    // `exec N>file` / `exec N>&-`: apre o chiude un descrittore persistente (solo N ≥ 3)
+    if (words.length === 1 && words[0] === 'exec' && node.redirs.length) {
+      for (const r of node.redirs) {
+        const t = this.expandStr(r.target, io);
+        if (r.fd >= 3 && (r.op === '>' || r.op === '>>')) {
+          const abs = this.resolve(t);
+          try {
+            if (r.op === '>' || !this.vfs.exists(abs)) this.vfs.writeFile(abs, '');
+          } catch (e) {
+            io.err(`bash: ${t}: ${e instanceof FsError ? fsErrorMessage(e, t) : String(e)}\n`);
+            return 1;
+          }
+          this.fds[r.fd] = abs;
+        } else if (r.fd >= 3 && r.op === '>&' && t === '-') delete this.fds[r.fd];
+        else {
+          io.err('bash: exec con redirezioni dei descrittori 0-2 non è supportato nel laboratorio\n');
+          return 1;
+        }
+      }
+      return 0;
+    }
     if (!words.length) {
       const r = node.redirs.length ? this.applyRedirs(node.redirs, io) : null;
       if (node.redirs.length && !r) return 1;

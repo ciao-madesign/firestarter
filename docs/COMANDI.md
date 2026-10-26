@@ -62,12 +62,45 @@ Differenze rispetto al comando reale:
 
 ### `set`
 
-Opzioni della shell. Supportato: -e (esce al primo errore).
+Opzioni della shell e parametri posizionali.
 
-Sintassi: `set [-e|+e]`
+Sintassi: `set [-eux] [-o opzione] [-- argomenti...]`
+
+- `-e`: esce al primo errore
+- `-u`: errore sulle variabili non definite
+- `-x`: stampa i comandi su stderr
+- `-o pipefail`: una pipeline fallisce se fallisce uno stadio
+- `-- a b c`: imposta $1 $2 $3
 
 Differenze rispetto al comando reale:
-- Le altre opzioni (-u, -x, -o pipefail) sono accettate ma non hanno effetto.
+- Opzioni supportate: -e, -u, -x, -o errexit|nounset|xtrace|pipefail. Le altre danno un errore esplicito.
+
+### `let`
+
+Valuta espressioni aritmetiche (come $(( ))). Esce con 1 se l'ultimo risultato è 0.
+
+Sintassi: `let espressione...`
+
+Differenze rispetto al comando reale:
+- Numeri interi, operatori con la precedenza di C, assegnazioni, ++/--, ?: e **.
+
+### `trap`
+
+Esegue un comando alla fine dello script.
+
+Sintassi: `trap 'comando' EXIT`
+
+Differenze rispetto al comando reale:
+- Solo il segnale EXIT, e solo negli script (bash script.sh, bash -c). Gli altri segnali danno un errore esplicito.
+
+### `exec`
+
+Sostituisce la shell con un comando, oppure apre il descrittore N (da 3 in su) su un file.
+
+Sintassi: `exec [comando] | exec N>file`
+
+Differenze rispetto al comando reale:
+- Le redirezioni dei descrittori 0-2 con exec non sono supportate.
 
 ### `shift`
 
@@ -131,12 +164,14 @@ Sintassi: `history [n] | history -c`
 
 ### `read`
 
-Legge una riga dallo standard input.
+Legge una riga dallo standard input e la assegna alle variabili.
 
 Sintassi: `read [-r] [var...]`
 
+- `-r`: non interpreta le barre inverse
+
 Differenze rispetto al comando reale:
-- Legge solo da pipe/redirezione: il terminale non chiede input interattivo.
+- Legge solo da pipe/redirezione/here-string (il terminale non chiede input interattivo). Rispetta IFS vuoto o con delimitatori; le opzioni -n, -d, -u, -a danno un errore esplicito.
 
 ### `test`
 
@@ -243,10 +278,11 @@ Stampa testo formattato.
 
 Sintassi: `printf formato [argomenti...]`
 
-- `%s %d %f %x`: segnaposto supportati
+- `%s %d %i %u %o %x %X %c %e %f %g %b %q %%`: segnaposto supportati
+- `larghezza, precisione e flag - + 0 #`: supportati
 
 Differenze rispetto al comando reale:
-- Supporta %s, %d, %i, %f, %x, %X, %b e %%.
+- Il formato viene riutilizzato finché ci sono argomenti. Un numero non valido stampa 0 e segnala l'errore con codice 1. Non supportato: * come larghezza.
 
 ### `sleep`
 
@@ -434,10 +470,12 @@ Sintassi: `tee [-a] file...`
 
 Informazioni su un file.
 
-Sintassi: `stat file...`
+Sintassi: `stat [-c formato] file...`
+
+- `-c formato`: stampa solo i campi richiesti: %s %n %a %A %F %U %Y
 
 Differenze rispetto al comando reale:
-- Output ridotto rispetto al comando reale.
+- L'output predefinito è ridotto rispetto al comando reale; formati diversi da quelli elencati danno un errore esplicito.
 
 ### `find`
 
@@ -459,6 +497,8 @@ Cerca righe che corrispondono a un modello. Codice 0 = trovato, 1 = nessuna corr
 
 Sintassi: `grep [opzioni] modello [file...]`
 
+- `-m N`: si ferma dopo N righe
+- `-x`: la riga deve coincidere per intero
 - `-i`: ignora maiuscole
 - `-v`: inverte
 - `-n`: numero di riga
@@ -546,7 +586,7 @@ Sintassi: `awk [-F sep] 'condizione {print $1, $2}' [file...]`
 - `-F sep`: separatore
 
 Differenze rispetto al comando reale:
-- Sottoinsieme: solo print di campi/NR/NF, condizioni /re/, NR==N, $N==x e END{print NR}. Nessuna variabile o ciclo.
+- Sottoinsieme: solo print di campi/NR/NF, condizioni /re/, NR==N, $N==x e END{print NR}. Nessuna variabile, ciclo, concatenazione o aritmetica: le espressioni non supportate danno un errore esplicito (mai un risultato sbagliato).
 
 ### `diff`
 
@@ -631,15 +671,18 @@ Differenze rispetto al comando reale:
 
 Elabora JSON.
 
-Sintassi: `jq [-rcs] 'filtro' [file...]`
+Sintassi: `jq [-rcsnje] 'filtro' [file...]`
 
+- `-n`: nessun input
+- `-j`: senza a capo (con -r)
+- `-e`: esce con 1 se l'ultimo valore è false o null
 - `-r`: stringhe senza virgolette
 - `-c`: output compatto
 - `.campo .[] .[0]`: percorsi
 - `select(cond) map(f) length keys sort`: funzioni
 
 Differenze rispetto al comando reale:
-- Sottoinsieme di jq: percorsi, pipe, select, map, length, keys, sort, unique, add, join, test, costruttori di oggetti/array. Niente variabili, reduce, def.
+- Sottoinsieme di jq: percorsi, pipe, select, map, length, keys, sort, sort_by, group_by, unique, unique_by, min, max, reverse, flatten, paths, index, add, join, test, interpolazione di stringhe \(...), @csv @tsv @json @text @sh, costruttori di oggetti/array. Niente variabili, reduce, def, if/then/else: le funzioni mancanti danno un errore esplicito (codice 3).
 
 ## PowerShell 5.1
 
@@ -970,6 +1013,9 @@ Sintassi: `Set-Variable <nome> <valore>`
 Mostra gli alias (alias: gal).
 
 Sintassi: `Get-Alias [nome]`
+
+Differenze rispetto al comando reale:
+- L'oggetto restituito ha solo CommandType e Name ("alias -> comando"): non ha la proprietà Definition.
 
 ### `Compare-Object`
 
