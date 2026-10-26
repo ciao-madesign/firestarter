@@ -21,7 +21,9 @@
     "course:programma": "tsx scripts/course-tools.ts programma",
     "docs": "npm run docs:commands && npm run course:programma",
     "check": "npm run typecheck && npm test",
-    "test:ui": "vitest run -c vitest.ui.config.ts"
+    "test:ui": "vitest run -c vitest.ui.config.ts",
+    "audit": "tsx scripts/audit-corso.ts && tsx scripts/audit-extra.ts && tsx scripts/audit-variants.ts",
+    "audit:terminale": "tsx scripts/audit-bash-diff.ts && tsx scripts/audit-pwsh-battery.ts && tsx scripts/audit-fuzz.ts"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
