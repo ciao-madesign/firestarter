@@ -1,0 +1,26 @@
+# Servizio systemd dedicato e isolato dagli altri progetti presenti sul Wyse.
+[Unit]
+Description=CLI & API Learning Lab (ambiente simulato)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=learninglab
+Group=learninglab
+WorkingDirectory=__CARTELLA__
+EnvironmentFile=/etc/learning-lab.env
+ExecStart=__NODE__ dist/server.mjs
+Restart=on-failure
+RestartSec=3
+# sandbox: nessun accesso agli altri progetti né al resto del sistema
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=__DATI__
+ReadOnlyPaths=__CARTELLA__
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target
