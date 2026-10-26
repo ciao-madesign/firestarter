@@ -273,6 +273,7 @@ function hasSections(md: string, names: string[]): { missing: string[] } {
 export const m6: Lesson[] = [
   {
     id: 'M6.L1',
+    artifacts: ['~/docs/test-plan.md'],
     module: 6,
     n: 1,
     title: 'Test case e test plan',
@@ -381,6 +382,7 @@ export const m6: Lesson[] = [
   },
   {
     id: 'M6.L2',
+    artifacts: ['~/docs/bug-report.md'],
     module: 6,
     n: 2,
     title: 'Passi di riproduzione e report di bug',
@@ -470,6 +472,7 @@ export const m6: Lesson[] = [
   },
   {
     id: 'M6.L3',
+    artifacts: ['~/docs/m6l3-tasks-api.md'],
     module: 6,
     n: 3,
     title: 'Documentare un endpoint con esempi verificabili',
@@ -543,6 +546,7 @@ export const m6: Lesson[] = [
   },
   {
     id: 'M6.L4',
+    artifacts: ['~/docs/troubleshooting.md'],
     module: 6,
     n: 4,
     title: 'Troubleshooting e verifica da un ambiente pulito',
@@ -630,6 +634,7 @@ export const m6: Lesson[] = [
   },
   {
     id: 'M6.L5',
+    artifacts: ['~/docs/final'],
     module: 6,
     n: 5,
     title: 'Progetto finale: testare e documentare staging',

@@ -182,6 +182,7 @@ if ($script:fail -gt 0) { exit 1 }
 export const m8: Lesson[] = [
   {
     id: 'M8.L1',
+    artifacts: ['~/portfolio/guida-rapida.md'],
     module: 8,
     n: 1,
     title: 'Portfolio 1: guida rapida all\'API',
@@ -270,6 +271,7 @@ export const m8: Lesson[] = [
   },
   {
     id: 'M8.L2',
+    artifacts: ['~/portfolio/openapi.json'],
     module: 8,
     n: 2,
     title: 'Portfolio 2: specifica OpenAPI',
@@ -376,6 +378,7 @@ export const m8: Lesson[] = [
   },
   {
     id: 'M8.L3',
+    artifacts: ['~/portfolio/bug-staging.md', '~/portfolio/troubleshooting.md'],
     module: 8,
     n: 3,
     title: 'Portfolio 3: bug report e troubleshooting',
@@ -472,6 +475,7 @@ export const m8: Lesson[] = [
   },
   {
     id: 'M8.L4',
+    artifacts: ['~/portfolio/test-api.sh', '~/portfolio/test-api.ps1', '~/portfolio/report.txt'],
     module: 8,
     n: 4,
     title: 'Portfolio 4: script di test con report',

@@ -130,6 +130,8 @@ export interface Lesson {
   concepts: string[];
   /** esercizio alternativo sullo stesso concetto, proposto se la verifica fallisce più volte */
   alt?: { task: string; criterion: string; checks: Check[]; solutions?: { bash?: string[]; pwsh?: string[] } };
+  /** file consegnati fuori dalla cartella della lezione (es. ~/docs/...): rimossi quando la lezione parte o viene ripristinata */
+  artifacts?: string[];
   /** il ripasso non sposta la "prossima lezione" */
   review?: boolean;
 }

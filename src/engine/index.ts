@@ -167,6 +167,7 @@ export function execute(state: WorkspaceState, shell: ShellId, line: string, opt
         exit,
         at: state.clock,
         exerciseId: state.activeExercise ?? undefined,
+        seq: (state.cmdSeq = (state.cmdSeq ?? 0) + 1),
         stdout: chunks.filter((c) => c.s === 'out').map((c) => c.t).join('').slice(0, 4000),
         stderr: chunks.filter((c) => c.s === 'err').map((c) => c.t).join('').slice(0, 2000),
       });

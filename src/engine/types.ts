@@ -104,6 +104,8 @@ export interface CommandLogEntry {
   exit: number;
   at: number;
   exerciseId?: string;
+  /** numero progressivo dei comandi del workspace: il ripristino taglia lo storico per numero, non per secondo simulato */
+  seq?: number;
   stdout: string;
   stderr: string;
 }
@@ -124,6 +126,8 @@ export interface ExerciseProgress {
   /** finestra del tentativo corrente: orologio simulato e numero di sequenza API all'avvio */
   startClock?: number;
   startSeq?: number;
+  /** numero progressivo del comando più recente all'avvio del tentativo */
+  startCmdSeq?: number;
 }
 
 export interface PredictionRecord {
@@ -153,6 +157,8 @@ export interface VerifyResult {
   at: number;
   pass: boolean;
   checks: CheckResult[];
+  /** superata con l'esercizio alternativo (i controlli riportati sono quelli dell'alternativa) */
+  viaAlt?: boolean;
 }
 
 export interface Preferences {
@@ -194,6 +200,8 @@ export interface WorkspaceState {
   activeEnv: EnvName;
   shells: Record<ShellId, ShellState>;
   commandLog: CommandLogEntry[];
+  /** contatore dei comandi eseguiti (vedi CommandLogEntry.seq) */
+  cmdSeq?: number;
   activeExercise: string | null;
   progress: Record<string, ExerciseProgress>;
   docVersions: Record<string, DocVersion[]>;

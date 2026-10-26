@@ -196,7 +196,7 @@ export const m1: Lesson[] = [
     objective: 'Usare pwd, ls e cd con percorsi assoluti e relativi, rispettando le maiuscole, e leggere un messaggio di errore.',
     explain: [
       'Un percorso assoluto inizia con `/` e vale ovunque ti trovi. Uno relativo dipende dalla cartella corrente. `.` è la cartella corrente, `..` quella superiore, `~` la home.',
-      'Nel terminale i nomi sono quelli reali: le maiuscole contano (`Progetti` ≠ `progetti`). Sul Mac il Finder mostra nomi tradotti (Documenti), ma il terminale vede `Documents`.',
+      'Nel terminale i nomi sono quelli reali: le maiuscole contano (`Progetti` ≠ `progetti`). Sul Mac il Finder mostra nomi tradotti (Documenti), ma il terminale vede `Documents`; nel laboratorio i nomi che vedi con `ls` sono sempre quelli reali, anche quando sono in italiano.',
       'Un errore si legge da sinistra: `shell: comando: argomento: causa`.',
     ],
     shells: ['bash', 'pwsh'],
@@ -224,7 +224,7 @@ export const m1: Lesson[] = [
       explain: 'Errore di esecuzione: "No such file or directory". Le maiuscole contano; su macOS alcuni dischi non le distinguono, ma non devi fidarti: su Linux falliscono.',
     },
     task: {
-      text: 'Portati in `Progetti/Alpha` con UN solo `cd` e un percorso ASSOLUTO. Poi, SENZA spostarti, elenca il contenuto di `../Beta`.',
+      text: 'Portati in `Progetti/Alpha` con UN solo `cd` e un percorso ASSOLUTO. Poi, SENZA spostarti, elenca il contenuto di `../Beta` scrivendo proprio quel percorso relativo.',
       criterion: 'Il prompt mostra la cartella Alpha e hai eseguito ls (o Get-ChildItem) su ../Beta.',
     },
     checks: [
@@ -240,8 +240,13 @@ export const m1: Lesson[] = [
         id: 'assoluto',
         description: 'Hai usato un cd con percorso assoluto',
         expected: 'cd /... oppure cd ~/...',
-        test: (c) => ({ pass: cmdMatches(c, /^(cd|Set-Location|sl)\s+["']?[/~]/), actual: cmdMatches(c, /^(cd|Set-Location|sl)\s+["']?[/~]/) ? 'sì' : 'nessun cd assoluto riuscito' }),
-        onFail: 'Un percorso assoluto inizia con / (o con ~ per la home).',
+        test: (c) => {
+          // conta l'ULTIMO spostamento riuscito: deve essere un unico cd con percorso assoluto, non una catena di cd relativi
+          const last = [...c.cmds].reverse().find((x) => x.exit === 0 && /(^|[;&]\s*)(cd|Set-Location|sl)\s/.test(x.cmd));
+          const ok = !!last && /(^|[;&]\s*)(cd|Set-Location|sl)\s+["']?(\/|~|\$HOME|\$\{HOME\}|\$env:HOME)/.test(last.cmd);
+          return { pass: ok, actual: ok ? 'sì' : last ? `ultimo cd: ${last.cmd.slice(0, 50)}` : 'nessun cd riuscito' };
+        },
+        onFail: 'Serve UN solo cd con percorso assoluto, che inizia con / (o con ~ per la home): niente catena di cd relativi.',
         errorTag: 'percorsi-maiuscole',
       },
       {
@@ -341,6 +346,13 @@ export const m1: Lesson[] = [
           expected: `${R}/m1l3/Mio Progetto (v2)`,
           test: (c) => ({ pass: cwdOf(c) === `${R}/m1l3/Mio Progetto (v2)`, actual: cwdOf(c) }),
           onFail: 'Metti il nome della cartella tra virgolette.',
+        },
+        {
+          id: 'alt-leggimi',
+          description: 'Hai stampato leggimi.txt dalla cartella',
+          expected: 'Contenuto segreto m1l3: ok',
+          test: (c) => ({ pass: stdoutHas(c, 'Contenuto segreto m1l3'), actual: stdoutHas(c, 'Contenuto segreto m1l3') ? 'ok' : 'frase non trovata nell\'output' }),
+          onFail: 'Dopo il cd, stampa il file con il solo nome (percorso relativo): cat leggimi.txt.',
         },
       ],
       solutions: { bash: ['cd "$HOME/corso-cli/m1l3/Mio Progetto (v2)"', 'cat leggimi.txt'], pwsh: ['cd "$HOME/corso-cli/m1l3/Mio Progetto (v2)"', 'cat leggimi.txt'] },

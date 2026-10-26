@@ -69,10 +69,15 @@ export function startLesson(state: WorkspaceState, id: string, forceSetup = fals
     const vfs = new Vfs(state.fs, () => state.clock);
     if (vfs.exists(dir)) vfs.remove(dir, true);
     vfs.mkdir(dir, true);
+    for (const a of lesson.artifacts ?? []) {
+      const abs = a.startsWith('~') ? HOME + a.slice(1) : a;
+      if (vfs.exists(abs)) vfs.remove(abs, true);
+    }
     // ambiente base dei laboratori: sviluppo, dati iniziali, credenziali nelle variabili d'ambiente
     lesson.setup(makeSetupCtx(state, dir));
     p.startClock = state.clock;
     p.startSeq = state.api.seq;
+    p.startCmdSeq = state.cmdSeq ?? 0;
     p.attempts++;
   }
   return lesson;
@@ -97,7 +102,8 @@ export function buildCheckCtx(state: WorkspaceState, lesson: Lesson, shell: Shel
   const vfs = new Vfs(state.fs, () => state.clock);
   const startClock = p.startClock ?? 0;
   const startSeq = p.startSeq ?? 0;
-  const cmds = state.commandLog.filter((c) => c.shell === shell && c.at >= startClock);
+  const startCmdSeq = p.startCmdSeq;
+  const cmds = state.commandLog.filter((c) => c.shell === shell && (startCmdSeq !== undefined ? (c.seq ?? 0) > startCmdSeq : c.at >= startClock));
   const api = state.api.log.filter((e) => e.seq > startSeq);
   return {
     state,
@@ -150,11 +156,11 @@ function modeFor(prog: ExerciseProgress, shell: ShellId): Completion['mode'] {
 }
 
 /** Valuta i controlli senza registrare nulla (feedback in tempo reale). */
-export function evaluateChecks(state: WorkspaceState, id: string, shell: ShellId): CheckResult[] {
+export function evaluateChecks(state: WorkspaceState, id: string, shell: ShellId, useAlt = false): CheckResult[] {
   const lesson = getLesson(id);
   if (!lesson) return [];
   const ctx = buildCheckCtx(state, lesson, shell);
-  return lesson.checks.map((c) => {
+  return (useAlt && lesson.alt ? lesson.alt.checks : lesson.checks).map((c) => {
     let r: { pass: boolean; actual: string };
     try {
       r = c.test(ctx);
@@ -169,19 +175,36 @@ export function verifyLesson(state: WorkspaceState, id: string, shell: ShellId, 
   const lesson = getLesson(id);
   if (!lesson) throw new Error(`Lezione sconosciuta: ${id}`);
   const p = ensureProgress(state, id);
-  const checks: CheckResult[] = evaluateChecks(state, id, shell);
-  const pass = checks.every((c) => c.pass);
-  const result: VerifyResult = { exerciseId: id, shell, at: state.clock, pass, checks };
+  let checks: CheckResult[] = evaluateChecks(state, id, shell);
+  let pass = checks.every((c) => c.pass);
+  let viaAlt = false;
+  // esercizio alternativo sullo stesso concetto: se la prova principale non è superata ma lo è l'alternativa, la lezione è superata (come aiuto)
+  if (!pass && lesson.alt) {
+    const altChecks = evaluateChecks(state, id, shell, true);
+    if (altChecks.length && altChecks.every((c) => c.pass)) {
+      checks = altChecks;
+      pass = true;
+      viaAlt = true;
+    }
+  }
+  const result: VerifyResult = { exerciseId: id, shell, at: state.clock, pass, checks, ...(viaAlt ? { viaAlt: true } : {}) };
   p.lastVerify = result;
   if (pass) {
     const prev = p.completions[shell];
-    const mode = modeFor(p, shell);
+    const mode = viaAlt && modeFor(p, shell) === 'autonomous' ? 'hinted' : modeFor(p, shell);
     const h = p.help[shell];
     const rank = { solution: 0, hinted: 1, autonomous: 2 } as const;
     if (!prev || rank[mode] >= rank[prev.mode]) {
       p.completions[shell] = { at: state.clock, mode, hints: (h?.hints ?? 0) + (h?.example ?? 0) };
     }
-    if (course) markLessonCompleted(course, lesson, mode, state);
+    if (course) {
+      markLessonCompleted(course, lesson, mode, state);
+      if (viaAlt) {
+        const rec = course.lessons[lesson.id];
+        const note = 'completata con l\'esercizio alternativo: da riprovare con la prova principale';
+        if (rec && !rec.errors.includes(note)) rec.errors.push(note);
+      }
+    }
   } else if (course) {
     for (const c of lesson.checks) {
       const r = checks.find((x) => x.id === c.id);

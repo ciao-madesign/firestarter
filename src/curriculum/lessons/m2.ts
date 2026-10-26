@@ -103,10 +103,12 @@ export const m2: Lesson[] = [
       {
         id: 'errori',
         description: 'errori.txt contiene le 5 righe ERROR (e solo quelle)',
-        expected: '5 righe, tutte con ERROR',
+        expected: '5 righe, identiche a quelle del log che contengono ERROR',
         test: (c) => {
           const l = fileLines(c.read('errori.txt'));
-          return { pass: l.length === 5 && l.every((x) => x.includes('ERROR')), actual: `${l.length} righe${l.length && !l.every((x) => x.includes('ERROR')) ? ', alcune senza ERROR' : ''}` };
+          const orig = fileLines(c.read('server.log')).filter((x) => x.includes('ERROR'));
+          const same = l.length === orig.length && l.every((x, i) => x === orig[i]);
+          return { pass: l.length === 5 && same, actual: `${l.length} righe${l.length && !l.every((x) => x.includes('ERROR')) ? ', alcune senza ERROR' : l.length === 5 && !same ? ', diverse dalle righe originali del log (non modificarle: niente numeri di riga né altro testo)' : ''}` };
         },
         onFail: 'Filtra con grep ERROR (PowerShell: Select-String) e redirigi con >. Controlla il file con cat: deve avere 5 righe.',
       },
@@ -201,7 +203,7 @@ export const m2: Lesson[] = [
     explain: [
       'Una variabile d\'ambiente è ereditata dai programmi che lanci. In Bash la crei con `export NOME=valore`; in PowerShell con `$env:NOME = "valore"`.',
       'Ogni comando termina con un codice di uscita: 0 = successo, altro = errore. Bash lo mette in `$?` (numero). PowerShell ha `$?` (True/False) e `$LASTEXITCODE` (solo per programmi esterni).',
-      'grep esce con 1 se non trova nulla (non è un errore "vero"); `ls` su un percorso inesistente esce con 2.',
+      'grep esce con 1 se non trova nulla (non è un errore "vero"); `ls` su un percorso inesistente esce con 2 (è il valore del `ls` GNU, quello del laboratorio e di Linux; il `ls` del Mac esce con 1: il numero esatto dipende dal sistema, conta che sia diverso da 0).',
     ],
     shells: ['bash', 'pwsh'],
     setup: (c) => c.file('check.txt', 'ok\n'),
@@ -224,7 +226,7 @@ export const m2: Lesson[] = [
     },
     task: {
       text: 'In questa shell: (1) imposta la variabile d\'ambiente STAGE al valore `testing`; (2) in ~/corso-cli/m2l3 esegui un comando su un percorso inesistente e salva in `esito.txt` l\'esito riportato dalla shell per quel comando.',
-      criterion: 'STAGE vale testing; esito.txt contiene 2 (Bash) oppure False (PowerShell).',
+      criterion: 'STAGE vale testing; esito.txt contiene il numero 2 (Bash; anche con una breve etichetta) oppure False (PowerShell).',
     },
     checks: [
       {
@@ -240,8 +242,8 @@ export const m2: Lesson[] = [
         expected: 'Bash: 2; PowerShell: False',
         test: (c) => {
           const t = (c.read('esito.txt') ?? '').trim();
-          const want = c.shell === 'bash' ? '2' : 'False';
-          return { pass: t === want, actual: t || '(vuoto o mancante)' };
+          const ok = c.shell === 'bash' ? /^\D*2\D*$/.test(t) : /^\W*False\W*$/i.test(t);
+          return { pass: ok, actual: t || '(vuoto o mancante)' };
         },
         onFail: 'Subito dopo il comando fallito (stessa riga, separata da ;) scrivi l\'esito: echo $? > esito.txt in Bash; $? > esito.txt in PowerShell.',
       },

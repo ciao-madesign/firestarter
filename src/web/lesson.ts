@@ -276,7 +276,8 @@ export function renderLesson(root: HTMLElement): void {
     verifyBody.push(
       h('div', { class: `result ${v.pass ? 'pass' : 'fail'}`, role: 'status' },
         v.pass ? `Verifica superata (${shellName(v.shell)}) — ${STATUS_LABEL[l.completions?.[v.shell]?.mode ?? 'autonomous'] ?? ''}.` : `Verifica non superata (${shellName(v.shell)}): ${v.checks.filter((c: any) => !c.pass).length} controlli da sistemare. Leggi la colonna "Perché" sotto ogni controllo.`));
-    if (!v.pass && l.hasAlt) verifyBody.push(h('div', { class: 'callout' }, h('strong', null, 'Esercizio alternativo sullo stesso concetto: '), l.alt.task));
+    if (!v.pass && l.hasAlt) verifyBody.push(h('div', { class: 'callout' }, h('strong', null, 'Esercizio alternativo sullo stesso concetto: '), l.alt.task, ' Se lo completi, la lezione risulta superata con l\'alternativa (registrata come aiuto) e potrai riprovare la prova principale.'));
+    if (v.pass && v.viaAlt) verifyBody.push(h('p', { class: 'muted' }, 'Superata con l\'esercizio alternativo.'));
     if (v.pass) {
       const sh2: ShellId = app.shell === 'bash' ? 'pwsh' : 'bash';
       if (l.shells.includes(sh2) && !l.completions?.[sh2]) {

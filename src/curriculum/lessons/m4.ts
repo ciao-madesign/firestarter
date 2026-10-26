@@ -344,7 +344,7 @@ export const m4: Lesson[] = [
       },
     ],
     example: { text: 'Esempio analogo: salvare il valore di un altro header.', cmd: { bash: "curl -sI $TASKFLOW_URL/v1/health | grep -i x-api-version | cut -d' ' -f2 | tr -d '\\r' > versione.txt", pwsh: '(iwr "$env:TASKFLOW_URL/v1/health" -UseBasicParsing).Headers["X-API-Version"] > versione.txt' } },
-    hints: ['Dopo la sesta richiesta la settima mostra gli header del 429: salva il valore con grep/cut/tr (Bash) o dal catch (PowerShell).', 'Per il timeout: curl --max-time 3 e poi echo $? > timeout.txt; in PowerShell $_.Exception.Message nel catch.'],
+    hints: ['La sesta richiesta riceve già il 429 (ne sono ammesse 5): leggi gli header di una risposta 429 (anche una settima) e salva il valore con grep/cut/tr (Bash) o dal catch (PowerShell).', 'Per il timeout: curl --max-time 3 e poi echo $? > timeout.txt; in PowerShell $_.Exception.Message nel catch.'],
     solutions: {
       bash: ['cd ~/corso-cli/m4l5', `for i in 1 2 3 4 5 6; do curl -s -o /dev/null -w "%{http_code} " ${AUTH_H} "$TASKFLOW_URL/v1/search?q=api"; done`, `curl -si ${AUTH_H} "$TASKFLOW_URL/v1/search?q=api" | grep -i retry-after | cut -d" " -f2 | tr -d "\\r" > attesa.txt`, 'curl -s --max-time 3 $TASKFLOW_URL/v1/slow; echo $? > timeout.txt'],
       pwsh: ['cd ~/corso-cli/m4l5', '$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', '1..5 | ForEach-Object { Invoke-RestMethod "$env:TASKFLOW_URL/v1/search?q=api" -Headers $h | Out-Null }', 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/search?q=api" -Headers $h } catch { $_.Exception.Response.Headers["Retry-After"] > attesa.txt }', 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/slow" -TimeoutSec 3 } catch { $_.Exception.Message > timeout.txt }'],

@@ -282,10 +282,12 @@ export const m5: Lesson[] = [
       {
         id: 'script',
         description: 'Lo script esiste',
-        expected: 'retry.sh / retry.ps1',
+        expected: 'retry.sh / retry.ps1, con la pausa di 1 secondo tra i tentativi',
         test: (c) => {
           const f = c.shell === 'bash' ? 'retry.sh' : 'retry.ps1';
-          return { pass: c.read(f) !== null, actual: c.read(f) !== null ? f : `${f} mancante` };
+          const t = c.read(f);
+          if (t === null) return { pass: false, actual: `${f} mancante` };
+          return { pass: /sleep|Start-Sleep/i.test(t), actual: /sleep|Start-Sleep/i.test(t) ? f : `${f} senza pausa tra i tentativi (sleep 1 / Start-Sleep -Seconds 1)` };
         },
         onFail: 'Crea il file nella cartella della lezione (heredoc con cat > file <<EOF in Bash; Set-Content in PowerShell).',
       },

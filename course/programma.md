@@ -74,7 +74,7 @@ Obiettivo: Impostare una variabile d'ambiente e leggere l'esito dell'ultimo coma
 
 Concetti: variabili d'ambiente; codici di uscita ($?); differenza Bash/PowerShell sugli esiti.
 
-Verifica (criterio): STAGE vale testing; esito.txt contiene 2 (Bash) oppure False (PowerShell).
+Verifica (criterio): STAGE vale testing; esito.txt contiene il numero 2 (Bash; anche con una breve etichetta) oppure False (PowerShell).
 
 ### M2.L4 — Test positivi e negativi: atteso ed effettivo
 
