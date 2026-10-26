@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Installazione ISOLATA del Learning Lab su Ubuntu (Wyse), accanto ad altri progetti (es. PersonalHub).
 # Non tocca altri servizi, porte, utenti, Docker, nginx o la configurazione Tailscale esistente.
-# Uso:  LAB_DATA=/mnt/ssd/learning-lab ./deploy/install-wyse.sh
+# Uso:  LAB_DATA=/mnt/data/learning-lab ./deploy/install-wyse.sh
+# Solo rete di casa: LAB_HOST=<IP del Wyse> LAB_TRUST_PROXY=0 LAB_DATA=... ./deploy/install-wyse.sh
 # Prima di modificare qualsiasi cosa esegue controlli e si ferma se qualcosa è già occupato.
 set -euo pipefail
 
@@ -12,6 +13,8 @@ if [ -z "${NODE:-}" ]; then
   else NODE=/opt/node22/bin/node; fi
 fi
 PORT="${LAB_PORT:-3100}"
+HOST="${LAB_HOST:-127.0.0.1}"          # per la sola rete di casa: l'IP del Wyse (non 0.0.0.0)
+TRUST_PROXY="${LAB_TRUST_PROXY:-1}"     # 1 solo dietro Tailscale/proxy; 0 con accesso diretto dalla LAN
 SERVICE="learning-lab"
 RUN_USER="learninglab"
 LAB_DATA="${LAB_DATA:-/var/lib/learning-lab}"
@@ -53,10 +56,10 @@ if [ -z "${LAB_PASSWORD:-}" ]; then read -r -s -p "Scegli la password di accesso
 sudo install -m 600 -o root -g root /dev/null "/etc/$SERVICE.env"
 sudo tee "/etc/$SERVICE.env" >/dev/null <<ENV
 PORT=$PORT
-LAB_HOST=127.0.0.1
+LAB_HOST=$HOST
 LAB_DATA_DIR=$LAB_DATA
 LAB_COURSE_FILE=$LAB_DATA/course/progress.json
-LAB_TRUST_PROXY=1
+LAB_TRUST_PROXY=$TRUST_PROXY
 LAB_PASSWORD=$LAB_PASSWORD
 ENV
 
@@ -67,6 +70,6 @@ sudo systemctl enable --now "$SERVICE"
 
 echo "== 4/4 Verifica =="
 sleep 2
-curl -fsS "http://127.0.0.1:$PORT/api/health" && echo
-echo "Learning Lab attivo SOLO su 127.0.0.1:$PORT. Per l'accesso da fuori: docs/INSTALLAZIONE-WYSE.md"
+curl -fsS "http://$HOST:$PORT/api/health" && echo
+echo "Learning Lab attivo su $HOST:$PORT. Per l'accesso da fuori: docs/INSTALLAZIONE-WYSE.md"
 echo "Disinstallazione completa: ./deploy/uninstall-wyse.sh"

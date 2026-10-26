@@ -41,6 +41,10 @@ Se sul Wyse non c'è Node 22: scarica il pacchetto ufficiale `node-v22.*-linux-x
    Indirizzo: `https://NOME-DEL-WYSE.tailNNNN.ts.net:8443`. Con Funnel è pubblico: **la password è l'unica protezione**, scegline una lunga (16 o più caratteri).
 5. Apri l'indirizzo, inserisci la password; "Aggiungi a schermata Home" lo trasforma in app.
 
+## Solo rete di casa (senza Tailscale)
+
+`LAB_HOST=<IP del Wyse> LAB_TRUST_PROXY=0 LAB_DATA=/mnt/data/learning-lab ./deploy/install-wyse.sh`, poi `http://<IP del Wyse>:3100`. Il traffico non è cifrato (http): la password viaggia in chiaro sulla LAN, quindi usa una password che non riusi altrove. Non esporre la porta 3100 su Internet. Più avanti si può passare a Tailscale cambiando `LAB_HOST=127.0.0.1` e `LAB_TRUST_PROXY=1` in `/etc/learning-lab.env`.
+
 ## Note
 
 - Il PC di lavoro può bloccare `*.ts.net` o porte non standard: in quel caso serve un'altra via (es. Cloudflare Tunnel), da valutare dopo.
