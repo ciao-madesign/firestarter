@@ -21,9 +21,14 @@ Lo script fa **prima i controlli e chiede conferma**; se qualcosa è già occupa
 
 ## Prerequisiti
 
-- Ubuntu a 64 bit sul Wyse e Node 22 (già presente in `/opt/node22/bin/node`).
+- Ubuntu a 64 bit sul Wyse e Node 22 o successivo: lo script usa `$NODE`, poi `/opt/node22/bin/node`, poi il `node` di sistema. Se manca, vedi «Node 22 senza installazioni globali» sotto.
+- Il progetto va copiato **fuori da `/home`** (per esempio `/opt/learning-lab`): il servizio ha `ProtectHome=true` e non vedrebbe una cartella in `/home` (lo script lo rifiuta).
 - Un SSD esterno montato (cartella dati dedicata); l'eMMC da 16 GB basta per sistema e applicazione.
 - Account Tailscale (già installato sul Wyse se lo usi per altro).
+
+## Node 22 senza installazioni globali
+
+Se sul Wyse non c'è Node 22: scarica il pacchetto ufficiale `node-v22.*-linux-x64.tar.xz` da nodejs.org e scompattalo in una cartella nuova (per esempio `/opt/node22`, in modo che esista `/opt/node22/bin/node`). Non usa `apt` né modifica Node o npm eventualmente già presenti per altri progetti.
 
 ## Passi
 

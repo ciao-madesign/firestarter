@@ -5,7 +5,12 @@
 # Prima di modificare qualsiasi cosa esegue controlli e si ferma se qualcosa è già occupato.
 set -euo pipefail
 
-NODE="${NODE:-/opt/node22/bin/node}"
+# Node 22: usa $NODE se indicato, altrimenti /opt/node22/bin/node, altrimenti il "node" di sistema se è la 22 o successiva.
+if [ -z "${NODE:-}" ]; then
+  if [ -x /opt/node22/bin/node ]; then NODE=/opt/node22/bin/node
+  elif command -v node >/dev/null 2>&1; then NODE="$(command -v node)"
+  else NODE=/opt/node22/bin/node; fi
+fi
 PORT="${LAB_PORT:-3100}"
 SERVICE="learning-lab"
 RUN_USER="learninglab"
@@ -18,6 +23,7 @@ fail() { echo "STOP: $*" >&2; exit 1; }
 echo "== Controlli preliminari (nessuna modifica) =="
 "$NODE" -v | grep -q '^v2[2-9]' || fail "serve Node 22 o successivo ($NODE)"
 [ -f "$DIR/package.json" ] || fail "esegui lo script dalla copia del progetto"
+case "$DIR" in /home/*|/root/*) fail "il servizio ha ProtectHome=true e non vedrebbe $DIR: installa il progetto fuori da /home, per esempio in /opt/learning-lab";; esac
 case "$DIR" in *personalhub*) fail "la cartella del lab non deve stare dentro PersonalHub";; esac
 case "$LAB_DATA" in *personalhub*) fail "i dati del lab non devono stare dentro PersonalHub";; esac
 [ ! -e "/etc/systemd/system/$SERVICE.service" ] || fail "il servizio $SERVICE esiste già (aggiornamento: vedi la guida)"
@@ -38,6 +44,11 @@ sudo mkdir -p "$LAB_DATA"
 sudo touch "$LAB_DATA/.learning-lab"
 sudo chown -R "$RUN_USER:$RUN_USER" "$LAB_DATA"
 sudo chmod 700 "$LAB_DATA"
+# stato del corso: se esiste nel progetto lo si copia (una sola volta) tra i dati del lab
+if [ -f "$DIR/course/progress.json" ] && [ ! -f "$LAB_DATA/course/progress.json" ]; then
+  sudo install -d -m 700 -o "$RUN_USER" -g "$RUN_USER" "$LAB_DATA/course"
+  sudo install -m 600 -o "$RUN_USER" -g "$RUN_USER" "$DIR/course/progress.json" "$LAB_DATA/course/progress.json"
+fi
 if [ -z "${LAB_PASSWORD:-}" ]; then read -r -s -p "Scegli la password di accesso al lab (lunga): " LAB_PASSWORD; echo; fi
 sudo install -m 600 -o root -g root /dev/null "/etc/$SERVICE.env"
 sudo tee "/etc/$SERVICE.env" >/dev/null <<ENV
