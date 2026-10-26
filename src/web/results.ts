@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { clear, copyText, h, renderMarkdown, toast } from './dom.ts';
-import { api, app, on, refreshSession, shellName, type Json, type ShellId } from './state.ts';
+import { api, app, download, on, refreshSession, shellName, workspaceId, type Json, type ShellId } from './state.ts';
 import { openLesson } from './lesson.ts';
 
 let root: HTMLElement;
@@ -51,7 +51,7 @@ function lastVerifySection(): HTMLElement | null {
   if (!v) return null;
   const sec = h('section', { 'aria-label': 'Ultima verifica' }, h('h3', null, `Ultima verifica — ${app.lesson.id} (${shellName(v.shell)}): ${v.pass ? 'superata' : 'non superata'}`));
   sec.append(h('div', { class: 'table-wrap' }, h('table', null, h('thead', null, h('tr', null, ['Controllo', 'Atteso', 'Ottenuto', 'Esito'].map((c) => h('th', { scope: 'col' }, c)))), h('tbody', null, v.checks.map((c: Json) => h('tr', { class: c.pass ? 'ok' : 'e4' }, h('td', null, c.description), h('td', null, c.expected), h('td', null, c.actual), h('td', null, c.pass ? 'ok' : 'differenza')))))));
-  sec.append(h('p', null, h('a', { href: '/api/report', download: 'report-test.md' }, 'Scarica il report (Markdown)'), ' — riutilizzabile per issue, bug report e documentazione.'));
+  sec.append(h('p', null, h('button', { class: 'linkish', type: 'button', on: { click: () => void download('/report', 'report-test.md').catch((e) => toast((e as Error).message, 'error')) } }, 'Scarica il report (Markdown)'), ' — riutilizzabile per issue, bug report e documentazione.'));
   return sec;
 }
 
@@ -134,7 +134,10 @@ function draw(): void {
   root.append(
     h('section', null,
       h('h3', null, 'Esportazione e dati personali'),
-      h('p', null, 'Esporta i principali artefatti in formati aperti: ', h('a', { href: '/api/export?format=json', download: 'workspace.json' }, 'JSON'), ' · ', h('a', { href: '/api/export?format=yaml', download: 'workspace.yaml' }, 'YAML'), ' · ', h('a', { href: '/api/report', download: 'report-test.md' }, 'report (Markdown)'), '. I documenti sono anche scaricabili dalla scheda Documentazione.'),
+      h('p', null, 'Esporta i principali artefatti in formati aperti: ', h('button', { class: 'linkish', type: 'button', on: { click: () => void download('/export?format=json', 'workspace.json') } }, 'JSON'), ' · ', h('button', { class: 'linkish', type: 'button', on: { click: () => void download('/export?format=yaml', 'workspace.yaml') } }, 'YAML'), ' · ', h('button', { class: 'linkish', type: 'button', on: { click: () => void download('/report', 'report-test.md') } }, 'report (Markdown)'), '. I documenti sono anche scaricabili dalla scheda Documentazione.'),
+      h('details', { class: 'sec' }, h('summary', null, 'Usare lo stesso workspace da un altro dispositivo (solo modalità multi-workspace)'), h('div', { class: 'sec-body' },
+        h('p', { class: 'muted' }, 'Il codice identifica il tuo workspace: chi lo conosce può leggerlo e modificarlo. Non condividerlo. In modalità personale (predefinita) il server usa un solo workspace e questo codice è ignorato.'),
+        h('div', { class: 'row' }, h('code', null, location.origin + '/#ws=' + workspaceId()), h('button', { class: 'btn small', type: 'button', on: { click: () => void copyText(location.origin + '/#ws=' + workspaceId()).then(() => toast('Link copiato')) } }, 'Copia il link')))),
       h('button', { class: 'btn danger', type: 'button', on: { click: async () => {
         if (!confirm('Eliminare TUTTI i dati del workspace (file, progressi, note)? Non si può annullare.')) return;
         await api('DELETE', '/workspace');

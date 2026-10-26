@@ -152,6 +152,12 @@ export const CATALOG: CommandDoc[] = [
   c('ConvertTo-Json', P, 'cmdlet', 'ConvertTo-Json [-Depth n] [-Compress]', 'Trasforma oggetti in testo JSON.', [], ['La profondità predefinita è 2 come in PowerShell: oggetti annidati più profondi vengono troncati.']),
   c('Invoke-RestMethod', P, 'cmdlet', 'Invoke-RestMethod -Uri <url> [-Method <m>] [-Headers <hashtable>] [-Body <testo|hashtable>] [-ContentType <tipo>]', 'Chiama un\'API e converte automaticamente la risposta JSON in oggetti (alias: irm).', ['-Uri|URL', '-Method|Get, Post, Put, Patch, Delete', '-Headers|hashtable di header', '-Body|corpo; una stringa è inviata così com\'è', '-ContentType|es. application/json', '-TimeoutSec|timeout'], ['Un body stringa senza -ContentType viene inviato come application/x-www-form-urlencoded: indica -ContentType application/json.', 'Con status >= 400 genera un errore terminante.'], 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/health"'),
   c('Invoke-WebRequest', P, 'cmdlet', 'Invoke-WebRequest -Uri <url> [-Method <m>] [-Headers <hashtable>] [-Body <testo>] [-UseBasicParsing]', 'Chiama un URL e restituisce la risposta completa (StatusCode, Headers, Content) (alias: iwr; in Windows PowerShell 5.1 anche `curl`).', ['-Uri|URL', '-Method|metodo', '-Headers|header', '-Body|corpo', '-ContentType|tipo del corpo'], ['Con status >= 400 genera un errore terminante: per leggere lo status usa try/catch.', 'In Windows PowerShell 5.1 `curl` è un alias di Invoke-WebRequest; il vero curl è `curl.exe`.']),
+  c('Get-Item', P, 'cmdlet', 'Get-Item <percorso> [-Force]', 'Restituisce un file o una cartella come oggetto (proprietà Name, FullName, Length, LastWriteTime).'),
+  c('Rename-Item', P, 'cmdlet', 'Rename-Item <percorso> <nuovoNome>', 'Rinomina un file o una cartella (alias: ren, rni).'),
+  c('Write-Warning', P, 'cmdlet', 'Write-Warning <messaggio>', 'Scrive un avviso (prefisso WARNING:).'),
+  c('Out-Host', P, 'cmdlet', 'Out-Host', 'Invia la pipeline direttamente allo schermo.'),
+  c('New-Object', P, 'cmdlet', 'New-Object -TypeName PSObject -Property <hashtable>', 'Crea un oggetto (nel laboratorio solo PSObject e Hashtable).', [], ['Gli altri tipi .NET non sono disponibili.']),
+  c('Invoke-Expression', P, 'cmdlet', 'Invoke-Expression <comando>', "Esegue il testo come comando PowerShell (alias: iex). Usalo con cautela: esegue ciò che gli passi.", [], ['Nel laboratorio esegue sempre dentro il motore simulato.']),
   c('Get-Variable', P, 'cmdlet', 'Get-Variable [nome]', 'Elenca le variabili.'),
   c('Get-Command', P, 'cmdlet', 'Get-Command <nome>', 'Dice se un nome è cmdlet, alias, funzione o applicazione (alias: gcm).'),
   c('Get-Help', P, 'cmdlet', 'Get-Help <cmdlet>', 'Mostra la guida del laboratorio (alias: help, man).'),
@@ -179,7 +185,7 @@ const ALIASES: Record<string, string> = {
   measure: 'Measure-Object', group: 'Group-Object', ft: 'Format-Table', fl: 'Format-List', irm: 'Invoke-RestMethod', iwr: 'Invoke-WebRequest',
   curl: 'Invoke-WebRequest', wget: 'Invoke-WebRequest', gcm: 'Get-Command', help: 'Get-Help', man: 'Get-Help', h: 'Get-History', history: 'Get-History',
   ps: 'Get-Process', gps: 'Get-Process', clear: 'Clear-Host', cls: 'Clear-Host', gal: 'Get-Alias', diff: 'Compare-Object', compare: 'Compare-Object',
-  sleep: 'Start-Sleep', gv: 'Get-Variable', mkdir: 'New-Item', sls: 'Select-String',
+  sleep: 'Start-Sleep', gv: 'Get-Variable', mkdir: 'New-Item', ren: 'Rename-Item', rni: 'Rename-Item', iex: 'Invoke-Expression', sls: 'Select-String',
 };
 
 /** Alias PowerShell (Windows PowerShell 5.1: `curl` e `wget` puntano a Invoke-WebRequest). */

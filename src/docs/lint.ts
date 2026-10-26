@@ -103,14 +103,14 @@ export function headingSections(md: string): { heading: MdHeading; text: string 
 }
 
 const STATUS_RE =
-  /(?:status(?:\s+code)?|stato|codice|http|restituisce|risponde|returns?|risposta|responds?)\s*:?\s*[`*]*([1-5]\d\d)\b|^\s*\|\s*[`*]*([1-5]\d\d)[`*]*\s*\||\b([1-5]\d\d)\s+(?:OK|Created|No Content|Bad Request|Unauthorized|Forbidden|Not Found|Conflict|Unprocessable Entity|Too Many Requests|Internal Server Error)\b/gi;
+  /(?:status(?:\s+code)?|stato|codice|http|restituisce|risponde|returns?|risposta|responds?)\s*:?\s*[`*]*([1-5]\d\d)\b|^\s*\|\s*[`*]*([1-5]\d\d)[`*]*\s*\||\(([1-5]\d\d)\)|[→>]\s*([1-5]\d\d)\b|\b([1-5]\d\d)\s+(?:OK|Created|No Content|Bad Request|Unauthorized|Forbidden|Not Found|Conflict|Unprocessable Entity|Too Many Requests|Internal Server Error)\b/gi;
 
 export function statusCodesIn(text: string): number[] {
   const out: number[] = [];
   for (const line of text.split('\n')) {
     STATUS_RE.lastIndex = 0;
     let m: RegExpExecArray | null;
-    while ((m = STATUS_RE.exec(line))) out.push(parseInt(m[1] ?? m[2] ?? m[3], 10));
+    while ((m = STATUS_RE.exec(line))) out.push(parseInt(m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5], 10));
   }
   return out;
 }

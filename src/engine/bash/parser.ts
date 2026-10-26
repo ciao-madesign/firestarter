@@ -191,6 +191,7 @@ export class Parser {
     if (w === 'while' || w === 'until') {
       this.pos += w.length;
       const cond = this.parseList(['do']);
+      this.requireNonEmpty(cond, 'do');
       this.expectWord('do');
       const body = this.parseList(['done']);
       this.expectWord('done');
@@ -261,6 +262,7 @@ export class Parser {
     this.pos += 2;
     const branches: { cond: Node; body: Node }[] = [];
     let cond = this.parseList(['then']);
+    this.requireNonEmpty(cond, 'then');
     this.expectWord('then');
     let body = this.parseList(['elif', 'else', 'fi']);
     branches.push({ cond, body });
@@ -272,6 +274,7 @@ export class Parser {
       if (w === 'elif') {
         this.pos += 4;
         cond = this.parseList(['then']);
+        this.requireNonEmpty(cond, 'then');
         this.expectWord('then');
         body = this.parseList(['elif', 'else', 'fi']);
         branches.push({ cond, body });
@@ -284,6 +287,13 @@ export class Parser {
       } else throw new BashSyntaxError("syntax error: atteso 'fi'");
     }
     return { type: 'if', branches, else: elseNode };
+  }
+
+  private requireNonEmpty(list: Node, token: string): void {
+    if (list.type === 'list' && !list.items.length) {
+      if (this.eof()) throw new Incomplete(token);
+      throw new BashSyntaxError(`syntax error near unexpected token \`${token}'`);
+    }
   }
 
   private parseFor(): Node {

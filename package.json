@@ -12,7 +12,14 @@
     "dev": "npm run build:web && tsx watch src/server/main.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "docs:commands": "tsx scripts/gen-commands-doc.ts"
+    "docs:commands": "tsx scripts/gen-commands-doc.ts",
+    "course:init": "tsx scripts/course-tools.ts init",
+    "course:render": "tsx scripts/course-tools.ts render",
+    "course:import": "tsx scripts/course-tools.ts import",
+    "course:export": "tsx scripts/course-tools.ts export",
+    "course:programma": "tsx scripts/course-tools.ts programma",
+    "docs": "npm run docs:commands && npm run course:programma",
+    "check": "npm run typecheck && npm test"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

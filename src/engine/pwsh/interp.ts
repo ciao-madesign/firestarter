@@ -302,7 +302,7 @@ export class PsRuntime {
     const text = this.src.slice(pos.start, Math.max(pos.start + 1, pos.end)).split('\n')[0];
     const head = err.cmdName ? `${err.cmdName} : ${err.message}` : err.message;
     this.io.err(
-      `${head}\nAt line:${line} char:${col}\n+ ${lineText}\n+ ${' '.repeat(Math.max(0, col - 1))}${'~'.repeat(Math.max(1, text.trimEnd().length))}\n    + CategoryInfo          : ${err.category}: (${err.target}) [${err.fqid === 'CommandNotFoundException' ? '' : err.cmdName}], ${excClass(err.fqid)}\n    + FullyQualifiedErrorId : ${err.fqid}\n`,
+      `${head}\nAt line:${line} char:${col}\n+ ${lineText}\n+ ${' '.repeat(Math.max(0, col - 1))}${'~'.repeat(Math.max(1, text.trimEnd().length))}\n    + CategoryInfo          : ${err.category}: (${err.target || ':'}) [${err.fqid === 'CommandNotFoundException' ? '' : err.cmdName}], ${excClass(err.fqid)}\n    + FullyQualifiedErrorId : ${err.fqid}\n`,
     );
     this.errors.unshift(this.errorRecord(err));
     this.cmdPos = { start: 0, end: 0 };

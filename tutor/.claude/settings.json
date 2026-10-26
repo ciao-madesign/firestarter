@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Edit(../course/progress.json)",
+      "Edit(../course/progress.md)",
+      "Write(../course/progress.json)",
+      "Write(../course/progress.md)"
+    ],
+    "deny": [
+      "Bash",
+      "NotebookEdit",
+      "Edit(../src/**)",
+      "Write(../src/**)",
+      "Read(~/.ssh/**)",
+      "Read(~/.claude.json)"
+    ]
+  }
+}

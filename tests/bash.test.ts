@@ -66,6 +66,10 @@ describe('Bash: quoting ed espansioni', () => {
     expect(r.err).toContain('syntax error near unexpected token `(\'');
     expect(r.exit).toBe(2);
   });
+  it('una condizione vuota è un errore di sintassi', () => {
+    const { bash } = lab();
+    expect(bash('if then fi').err).toContain("syntax error near unexpected token `then'");
+  });
   it('sostituzione di comando, aritmetica, brace expansion, glob', () => {
     const { bash } = lab();
     expect(bash('echo $(echo ciao)').out).toBe('ciao\n');

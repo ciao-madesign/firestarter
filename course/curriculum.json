@@ -1,0 +1,721 @@
+{
+  "version": "0.1.0",
+  "modules": [
+    {
+      "n": 1,
+      "title": "Fondamenti",
+      "summary": "Terminale e shell, variabili, prompt, percorsi, quoting, opzioni, man, lettura file.",
+      "lessons": [
+        {
+          "id": "M1.R",
+          "title": "Ripasso rapido dei 4 errori ricorrenti",
+          "objective": "In circa 5 minuti: percorsi assoluti con le maiuscole giuste, errore di sintassi vs errore di esecuzione, lettura del prompt, previsioni coerenti.",
+          "concepts": [
+            "ripasso: percorsi assoluti case-sensitive",
+            "ripasso: errore di sintassi vs errore di esecuzione",
+            "ripasso: lettura del prompt"
+          ],
+          "skills": [
+            "comandi",
+            "output",
+            "autonomia"
+          ],
+          "review": true,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M1.L1",
+          "title": "Terminale, shell, variabili",
+          "objective": "Distinguere terminale e shell, leggere il prompt, usare echo e le variabili ($SHELL, $HOME) e riconoscere il fallimento silenzioso.",
+          "concepts": [
+            "terminale e shell",
+            "echo",
+            "variabili con $",
+            "lettura del prompt",
+            "fallimento silenzioso delle variabili inesistenti"
+          ],
+          "skills": [
+            "comandi",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M1.L2",
+          "title": "Percorsi e navigazione",
+          "objective": "Usare pwd, ls e cd con percorsi assoluti e relativi, rispettando le maiuscole, e leggere un messaggio di errore.",
+          "concepts": [
+            "pwd, ls, cd",
+            "percorso assoluto e relativo",
+            "le maiuscole contano",
+            "lettura di un messaggio di errore"
+          ],
+          "skills": [
+            "comandi",
+            "output",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M1.L3",
+          "title": "Spazi, virgolette e quoting",
+          "objective": "Capire che la shell divide la riga negli spazi, usare le virgolette per un unico argomento e distinguere errore di sintassi ed errore di esecuzione.",
+          "concepts": [
+            "la shell divide la riga negli spazi",
+            "le virgolette creano un unico argomento",
+            "caratteri speciali",
+            "errore di sintassi ed errore di esecuzione"
+          ],
+          "skills": [
+            "comandi",
+            "output",
+            "diagnosi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M1.L4",
+          "title": "Opzioni, help e lettura dei file",
+          "objective": "Riconoscere comando, opzioni e argomenti; consultare man; leggere file con cat/head; capire i file nascosti.",
+          "concepts": [
+            "comando, opzioni e argomenti",
+            "ls -l",
+            "man",
+            "-a e file nascosti",
+            "opzioni combinabili",
+            "cat",
+            "commenti con # nei file di configurazione"
+          ],
+          "skills": [
+            "comandi",
+            "output",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "title": "Comporre e testare",
+      "summary": "Pipe, redirezione, filtri, variabili d'ambiente, codici di uscita, test positivi e negativi.",
+      "lessons": [
+        {
+          "id": "M2.L1",
+          "title": "Pipe e redirezione dell'output",
+          "objective": "Collegare comandi con | e scrivere l'output su file con > e >>, conoscendo il rischio di sovrascrittura.",
+          "concepts": [
+            "pipe |",
+            "redirezione > e >>",
+            "rischio di sovrascrittura con >",
+            "grep come filtro"
+          ],
+          "skills": [
+            "comandi",
+            "testing",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M2.L2",
+          "title": "Filtri: grep, sort, uniq, cut, wc",
+          "objective": "Comporre filtri in pipeline per estrarre, ordinare e contare dati da un log.",
+          "concepts": [
+            "filtri in pipeline",
+            "cut, sort, uniq -c, wc",
+            "Group-Object e Measure-Object in PowerShell"
+          ],
+          "skills": [
+            "comandi",
+            "output",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M2.L3",
+          "title": "Variabili d'ambiente e codici di uscita",
+          "objective": "Impostare una variabile d'ambiente e leggere l'esito dell'ultimo comando ($? in Bash; $? e $LASTEXITCODE in PowerShell).",
+          "concepts": [
+            "variabili d'ambiente",
+            "codici di uscita ($?)",
+            "differenza Bash/PowerShell sugli esiti"
+          ],
+          "skills": [
+            "comandi",
+            "output",
+            "testing"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M2.L4",
+          "title": "Test positivi e negativi: atteso ed effettivo",
+          "objective": "Provare un programma con input validi e non validi e documentare risultato atteso ed effettivo in una tabella.",
+          "concepts": [
+            "input validi e non validi",
+            "test negativi",
+            "risultato atteso ed effettivo",
+            "permesso di esecuzione e chmod"
+          ],
+          "skills": [
+            "testing",
+            "output",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "title": "HTTP e API",
+      "summary": "Client e server, URL, metodi, status code, header, body, JSON, parametri, errore HTTP ed errore applicativo.",
+      "lessons": [
+        {
+          "id": "M3.L1",
+          "title": "Client e server, URL e metodi",
+          "objective": "Capire chi fa cosa in una richiesta HTTP, leggere un URL e inviare una prima richiesta GET con curl (o Invoke-RestMethod).",
+          "concepts": [
+            "client e server",
+            "URL ed endpoint",
+            "metodi HTTP",
+            "GET con curl",
+            "connessione rifiutata (curl 7)"
+          ],
+          "skills": [
+            "http",
+            "comandi",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M3.L2",
+          "title": "Status code e header",
+          "objective": "Leggere lo status code e gli header di una risposta, e salvarli con gli strumenti della shell.",
+          "concepts": [
+            "status code",
+            "header",
+            "curl -i, -I, -w",
+            "X-Request-Id",
+            "differenza 404/405"
+          ],
+          "skills": [
+            "http",
+            "output",
+            "comandi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M3.L3",
+          "title": "Body JSON, parametri e Content-Type",
+          "objective": "Usare query parameter e inviare un body JSON dichiarando il Content-Type, con l'URL correttamente quotato.",
+          "concepts": [
+            "query parameter",
+            "body JSON",
+            "Content-Type",
+            "quoting degli URL",
+            "header Authorization"
+          ],
+          "skills": [
+            "http",
+            "comandi",
+            "testing"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M3.L4",
+          "title": "Errore HTTP ed errore applicativo a confronto",
+          "objective": "Distinguere lo status HTTP dal codice di errore del corpo (applicativo) e usarli entrambi per descrivere un problema.",
+          "concepts": [
+            "errore HTTP vs errore applicativo",
+            "404 route_not_found vs not_found",
+            "422 validation_failed",
+            "401 unauthorized"
+          ],
+          "skills": [
+            "http",
+            "diagnosi",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        }
+      ]
+    },
+    {
+      "n": 4,
+      "title": "Testing API REST + OpenAPI",
+      "summary": "Specifica OpenAPI, autenticazione e segreti, CRUD, validazione, paginazione, idempotenza, timeout, rate limit, confronto con PowerShell.",
+      "lessons": [
+        {
+          "id": "M4.L1",
+          "title": "Leggere una specifica OpenAPI",
+          "objective": "Scaricare la specifica OpenAPI del servizio e ricavarne informazioni verificabili (quali endpoint accettano POST).",
+          "concepts": [
+            "struttura di una specifica OpenAPI",
+            "jq di base",
+            "ConvertFrom-Json"
+          ],
+          "skills": [
+            "http",
+            "testing",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M4.L2",
+          "title": "Autenticazione Bearer e segreti",
+          "objective": "Ottenere un access token senza scrivere i segreti nei comandi e usarlo in una richiesta autenticata.",
+          "concepts": [
+            "autenticazione Bearer",
+            "segreti in variabili d'ambiente",
+            "ottenere un token",
+            "jq -r"
+          ],
+          "skills": [
+            "http",
+            "testing",
+            "diagnosi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M4.L3",
+          "title": "CRUD con JSON, Content-Type e Accept",
+          "objective": "Creare, leggere e aggiornare una risorsa con richieste HTTP, verificando lo stato dopo ogni passaggio.",
+          "concepts": [
+            "CRUD con HTTP",
+            "Content-Type e Accept",
+            "PATCH vs PUT",
+            "409 conflitto",
+            "Location header"
+          ],
+          "skills": [
+            "http",
+            "testing",
+            "comandi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M4.L4",
+          "title": "Validazione, paginazione e idempotenza",
+          "objective": "Leggere pagine di risultati, riconoscere gli errori di validazione e verificare l'idempotenza di DELETE.",
+          "concepts": [
+            "paginazione",
+            "validazione 422",
+            "400 vs 422",
+            "idempotenza"
+          ],
+          "skills": [
+            "http",
+            "testing",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M4.L5",
+          "title": "Timeout e rate limit",
+          "objective": "Riconoscere e documentare un rate limit (429, Retry-After) e un timeout del client.",
+          "concepts": [
+            "rate limit 429",
+            "header Retry-After",
+            "timeout del client (curl 28)"
+          ],
+          "skills": [
+            "http",
+            "testing",
+            "diagnosi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M4.L6",
+          "title": "Dallo stesso test a PowerShell",
+          "objective": "Trasferire una procedura di test da Bash a PowerShell 5.1: oggetti al posto del testo, errori HTTP come eccezioni, e la trappola dell'alias curl.",
+          "concepts": [
+            "trasferire una procedura da Bash a PowerShell",
+            "alias curl vs curl.exe",
+            "Invoke-RestMethod",
+            "gestione degli errori HTTP in PowerShell"
+          ],
+          "skills": [
+            "http",
+            "comandi",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "pwsh"
+          ]
+        }
+      ]
+    },
+    {
+      "n": 5,
+      "title": "Integrazioni e diagnosi",
+      "summary": "DNS, connessioni rifiutate, 4xx e 5xx, log, individuare il punto di rottura, retry e script elementari.",
+      "lessons": [
+        {
+          "id": "M5.L1",
+          "title": "DNS e raggiungibilità: il nome non si risolve",
+          "objective": "Riconoscere un errore di risoluzione del nome (DNS), trovarne la causa in una configurazione e correggerla.",
+          "concepts": [
+            "DNS (introduttivo)",
+            "curl exit 6",
+            "metodo diagnostico",
+            "variabili di configurazione errate"
+          ],
+          "skills": [
+            "diagnosi",
+            "http",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M5.L2",
+          "title": "Connessione rifiutata, processi e configurazione",
+          "objective": "Distinguere nome non risolto e porta chiusa, e verificare su quale porta ascolta il servizio.",
+          "concepts": [
+            "connessione rifiutata (curl 7)",
+            "ps e processi",
+            "configurazione del servizio",
+            "permessi sui processi"
+          ],
+          "skills": [
+            "diagnosi",
+            "http",
+            "comandi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M5.L3",
+          "title": "Un 401 inatteso: leggere risposta e log",
+          "objective": "Diagnosticare un 401 usando il corpo della risposta e il log applicativo, e ripristinare il funzionamento.",
+          "concepts": [
+            "4xx: autenticazione",
+            "log applicativi",
+            "token scaduto",
+            "fatto osservato vs ipotesi"
+          ],
+          "skills": [
+            "diagnosi",
+            "http",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M5.L4",
+          "title": "Errori 5xx e retry: uno script elementare",
+          "objective": "Scrivere ed eseguire uno script che riprova un'operazione instabile con un numero massimo di tentativi.",
+          "concepts": [
+            "errori 5xx",
+            "retry con numero massimo di tentativi",
+            "script elementari",
+            "exit code di uno script"
+          ],
+          "skills": [
+            "diagnosi",
+            "comandi",
+            "testing",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M5.L5",
+          "title": "Trovare il punto di rottura nei log",
+          "objective": "Analizzare un log di accessi con filtri e conteggi per individuare l'endpoint con più errori 5xx.",
+          "concepts": [
+            "analisi di log",
+            "pipeline di conteggio",
+            "separatore --"
+          ],
+          "skills": [
+            "diagnosi",
+            "comandi",
+            "output",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        }
+      ]
+    },
+    {
+      "n": 6,
+      "title": "Documentazione professionale + progetto finale",
+      "summary": "Test case e test plan, bug report riproducibili, documentazione con esempi verificabili, troubleshooting, procedura da ambiente pulito, progetto finale.",
+      "lessons": [
+        {
+          "id": "M6.L1",
+          "title": "Test case e test plan",
+          "objective": "Scrivere un piano di test con casi positivi e negativi, eseguirlo e riportare atteso ed effettivo.",
+          "concepts": [
+            "test case e test plan",
+            "casi positivi e negativi",
+            "atteso ed effettivo"
+          ],
+          "skills": [
+            "testing",
+            "docs",
+            "http"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M6.L2",
+          "title": "Passi di riproduzione e report di bug",
+          "objective": "Scrivere un bug report riproducibile che distingue fatto osservato, comportamento documentato e ipotesi.",
+          "concepts": [
+            "passi di riproduzione",
+            "bug report",
+            "fatto osservato, comportamento documentato, ipotesi"
+          ],
+          "skills": [
+            "testing",
+            "diagnosi",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M6.L3",
+          "title": "Documentare un endpoint con esempi verificabili",
+          "objective": "Correggere una pagina di documentazione finché metodo, campi, status ed esempi corrispondono davvero al comportamento dell'API.",
+          "concepts": [
+            "documentazione di un endpoint",
+            "esempi verificabili",
+            "coerenza tra documentazione e comportamento"
+          ],
+          "skills": [
+            "docs",
+            "testing",
+            "http"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M6.L4",
+          "title": "Troubleshooting e verifica da un ambiente pulito",
+          "objective": "Scrivere una guida di troubleshooting e una procedura ripetibile che funziona da un ambiente pulito.",
+          "concepts": [
+            "troubleshooting guide",
+            "verifica da ambiente pulito",
+            "configurazione e segreti"
+          ],
+          "skills": [
+            "docs",
+            "testing",
+            "diagnosi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M6.L5",
+          "title": "Progetto finale: testare e documentare staging",
+          "objective": "Testare un'API, individuare un'anomalia rispetto alla documentazione e consegnare piano di test, bug report, guida corretta e procedura ripetibile.",
+          "concepts": [
+            "progetto finale: test plan, bug report, guida e procedura ripetibile",
+            "anomalia di versione tra documentazione e comportamento"
+          ],
+          "skills": [
+            "testing",
+            "diagnosi",
+            "docs",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        }
+      ]
+    },
+    {
+      "n": 7,
+      "title": "Automazione (estensione facoltativa)",
+      "summary": "Cicli e funzioni, suite di test ripetibili con report, retry e rate limit.",
+      "optional": true,
+      "lessons": [
+        {
+          "id": "M7.L1",
+          "title": "Cicli e funzioni per ripetere le operazioni",
+          "objective": "Automatizzare richieste ripetitive con un ciclo e raccogliere un comando riutilizzabile in una funzione.",
+          "concepts": [
+            "cicli",
+            "funzioni",
+            "chiamate API da script"
+          ],
+          "skills": [
+            "comandi",
+            "autonomia",
+            "testing"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M7.L2",
+          "title": "Una suite di test ripetibile con report",
+          "objective": "Raccogliere i controlli in uno script che stampa PASS/FAIL, un riepilogo e restituisce un codice di uscita.",
+          "concepts": [
+            "automazione di verifiche",
+            "suite di test in uno script",
+            "exit code"
+          ],
+          "skills": [
+            "testing",
+            "autonomia",
+            "comandi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M7.L3",
+          "title": "Retry con Retry-After: gestire il rate limit",
+          "objective": "Scrivere un client che rispetta il rate limit: su 429 attende il tempo indicato e riprova, con un massimo di tentativi.",
+          "concepts": [
+            "gestione di errori e retry",
+            "rate limit",
+            "concatenazione di operazioni"
+          ],
+          "skills": [
+            "http",
+            "autonomia",
+            "testing"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        }
+      ]
+    }
+  ]
+}

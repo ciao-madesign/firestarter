@@ -135,18 +135,25 @@ export function execute(state: WorkspaceState, shell: ShellId, line: string, opt
   }
   let exit = 0;
   let clear = false;
-  if (shell === 'bash') {
-    const rt = new BashRuntime(state);
-    const r = runBashLine(rt, line, io);
-    if (r.incomplete) return { out: [], exit: 0, incomplete: true, cwd: sh.cwd, prompt };
-    exit = r.code;
-    clear = rt.clearRequested;
-    sh.lastExit = exit;
-  } else {
-    const r = runPwshLine(state, line, io);
-    if (r.incomplete) return { out: [], exit: 0, incomplete: true, cwd: sh.cwd, prompt };
-    exit = r.code;
-    clear = r.clear;
+  try {
+    if (shell === 'bash') {
+      const rt = new BashRuntime(state);
+      const r = runBashLine(rt, line, io);
+      if (r.incomplete) return { out: [], exit: 0, incomplete: true, cwd: sh.cwd, prompt };
+      exit = r.code;
+      clear = rt.clearRequested;
+      sh.lastExit = exit;
+    } else {
+      const r = runPwshLine(state, line, io);
+      if (r.incomplete) return { out: [], exit: 0, incomplete: true, cwd: sh.cwd, prompt };
+      exit = r.code;
+      clear = r.clear;
+    }
+  } catch (e) {
+    // un difetto del simulatore non deve mai interrompere la sessione dello studente
+    console.error('Errore interno del simulatore:', e);
+    push('err', `Errore interno del simulatore (${(e as Error).message}). Il comando non è stato eseguito completamente: segnalalo, indicando il comando digitato.\n`);
+    exit = 70;
   }
   state.clock += 1;
   if (!opts.silent) {
