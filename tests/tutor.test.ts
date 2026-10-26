@@ -89,3 +89,16 @@ describe('Tutor deterministico', () => {
     expect(t).toMatch(/potrebbe fallire/);
   });
 });
+
+describe('M2.L1 in PowerShell: Select-String senza .Line', () => {
+  it('spiega il prefisso file:riga invece di un messaggio generico', () => {
+    const s = createWorkspace('m2l1');
+    startLesson(s, 'M2.L1');
+    execute(s, 'pwsh', 'cd ~/corso-cli/m2l1; Select-String ERROR server.log > errori.txt');
+    const v = verifyLesson(s, 'M2.L1', 'pwsh');
+    const c = v.checks.find((x) => x.id === 'errori')!;
+    expect(c.pass).toBe(false);
+    expect(c.actual).toMatch(/nome del file e il numero di riga/);
+    expect(c.actual).toMatch(/\.Line/);
+  });
+});

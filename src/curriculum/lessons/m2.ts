@@ -96,7 +96,7 @@ export const m2: Lesson[] = [
       explain: 'Il contenuto precedente di prova.txt è sparito, senza avviso né cestino. Prima di usare > su un file importante, verifica il nome (o fai una copia).',
     },
     task: {
-      text: 'In ~/corso-cli/m2l1 salva in `errori.txt` SOLO le righe con ERROR di `server.log`. Non devi toccare `importante.txt`.',
+      text: 'In ~/corso-cli/m2l1 salva in `errori.txt` SOLO le righe con ERROR di `server.log`, così come sono nel log (senza nome del file né numero di riga). Non devi toccare `importante.txt`.',
       criterion: 'errori.txt ha esattamente 5 righe, tutte con ERROR; importante.txt è invariato.',
     },
     checks: [
@@ -108,9 +108,12 @@ export const m2: Lesson[] = [
           const l = fileLines(c.read('errori.txt'));
           const orig = fileLines(c.read('server.log')).filter((x) => x.includes('ERROR'));
           const same = l.length === orig.length && l.every((x, i) => x === orig[i]);
-          return { pass: l.length === 5 && same, actual: `${l.length} righe${l.length && !l.every((x) => x.includes('ERROR')) ? ', alcune senza ERROR' : l.length === 5 && !same ? ', diverse dalle righe originali del log (non modificarle: niente numeri di riga né altro testo)' : ''}` };
+          // Select-String scrive "file:riga:testo": a video sembra giusto, ma nel file le righe non sono quelle originali
+          const prefixed = l.length === 5 && !same && l.every((x, i) => x.replace(/^[^:\s]+:\d+:/, '') === orig[i]);
+          const why = l.length && !l.every((x) => x.includes('ERROR')) ? ', alcune senza ERROR' : prefixed ? ', ma ogni riga inizia con il nome del file e il numero di riga (es. server.log:4:). È il formato di Select-String: per salvare solo il testo originale usa ForEach-Object { $_.Line } oppure Select-Object -ExpandProperty Line' : l.length === 5 && !same ? ', diverse dalle righe originali del log (non modificarle: niente numeri di riga né altro testo)' : '';
+          return { pass: l.length === 5 && same, actual: `${l.length} righe${why}` };
         },
-        onFail: 'Filtra con grep ERROR (PowerShell: Select-String) e redirigi con >. Controlla il file con cat: deve avere 5 righe.',
+        onFail: 'Filtra con grep ERROR (PowerShell: Select-String) e redirigi con >. Controlla il file con cat: deve avere 5 righe identiche al log. Attenzione in PowerShell: Select-String aggiunge "file:riga:" davanti a ogni riga; estrai solo il testo con ForEach-Object { $_.Line }.',
       },
       {
         id: 'intatto',
@@ -122,7 +125,7 @@ export const m2: Lesson[] = [
       },
     ],
     example: { text: 'Esempio analogo: salvare le righe WARN in avvisi.txt (stesso schema, filtro diverso).', cmd: { bash: 'grep WARN server.log > avvisi.txt', pwsh: 'Select-String WARN server.log | ForEach-Object { $_.Line } > avvisi.txt' } },
-    hints: ['Un filtro per righe si chiama grep (PowerShell: Select-String). La redirezione che crea il file è >.', 'Controlla di essere in ~/corso-cli/m2l1 leggendo il prompt, poi verifica con cat errori.txt.'],
+    hints: ['Un filtro per righe si chiama grep (PowerShell: Select-String). La redirezione che crea il file è >. In PowerShell Select-String restituisce oggetti con nome file e numero di riga: per ottenere solo il testo della riga serve la proprietà Line.', 'Controlla di essere in ~/corso-cli/m2l1 leggendo il prompt, poi verifica con cat errori.txt.'],
     solutions: {
       bash: ['cd ~/corso-cli/m2l1', 'grep ERROR server.log > errori.txt'],
       pwsh: ['cd ~/corso-cli/m2l1', 'Select-String ERROR server.log | ForEach-Object { $_.Line } > errori.txt'],
