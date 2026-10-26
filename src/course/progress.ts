@@ -3,6 +3,8 @@
  * Il file di riferimento è course/progress.json; course/progress.md è la vista leggibile.
  */
 
+import { parseEditorial } from '../docs/rubric.ts';
+
 export type LessonStatus = 'todo' | 'in_progress' | 'completed';
 
 export interface LessonRecord {
@@ -47,6 +49,8 @@ export interface CourseProgress {
   toConsolidate: string[];
   strengths: string[];
   next: { lesson: string; note: string };
+  /** valutazioni redazionali (griglia 1–4) registrate dal REGISTRO */
+  editorial?: { date: string; lesson: string; scores: Record<string, number> }[];
   sessions: { date: string; lesson: string; level: number; env?: string }[];
 }
 
@@ -181,6 +185,7 @@ export interface Registro {
   acquired: string[];
   toConsolidate: string[];
   next: LessonRef | null;
+  editorial: Record<string, number> | null;
 }
 
 export class RegistroError extends Error {}
@@ -207,11 +212,11 @@ export function parseRegistro(text: string): Registro {
   const lines = text.split(/\r?\n/);
   const start = lines.findIndex((l) => /^\s*REGISTRO\s*[—–-]/i.test(l));
   if (start < 0) throw new RegistroError('Blocco REGISTRO non trovato: la prima riga deve essere "REGISTRO — [data]".');
-  const reg: Registro = { date: normDate(lines[start].replace(/^\s*REGISTRO\s*[—–-]\s*/i, '')), env: '', completed: null, level: null, acquired: [], toConsolidate: [], next: null };
+  const reg: Registro = { date: normDate(lines[start].replace(/^\s*REGISTRO\s*[—–-]\s*/i, '')), env: '', completed: null, level: null, acquired: [], toConsolidate: [], next: null, editorial: null };
   let current: 'acq' | 'cons' | null = null;
   for (const raw of lines.slice(start + 1)) {
     const line = raw.replace(/^\s*>\s?/, '');
-    const kv = /^\s*(Ambiente|Lezione completata|Livello attuale|Acquisito|Da consolidare|Prossima lezione)\s*:\s*(.*)$/i.exec(line);
+    const kv = /^\s*(Ambiente|Lezione completata|Livello attuale|Acquisito|Da consolidare|Prossima lezione|Valutazione redazionale)\s*:\s*(.*)$/i.exec(line);
     if (kv) {
       const key = kv[1].toLowerCase();
       const val = kv[2];
@@ -228,6 +233,7 @@ export function parseRegistro(text: string): Registro {
         reg.toConsolidate.push(...list(val));
         current = 'cons';
       } else if (key === 'prossima lezione') reg.next = lessonRef(val);
+      else if (key === 'valutazione redazionale') reg.editorial = parseEditorial(val);
     } else if (current && /^\s*[-*]\s+/.test(line)) {
       (current === 'acq' ? reg.acquired : reg.toConsolidate).push(line.replace(/^\s*[-*]\s+/, '').trim());
     } else if (line.trim() === '') {
@@ -267,6 +273,10 @@ export function applyRegistro(p: CourseProgress, reg: Registro): { progress: Cou
     out.next = { lesson: reg.next.id, note: '' };
     changes.push(`Prossima lezione: ${reg.next.id}.`);
   } else if (reg.next) changes.push(`Prossima lezione ${reg.next.id} ignorata: lo stato è già più avanti (${out.next.lesson}).`);
+  if (reg.editorial) {
+    (out.editorial ??= []).push({ date: reg.date, lesson: reg.completed?.id ?? '', scores: reg.editorial });
+    changes.push('Valutazione redazionale registrata.');
+  }
   out.sessions.push({ date: reg.date, lesson: reg.completed?.id ?? '', level: out.level, env: reg.env });
   return { progress: out, changes };
 }
@@ -286,6 +296,7 @@ export function buildRegistro(p: CourseProgress, titles: Record<string, string>,
     `Acquisito: ${rec?.acquired.join('; ') || 'nessuno'}`,
     `Da consolidare: ${p.toConsolidate.join('; ') || 'nessuno'}`,
     `Prossima lezione: ${t(p.next.lesson)}`,
+    ...(p.editorial?.length ? [`Valutazione redazionale: ${Object.entries(p.editorial[p.editorial.length - 1].scores).map(([k, v]) => `${k} ${v}/4`).join('; ')}`] : []),
   ].join('\n');
 }
 

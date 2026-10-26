@@ -139,6 +139,7 @@ export function createApp(cfg: AppConfig): Server {
       level: course.level,
       levelNote: course.levelNote,
       levelDetail: describeLevel(course),
+      editorial: course.editorial ?? [],
       reviewDue: reviewDue(course, new Date().toISOString().slice(0, 10)),
       next: course.next,
       toConsolidate: course.toConsolidate,

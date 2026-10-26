@@ -1,4 +1,5 @@
 /** Cmdlet PowerShell simulati. L'elenco documentato è in catalog.ts. */
+import { lookupHost, pingMs } from '../net.ts';
 import { FsError, basename, dirname } from '../vfs.ts';
 import { byteLen, getopt } from '../util.ts';
 import { base64, lowerHeaders, performHttp } from '../http.ts';
@@ -643,6 +644,30 @@ def('ConvertTo-Json', 'InputObject:0, Depth, Compress!', (c) => {
   return [jsonString(toJsonValue(v, depth), !!c.get('Compress'))];
 });
 
+// ---------- rete ----------
+def('Test-NetConnection', 'ComputerName:0, Port:1, InformationLevel', (c) => {
+  const host = psToString(c.get('ComputerName') ?? 'internetbeacon.msedge.net');
+  const port = c.has('Port') ? Number(c.get('Port')) : null;
+  const info = lookupHost(host);
+  if (!info) {
+    c.rt.io.out(`WARNING: Name resolution of ${host} failed\n`);
+    return [custom({ ComputerName: host, RemoteAddress: null, NameResolutionSucceeded: false, PingSucceeded: false })];
+  }
+  if (port === null) return [custom({ ComputerName: host, RemoteAddress: info.ip, InterfaceAlias: 'Ethernet', SourceAddress: '10.0.0.15', PingSucceeded: true, PingReplyDetails: `${pingMs(info, 0)}ms` })];
+  const ok = info.ports.includes(port);
+  if (!ok) c.rt.io.out(`WARNING: TCP connect to (${info.ip} : ${port}) failed\n`);
+  return [custom({ ComputerName: host, RemoteAddress: info.ip, RemotePort: port, InterfaceAlias: 'Ethernet', SourceAddress: '10.0.0.15', TcpTestSucceeded: ok })];
+});
+def('Resolve-DnsName', 'Name:0, Type', (c) => {
+  const host = psToString(c.get('Name'));
+  const info = lookupHost(host);
+  if (!info) {
+    fail(c, new PSError(`${host} : DNS name does not exist`, 'ResourceUnavailable', 'DnsNameDoesNotExist,Microsoft.DnsClient.Commands.ResolveDnsName', host, 'Resolve-DnsName'));
+    return [];
+  }
+  return [custom({ Name: info.name, Type: 'A', TTL: 300, Section: 'Answer', IPAddress: info.ip })];
+});
+
 // ---------- CSV, oggetti e utilità ----------
 function csvField(v: unknown, delim: string): string {
   const t = v === null || v === undefined ? '' : psToString(v);
@@ -839,6 +864,7 @@ function webRequest(c: CmdCtx, cmd: 'Invoke-RestMethod' | 'Invoke-WebRequest'): 
       r.kind === 'dns' ? `The remote name could not be resolved: '${r.host}'`
       : r.kind === 'refused' ? 'Unable to connect to the remote server'
       : r.kind === 'timeout' ? 'The operation has timed out.'
+      : r.kind === 'cert' ? 'The underlying connection was closed: Could not establish trust relationship for the SSL/TLS secure channel.'
       : r.kind === 'tls' ? 'The underlying connection was closed: An unexpected error occurred on a send.'
       : `Invalid URI: The hostname could not be parsed.`;
     throw new PSError(msg, 'InvalidOperation', `WebCmdletWebResponseException,${klass}`, 'System.Net.HttpWebRequest:HttpWebRequest', cmd);

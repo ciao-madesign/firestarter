@@ -688,6 +688,73 @@ Elenca i processi (simulati).
 
 Sintassi: `ps [aux]`
 
+### `ping`
+
+Verifica che un host risponda e quanto ci mette (ICMP simulato).
+
+Sintassi: `ping [-c n] host`
+
+- `-c n`: numero di pacchetti (1–10, default 4: il vero ping non si ferma da solo)
+
+Esempio: `ping -c 2 localhost`
+
+Differenze rispetto al comando reale:
+- Gli host noti sono quelli del laboratorio (localhost e gli ambienti TaskFlow); gli altri danno "Name or service not known". I tempi sono deterministici. Su macOS il messaggio di errore è diverso ("cannot resolve").
+
+### `nslookup`
+
+Interroga il DNS e mostra l'indirizzo di un nome.
+
+Sintassi: `nslookup host`
+
+Esempio: `nslookup staging.api.taskflow.test`
+
+Differenze rispetto al comando reale:
+- Server DNS fisso e simulato (10.0.0.2). Un nome inesistente dà NXDOMAIN e codice di uscita 1.
+
+### `dig`
+
+Interroga il DNS con il dettaglio della risposta.
+
+Sintassi: `dig [+short] host`
+
+- `+short`: solo l'indirizzo
+
+Esempio: `dig +short staging.api.taskflow.test`
+
+Differenze rispetto al comando reale:
+- Solo record A. Output ridotto rispetto al vero dig.
+
+### `nc`
+
+Controlla se una porta TCP accetta connessioni.
+
+Sintassi: `nc -zv host porta`
+
+- `-z`: solo test, senza inviare dati
+- `-v`: messaggio di esito
+
+Esempio: `nc -zv localhost 8080`
+
+Differenze rispetto al comando reale:
+- Nel laboratorio è supportato solo il test con -z. I messaggi seguono la versione OpenBSD (Linux); su macOS il testo cambia leggermente.
+
+### `ss`
+
+Elenca i servizi in ascolto sulla macchina.
+
+Sintassi: `ss -tlnp`
+
+- `-t`: TCP
+- `-l`: solo in ascolto
+- `-n`: numeri invece di nomi
+- `-p`: processo
+
+Esempio: `ss -tlnp`
+
+Differenze rispetto al comando reale:
+- Elenco fisso: sshd (22) e taskflow (8080). Su macOS non esiste `ss`: si usa `netstat -an` o `lsof -i`.
+
 ### `kill`
 
 Invia un segnale a un processo.
@@ -717,6 +784,7 @@ Sintassi: `curl [opzioni] URL`
 - `-L`: segue i redirect
 - `-u u:p`: autenticazione Basic
 - `-m sec`: timeout totale
+- `-k`: ignora gli errori di certificato (solo per diagnosi!)
 
 Esempio: `curl -s $TASKFLOW_URL/v1/health`
 
@@ -1081,6 +1149,30 @@ Sintassi: `Get-Member [-MemberType NoteProperty] [-Name <nome>]`
 
 Differenze rispetto al comando reale:
 - Funziona su PSCustomObject, hashtable e risultati dei cmdlet; per tipi .NET e metodi dà un errore esplicito.
+
+### `Test-NetConnection`
+
+Verifica la raggiungibilità di un host o di una porta TCP.
+
+Sintassi: `Test-NetConnection <host> [-Port n]`
+
+- `-Port`: porta da provare
+
+Esempio: `Test-NetConnection localhost -Port 8080`
+
+Differenze rispetto al comando reale:
+- Output ridotto (campi principali). Senza -Port il laboratorio mostra solo l'esito del ping.
+
+### `Resolve-DnsName`
+
+Risolve un nome tramite DNS.
+
+Sintassi: `Resolve-DnsName <nome>`
+
+Esempio: `Resolve-DnsName staging.api.taskflow.test`
+
+Differenze rispetto al comando reale:
+- Solo record A. Un nome inesistente dà l'errore "DNS name does not exist".
 
 ### `Write-Warning`
 

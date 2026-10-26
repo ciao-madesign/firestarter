@@ -18,6 +18,7 @@ export function curl(args: string[], io: Io, rt: BashRuntime, shell: ShellId = '
   let verbose = false;
   let fail = false;
   let follow = false;
+  let insecure = false;
   let outFile: string | null = null;
   let writeOut: string | null = null;
   let maxTime: number | null = null;
@@ -69,7 +70,7 @@ export function curl(args: string[], io: Io, rt: BashRuntime, shell: ShellId = '
         case '--verbose': verbose = true; break;
         case '--fail': fail = true; break;
         case '--location': follow = true; break;
-        case '--insecure': break;
+        case '--insecure': insecure = true; break;
         case '--url': if ((v = val()) === null) return 2; url = v; break;
         case '--help':
           io.out(`Usage: curl [options...] <url>\n -X, --request <method>   metodo HTTP\n -H, --header <header>    aggiunge un header\n -d, --data <dati>        body della richiesta (implica POST)\n -i, --include            mostra gli header di risposta\n -I, --head               solo header (HEAD)\n -s, --silent             modalità silenziosa\n -v, --verbose            dettagli della richiesta\n -o, --output <file>      scrive il body su file\n -w, --write-out <fmt>    stampa informazioni (es. %{http_code})\n -f, --fail               esce con errore sugli status >= 400\n -L, --location           segue i redirect\n -u, --user <u:p>         autenticazione Basic\n -m, --max-time <s>       timeout totale\n Per la guida completa: man curl\n`);
@@ -108,7 +109,8 @@ export function curl(args: string[], io: Io, rt: BashRuntime, shell: ShellId = '
           case 'v': verbose = true; break;
           case 'f': fail = true; break;
           case 'L': follow = true; break;
-          case 'k': case 'g': case '#': break;
+          case 'k': insecure = true; break;
+          case 'g': case '#': break;
           default:
             return optErr(`option -${c}: is unknown`);
         }
@@ -151,6 +153,7 @@ export function curl(args: string[], io: Io, rt: BashRuntime, shell: ShellId = '
     client: 'curl',
     shell,
     timeoutMs: maxTime !== null ? Math.round(maxTime * 1000) : undefined,
+    ...(insecure ? { insecure: true } : {}),
   };
   const u = parseUrl(url)!;
   const outcome = performHttp(rt.state, req, { follow });
@@ -247,6 +250,8 @@ export function netError(r: { kind: string; host: string; port: number; ms: numb
       return { text: `${name}: (7) Failed to connect to ${r.host} port ${r.port} after 0 ms: Couldn't connect to server\n`, code: 7 };
     case 'timeout':
       return { text: `${name}: (28) Operation timed out after ${r.ms + 1} milliseconds with 0 bytes received\n`, code: 28 };
+    case 'cert':
+      return { text: `${name}: (60) SSL certificate problem: certificate has expired\nMore details here: https://curl.se/docs/sslcerts.html\n\n${name} failed to verify the legitimacy of the server and therefore could not\nestablish a secure connection to it. To learn more about this situation and\nhow to fix it, please visit the web page mentioned above.\n`, code: 60 };
     case 'tls':
       return { text: `${name}: (35) OpenSSL/3.0.2: error:0A00010B:SSL routines::wrong version number\n`, code: 35 };
     default:

@@ -8,6 +8,7 @@ import { CREDENTIALS } from '../api/server.ts';
 import { BUILTINS, COMMANDS, ExitSignal, isAssoc, LoopSignal, ReturnSignal, type BashRuntime, type CmdFn, type Io } from './interp.ts';
 import { curl } from './curl.ts';
 import { AwkError, runAwk } from './awk.ts';
+import { DNS_SERVER, LISTENING, lookupHost, pingMs } from '../net.ts';
 import { renderHelp } from '../catalog.ts';
 import { BashSyntaxError } from './parser.ts';
 
@@ -1849,6 +1850,100 @@ reg('ps', (args, io) => {
   } else {
     io.out('  PID TTY          TIME CMD\n  530 pts/0    00:00:00 bash\n  611 pts/0    00:00:00 ps\n');
   }
+  return 0;
+});
+reg('ping', (args, io) => {
+  const o = getopt(args, { flags: '', values: 'cW' });
+  if (o.error || !o.rest.length) {
+    io.err('Usage: ping [-c count] destination\n');
+    return 2;
+  }
+  const host = o.rest[0];
+  const count = Math.min(10, Math.max(1, parseInt(o.values.c?.[0] ?? '4', 10) || 4));
+  const info = lookupHost(host);
+  if (!info) {
+    io.err(`ping: ${host}: Name or service not known\n`);
+    return 2;
+  }
+  io.out(`PING ${host} (${info.ip}) 56(84) bytes of data.\n`);
+  const times: number[] = [];
+  for (let i = 0; i < count; i++) {
+    const t = pingMs(info, i);
+    times.push(t);
+    io.out(`64 bytes from ${info.ip}: icmp_seq=${i + 1} ttl=${info.ip.startsWith('127.') ? 64 : 57} time=${t} ms\n`);
+  }
+  const avg = (times.reduce((a, b) => a + b, 0) / times.length).toFixed(3);
+  io.out(`\n--- ${host} ping statistics ---\n${count} packets transmitted, ${count} received, 0% packet loss, time ${(count - 1) * 1000}ms\nrtt min/avg/max/mdev = ${Math.min(...times).toFixed(3)}/${avg}/${Math.max(...times).toFixed(3)}/0.100 ms\n`);
+  return 0;
+});
+reg('nslookup', (args, io) => {
+  const host = args.find((a) => !a.startsWith('-'));
+  if (!host) {
+    io.err('nslookup: missing host name\n');
+    return 1;
+  }
+  const info = lookupHost(host);
+  io.out(`Server:\t\t${DNS_SERVER}\nAddress:\t${DNS_SERVER}#53\n\n`);
+  if (!info) {
+    io.out(`** server can't find ${host}: NXDOMAIN\n\n`);
+    return 1;
+  }
+  io.out(`Non-authoritative answer:\nName:\t${info.name}\nAddress: ${info.ip}\n\n`);
+  return 0;
+});
+reg('dig', (args, io) => {
+  const short = args.includes('+short');
+  const host = args.find((a) => !a.startsWith('-') && !a.startsWith('+') && !a.startsWith('@'));
+  if (!host) {
+    io.out('; <<>> DiG 9.18 <<>>\n');
+    return 0;
+  }
+  const info = lookupHost(host);
+  if (short) {
+    if (info) io.out(info.ip + '\n');
+    return 0;
+  }
+  io.out(`; <<>> DiG 9.18 <<>> ${host}\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: ${info ? 'NOERROR' : 'NXDOMAIN'}, id: 41023\n;; flags: qr rd ra; QUERY: 1, ANSWER: ${info ? 1 : 0}, AUTHORITY: 0, ADDITIONAL: 1\n\n;; QUESTION SECTION:\n;${host}.\t\tIN\tA\n\n`);
+  if (info) io.out(`;; ANSWER SECTION:\n${host}.\t300\tIN\tA\t${info.ip}\n\n`);
+  io.out(`;; SERVER: ${DNS_SERVER}#53(${DNS_SERVER})\n`);
+  return 0;
+});
+reg('nc', (args, io) => {
+  const o = getopt(args, { flags: 'zvw', values: 'w' });
+  if (o.error || o.rest.length < 2) {
+    io.err('usage: nc [-zv] [-w timeout] host port\n');
+    return 2;
+  }
+  if (!o.flags.has('z')) {
+    io.err('nc: nel laboratorio è supportato solo il controllo di una porta (nc -z host porta)\n');
+    return 2;
+  }
+  const [host, portS] = o.rest;
+  const port = parseInt(portS, 10);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    io.err(`nc: port number invalid: ${portS}\n`);
+    return 1;
+  }
+  const info = lookupHost(host);
+  if (!info) {
+    io.err(`nc: getaddrinfo for host "${host}" port ${port}: Name or service not known\n`);
+    return 1;
+  }
+  if (info.ports.includes(port)) {
+    if (o.flags.has('v')) io.err(`Connection to ${host} ${port} port [tcp/*] succeeded!\n`);
+    return 0;
+  }
+  io.err(`nc: connect to ${host} port ${port} (tcp) failed: Connection refused\n`);
+  return 1;
+});
+reg('ss', (args, io) => {
+  const flags = args.filter((a) => a.startsWith('-')).join('').replace(/-/g, '');
+  if (/[^tlnp]/.test(flags)) {
+    io.err('ss: nel laboratorio sono supportate le opzioni -t -l -n -p (per esempio ss -tlnp)\n');
+    return 1;
+  }
+  io.out(`State   Recv-Q  Send-Q   Local Address:Port   Peer Address:Port  Process\n`);
+  for (const l of LISTENING) io.out(`LISTEN  0       128      ${l.local.padEnd(20)} 0.0.0.0:*          ${flags.includes('p') ? `users:(("${l.proc}",pid=${l.proc === 'sshd' ? 410 : 622},fd=3))` : ''}\n`);
   return 0;
 });
 reg('kill', (args, io) => {

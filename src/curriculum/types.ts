@@ -34,7 +34,7 @@ export interface GuidedStep {
   /** solo per i test: frammento che l'output reale deve contenere (verifica che `expect` sia veritiero) */
   contains?: string | { bash?: string; pwsh?: string };
   /** il passo è un errore voluto: l'uscita diversa da 0 è attesa */
-  fails?: boolean;
+  fails?: boolean | { bash?: boolean; pwsh?: boolean };
 }
 
 export interface PredictStep {

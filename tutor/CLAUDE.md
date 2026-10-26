@@ -75,6 +75,8 @@ Da consolidare: [...]
 Prossima lezione: M[x].L[y] — [titolo]
 ```
 
+Quando valuti un documento dello studente (guida, bug report, troubleshooting) usa la griglia redazionale di `src/docs/rubric.ts` (chiarezza, struttura, pubblico, completezza; scala 1–4, una frase di motivazione per criterio, confronto con l'esempio di riferimento) e aggiungi al REGISTRO la riga facoltativa `Valutazione redazionale: chiarezza N/4; struttura N/4; pubblico N/4; completezza N/4`. Il laboratorio la importa e la mostra nei risultati.
+
 ## Sincronizzazione con la chat e con il laboratorio web
 
 Lo studente segue il corso anche su claude.ai e nel laboratorio web. `/importa-registro` legge un REGISTRO incollato e aggiorna lo stato **senza abbassare** livello o avanzamento: vince la lezione più avanzata; i concetti si aggiungono senza duplicati; "Da consolidare" si unisce. Dì allo studente cosa è cambiato. Il laboratorio web usa lo stesso file e lo stesso formato.

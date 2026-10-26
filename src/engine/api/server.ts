@@ -76,6 +76,8 @@ export interface HttpRequest {
   client: string;
   shell: ShellId | null;
   timeoutMs?: number;
+  /** ignora gli errori di certificato (curl -k); Windows PowerShell 5.1 non ha un equivalente */
+  insecure?: boolean;
 }
 
 export interface HttpResponse {
@@ -89,7 +91,7 @@ export interface HttpResponse {
 
 export type NetResult =
   | { ok: true; res: HttpResponse; env: EnvName | null }
-  | { ok: false; kind: 'dns' | 'refused' | 'timeout' | 'tls' | 'badurl'; host: string; port: number; ms: number };
+  | { ok: false; kind: 'dns' | 'refused' | 'timeout' | 'tls' | 'cert' | 'badurl'; host: string; port: number; ms: number };
 
 const STATUS_TEXT: Record<number, string> = {
   200: 'OK', 201: 'Created', 204: 'No Content', 301: 'Moved Permanently', 400: 'Bad Request', 401: 'Unauthorized',
@@ -124,7 +126,13 @@ export function parseUrl(url: string): ParsedUrl | null {
   return { scheme, host: m[2].toLowerCase(), port, path: m[4] || '/', query, rawQuery: m[5] ?? '' };
 }
 
+/** host con certificato scaduto (stessi dati dello staging): serve per esercitarsi sugli errori TLS */
+export const EXPIRED_CERT_HOST = 'expired.api.taskflow.test';
+/** origini consentite dal CORS del servizio simulato */
+export const CORS_ALLOWED_ORIGINS = ['https://docs.taskflow.test', 'http://localhost:3000'];
+
 function envForHost(u: ParsedUrl): EnvName | null {
+  if (u.host === EXPIRED_CERT_HOST) return 'staging';
   for (const env of Object.keys(BASE_URLS) as EnvName[]) {
     const b = parseUrl(BASE_URLS[env])!;
     if (b.host === u.host || (env === 'development' && u.host === '127.0.0.1')) return env;
@@ -459,6 +467,7 @@ export function sendRequest(state: WorkspaceState, req: HttpRequest): NetResult 
       : u.port === baseUrl.port;
   if (!reachable) return { ok: false, kind: 'refused', host: u.host, port: u.port, ms: 0 };
   if (baseUrl.scheme === 'http' && u.scheme === 'https') return { ok: false, kind: 'tls', host: u.host, port: u.port, ms: 3 };
+  if (u.host === EXPIRED_CERT_HOST && u.scheme === 'https' && !req.insecure) return { ok: false, kind: 'cert', host: u.host, port: u.port, ms: 4 };
   const api = state.api;
   api.seq++;
   const requestId = `req_${String(api.seq).padStart(6, '0')}`;
@@ -468,7 +477,8 @@ export function sendRequest(state: WorkspaceState, req: HttpRequest): NetResult 
   if (u.scheme === 'http' && baseUrl.scheme === 'https') {
     raw = { status: 301, body: '', headers: { Location: BASE_URLS[env] + u.path + (u.rawQuery ? '?' + u.rawQuery : '') } };
   } else {
-    raw = route(ctx);
+    const pre = ctx.req.method === 'OPTIONS' && ctx.req.headers['access-control-request-method'] && ctx.req.headers['origin'];
+    raw = applyCors(ctx, pre ? { status: 204, body: '', headers: {} } : route(ctx));
   }
   const ms = raw.ms ?? 6 + ((api.seq * 7) % 34);
   if (req.timeoutMs !== undefined && ms > req.timeoutMs) {
@@ -488,6 +498,28 @@ export function sendRequest(state: WorkspaceState, req: HttpRequest): NetResult 
   const res: HttpResponse = { status: raw.status, statusText: statusText(raw.status), headers, body: ctx.req.method === 'HEAD' ? '' : raw.body, ms, httpVersion: 'HTTP/1.1' };
   logRequest(ctx, raw, raw.note);
   return { ok: true, res, env };
+}
+
+/** CORS: il servizio risponde solo alle origini consentite. curl non applica CORS (lo fa il browser): qui si osservano gli header. */
+function applyCors(ctx: Ctx, raw: Raw): Raw {
+  const origin = ctx.req.headers['origin'];
+  if (!origin) return raw;
+  const allowed = CORS_ALLOWED_ORIGINS.includes(origin);
+  if (ctx.req.method === 'OPTIONS' && ctx.req.headers['access-control-request-method']) {
+    if (!allowed) return { status: 403, body: JSON.stringify({ error: 'cors_origin_not_allowed', message: `Origine non consentita: ${origin}` }), headers: { 'Content-Type': 'application/json', Vary: 'Origin' } };
+    return {
+      status: 204,
+      body: '',
+      headers: {
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+        'Access-Control-Max-Age': '600',
+        Vary: 'Origin',
+      },
+    };
+  }
+  return { ...raw, headers: { ...raw.headers, Vary: 'Origin', ...(allowed ? { 'Access-Control-Allow-Origin': origin } : {}) } };
 }
 
 function logRequest(ctx: Ctx, raw: Raw, note?: string): void {

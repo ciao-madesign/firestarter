@@ -248,6 +248,22 @@ Concetti: 401 invalid_token; ambienti diversi; trasferimento.
 
 Verifica (criterio): Il server ha registrato su staging un 401 e poi un 200 su /v1/tasks; hai letto app.log; diagnosi.md nomina la causa (token di un altro ambiente) e l'ambiente.
 
+### M5.L7 — Più cause insieme: correggerne una ne rivela un'altra
+
+Obiettivo: Diagnosticare uno script che fallisce per quattro cause successive (nome host, redirect, token scaduto, Content-Type) e documentarle nell'ordine in cui emergono.
+
+Concetti: diagnosi con più cause; redirect 301 e Location; ordine delle correzioni.
+
+Verifica (criterio): Il registro mostra POST /v1/tasks con 401, poi 415, poi 201; lo script contiene il Content-Type; diagnosi.md nomina le quattro cause.
+
+### M5.L8 — Strumenti di rete: DNS, porte, certificati e CORS
+
+Obiettivo: Usare gli strumenti di rete per distinguere DNS, porta chiusa e certificato, e leggere gli header CORS.
+
+Concetti: nslookup/dig; nc e Test-NetConnection; certificato scaduto; CORS.
+
+Verifica (criterio): Hai usato uno strumento DNS e uno di porta; rete.md contiene IP, 443 aperta, 8443 chiusa e un'origine.
+
 ## M6 — Documentazione professionale + progetto finale
 
 Test case e test plan, bug report riproducibili, documentazione con esempi verificabili, troubleshooting, procedura da ambiente pulito, progetto finale.

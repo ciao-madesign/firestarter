@@ -27,7 +27,9 @@ export function performHttp(state: WorkspaceState, req: HttpRequest, opts: Follo
       const loc = result.res.headers.Location;
       const base = parseUrl(cur.url)!;
       const next = /^https?:\/\//.test(loc) ? loc : `${base.scheme}://${base.host}${base.port && ![80, 443].includes(base.port) ? ':' + base.port : ''}${loc}`;
-      cur = { ...cur, url: next, ...(result.res.status === 303 ? { method: 'GET', body: null } : {}) };
+      // come curl: 303 sempre GET; 301/302 trasformano POST in GET (senza body)
+      const toGet = result.res.status === 303 || ([301, 302].includes(result.res.status) && cur.method === 'POST');
+      cur = { ...cur, url: next, ...(toGet ? { method: 'GET', body: null } : {}) };
       redirects++;
       continue;
     }

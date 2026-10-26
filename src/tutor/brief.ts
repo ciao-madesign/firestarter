@@ -5,6 +5,7 @@
 import type { ShellId, WorkspaceState } from '../engine/types.ts';
 import type { LintResult } from '../docs/lint.ts';
 import { buildTutorContext } from './tutor.ts';
+import { REFERENCE_EXAMPLE, REFERENCE_TITLE, rubricText } from '../docs/rubric.ts';
 
 const RULES = [
   'Sei il tutor di un Technical Writer che impara CLI (Bash, PowerShell 5.1), HTTP/API, testing e documentazione.',
@@ -22,6 +23,7 @@ export function buildBrief(state: WorkspaceState, shell: ShellId, kind: 'lesson'
   if (opts.question) out.push('## Domanda', '', opts.question.slice(0, 2000), '');
   if (kind === 'doc') {
     out.push(`## Documento${opts.docPath ? ` (${opts.docPath})` : ''}`, '', 'Commenta chiarezza, struttura e correttezza tecnica. Distingui errori verificabili da giudizi editoriali.', '', fence((opts.doc ?? '').slice(0, 12000)), '');
+    out.push('## Valutazione redazionale', '', rubricText(), '', `### Esempio di riferimento (${REFERENCE_TITLE})`, '', fence(REFERENCE_EXAMPLE), '');
     if (opts.lint) {
       out.push('## Esito del controllo automatico', '', `Errori ${opts.lint.stats.errors}, avvisi ${opts.lint.stats.warnings}, valutazioni editoriali ${opts.lint.stats.editorial}; esempi eseguiti ${opts.lint.stats.examplesOk}/${opts.lint.stats.examplesRun}.`);
       for (const i of opts.lint.issues.slice(0, 20)) out.push(`- riga ${i.line} [${i.kind}/${i.severity}] ${i.message}`);
