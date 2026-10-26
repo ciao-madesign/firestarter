@@ -34,6 +34,7 @@ Limite: i backup stanno sullo **stesso disco** dei dati (`/mnt/data`): proteggon
 |---|---|
 | Backup subito | `sudo systemctl start learning-lab-backup.service` |
 | Elenco copie | `sudo ls -lh /mnt/data/backup-learning-lab` |
+| Contenuto di una copia | `sudo sh -c 'tar -tzf /mnt/data/backup-learning-lab/learning-lab-*.tar.gz'` (la cartella è 700 di `learninglab`: l'asterisco deve espanderlo `sudo`, non la tua shell) |
 | Prossima esecuzione | `systemctl list-timers learning-lab-backup.timer --no-pager` |
 | Esito dell'ultima | `journalctl -u learning-lab-backup.service -n 20 --no-pager` |
 | Ripristino | `sudo systemctl stop learning-lab && sudo tar -xzf /mnt/data/backup-learning-lab/<archivio> -C /mnt/data/learning-lab && sudo chown -R learninglab:learninglab /mnt/data/learning-lab && sudo systemctl start learning-lab` |
