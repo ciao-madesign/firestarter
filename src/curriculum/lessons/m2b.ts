@@ -53,9 +53,9 @@ export const m2b: Lesson[] = [
     title: 'Due canali: output ed errori',
     objective: 'Separare, unire e scartare i due canali di uscita di un comando (stdout e stderr) e prevedere dove finisce ogni messaggio.',
     explain: [
-      'Ogni comando ha DUE canali di uscita: il risultato (stdout, canale 1) e i messaggi di errore (stderr, canale 2). Sullo schermo si vedono insieme, ma sono canali diversi: per questo `>` salva nel file il risultato e gli errori compaiono comunque a schermo.',
-      '`2> file` salva solo gli errori; `> file 2>&1` salva tutto nello stesso file (`2>&1` significa «manda il canale 2 dove va il canale 1»); `2>/dev/null` (PowerShell: `2>$null`) butta via gli errori. In PowerShell `*> file` redirige tutti i flussi. L\'ORDINE conta in Bash: `> file 2>&1` salva tutto; `2>&1 > file` manda gli errori a schermo e solo il risultato nel file.',
-      'In PowerShell per leggere più file si separano con la virgola: `Get-Content dati.txt, manca.txt`. Differenza dichiarata: in Windows PowerShell 5.1 `>` scrive i file in UTF-16, il laboratorio no.',
+      'Ogni comando ha DUE canali di uscita: il risultato (stdout, canale 1) e gli errori (stderr, canale 2). A schermo si vedono insieme, ma `>` salva nel file solo il risultato.',
+      '`2> file` salva solo gli errori; `> file 2>&1` salva tutto (`2>&1` = «manda il canale 2 dove va il canale 1»); `2>/dev/null` (PowerShell: `2>$null`) butta via gli errori; in PowerShell `*> file` redirige tutti i flussi. In Bash l\'ORDINE conta: `2>&1 > file` manda gli errori a schermo.',
+      'In PowerShell più file si separano con la virgola: `Get-Content dati.txt, manca.txt`. Differenza dichiarata: in Windows PowerShell 5.1 `>` scrive in UTF-16, il laboratorio no.',
     ],
     shells: ['bash', 'pwsh'],
     setup: (c) => c.file('dati.txt', DATI),
@@ -168,10 +168,10 @@ export const m2b: Lesson[] = [
     title: 'Codici di uscita nelle pipeline e negli script',
     objective: 'Prevedere il codice di uscita di una pipeline, sapere che «nessuna corrispondenza» non è sempre un errore e scrivere uno script con codici di uscita corretti.',
     explain: [
-      'Ogni comando termina con un codice: 0 = riuscito, diverso da 0 = problema. In Bash si legge con `$?`. In una pipeline il codice finale è quello dell\'ULTIMO comando: `false | true` termina con 0 anche se il primo è fallito. `set -o pipefail` cambia la regola: la pipeline fallisce se fallisce uno qualsiasi degli stadi; `${PIPESTATUS[*]}` (da leggere nello stesso comando di `$?`) elenca i codici di ognuno.',
-      '`grep` esce con 1 quando NON trova nulla: non è un errore del programma, è la risposta «zero corrispondenze». Anche `grep -c` stampa 0 ma esce con 1. Uno script che termina con un `grep -c` senza risultati risulta quindi «fallito» a chi lo chiama: per questo si chiude lo script con `exit 0` quando si vuole dire «tutto regolare».',
-      'In PowerShell `$?` dice se l\'ultimo comando è riuscito (True/False) e `$LASTEXITCODE` è il codice dell\'ultimo programma esterno (curl.exe, oppure `powershell -Command "exit 3"`, che avvia un PowerShell figlio e ne restituisce il codice). `Select-String` senza risultati NON è un errore: `$?` resta True. Negli script `exit 2` imposta il codice di uscita.',
-      'Per scrivere uno script su più righe dal terminale: in Bash (heredoc) `cat > conta.sh <<\'EOF\'`, poi le righe dello script e `EOF` da solo su una riga (gli apici attorno a EOF impediscono alla shell di interpretare `$`); in PowerShell `Set-Content conta.ps1 -Value @\'` seguito dalle righe e da `\'@`.',
+      'Ogni comando termina con un codice: 0 = riuscito, diverso da 0 = problema. In Bash si legge con `$?`. In una pipeline conta l\'ULTIMO comando: `false | true` termina con 0. Con `set -o pipefail` la pipeline fallisce se fallisce uno qualsiasi degli stadi; `${PIPESTATUS[*]}` (da leggere nello stesso comando di `$?`) li elenca tutti.',
+      '`grep` esce con 1 quando NON trova nulla: non è un errore, è «zero corrispondenze» (anche `grep -c`, che stampa 0). Per dire «tutto regolare» si chiude lo script con `exit 0`.',
+      'In PowerShell `$?` dice se l\'ultimo comando è riuscito (True/False) e `$LASTEXITCODE` è il codice dell\'ultimo programma esterno (curl.exe, oppure `powershell -Command "exit 3"`, che avvia un PowerShell figlio). `Select-String` senza risultati NON è un errore. Negli script `exit 2` imposta il codice di uscita.',
+      'Script su più righe dal terminale: in Bash (heredoc) `cat > conta.sh <<\'EOF\'`, le righe e `EOF` da solo (gli apici impediscono alla shell di interpretare `$`); in PowerShell `Set-Content conta.ps1 -Value @\'` seguito dalle righe e da `\'@`.',
     ],
     shells: ['bash', 'pwsh'],
     setup: (c) => {
@@ -284,9 +284,9 @@ export const m2b: Lesson[] = [
     title: 'PATH, permessi di esecuzione e «command not found»',
     objective: 'Capire come la shell trova i comandi, distinguere i tre errori più comuni e rendere eseguibile uno script richiamabile per nome.',
     explain: [
-      'Quando scrivi `riepilogo` la shell non cerca nella cartella corrente: scorre le cartelle elencate nella variabile PATH (`echo $PATH`; PowerShell: `$env:PATH`) e prende il primo file con quel nome. `which riepilogo` (o `type`, `command -v`; PowerShell: `Get-Command`) dice quale file verrebbe eseguito. Tre errori diversi: «command not found» (non è in nessuna cartella del PATH), «Permission denied» (il file c\'è ma non ha il permesso di esecuzione: si risolve con `chmod +x file`) e «No such file or directory» (il percorso scritto non esiste).',
-      '`./riepilogo` con il percorso salta la ricerca nel PATH: esegue proprio quel file. Per usarlo per nome da qualsiasi cartella lo si copia in una cartella (per esempio `bin`) e la si aggiunge al PATH: `export PATH=$PATH:/percorso/bin`. La modifica vale solo per la finestra aperta: per renderla permanente si scrive nel file di avvio della shell (non simulato qui).',
-      'In PowerShell non esiste chmod: gli script `.ps1` si eseguono con `./nome.ps1`, e per nome (senza ./) solo se la cartella è nel PATH. Differenza dichiarata: su Windows il PATH è separato da `;` e le cartelle sono come C:\\Strumenti; nel laboratorio il filesystem è Linux e il separatore è `:`.',
+      'Scrivendo `riepilogo` la shell scorre le cartelle del PATH (`echo $PATH`; PowerShell: `$env:PATH`) e prende il primo file con quel nome. `which riepilogo` (o `type`, `command -v`; PowerShell: `Get-Command`) dice quale. Tre errori diversi: «command not found» (non è nel PATH), «Permission denied» (manca il permesso: `chmod +x file`), «No such file or directory» (percorso inesistente).',
+      '`./riepilogo` salta la ricerca nel PATH. Per usarlo per nome si copia in una cartella (per esempio `bin`) e si aggiunge al PATH: `export PATH=$PATH:/percorso/bin`. Vale solo per la finestra aperta (il file di avvio della shell non è simulato).',
+      'In PowerShell non c\'è chmod: gli script `.ps1` si eseguono con `./nome.ps1`, o per nome se la cartella è nel PATH. Differenza dichiarata: su Windows il separatore del PATH è `;`; nel laboratorio il filesystem è Linux e il separatore è `:`.',
     ],
     shells: ['bash', 'pwsh'],
     setup: (c) => {

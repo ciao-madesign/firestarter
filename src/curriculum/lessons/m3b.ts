@@ -166,9 +166,9 @@ export const m3b: Lesson[] = [
     title: 'Il JSON tra virgolette: Bash e Windows PowerShell 5.1',
     objective: 'Inviare un body JSON che contiene virgolette e apostrofi nelle due shell, scegliendo tra testo nel comando, file e costruzione automatica.',
     explain: [
-      'Il JSON usa SEMPRE virgolette doppie, e le shell le trattano in modo speciale. In Bash il JSON si scrive tra apici singoli (`-d \'{"title":"x"}\'`), ma un apice o una virgoletta DENTRO il testo rompono il quoting o il JSON. Le soluzioni robuste sono due: scrivere il JSON in un FILE (`-d @body.json`) oppure farlo costruire a uno strumento che gestisce gli escape (`jq -n --arg t "$TITOLO" \'{title:$t}\'`).',
-      'In Windows PowerShell 5.1 c\'è una trappola in più: quando passa un argomento a un programma esterno come curl.exe, PowerShell NON protegge le virgolette doppie interne, e curl.exe le perde: `-d \'{"title":"x"}\'` arriva come `{title:x}` (errore 400 invalid_json). Si risolve scrivendo le virgolette con il backslash (`-d \'{\\"title\\":\\"x\\"}\'`), oppure — meglio — con un file, oppure con i cmdlet: `@{ title = $t } | ConvertTo-Json` e `Invoke-RestMethod -Uri URL -Body $corpo` (con `-Uri` si indica l\'indirizzo).',
-      'In PowerShell un apice dentro un testo tra apici singoli si raddoppia (`\'l\'\'ultima\'`); in Bash si usa un testo tra virgolette doppie con `\\"` per le virgolette interne. `ConvertTo-Json` scrive l\'apostrofo come `\\u0027`: è JSON valido, e il server lo decodifica.',
+      'Il JSON usa SEMPRE virgolette doppie. In Bash si scrive tra apici singoli (`-d \'{"title":"x"}\'`), ma un apice DENTRO il testo rompe tutto. Soluzioni robuste: scriverlo in un FILE (`-d @body.json`) o farlo costruire a `jq -n --arg t "$TITOLO" \'{title:$t}\'`.',
+      'In Windows PowerShell 5.1 c\'è una trappola in più: verso curl.exe le virgolette doppie interne si perdono (`-d \'{"title":"x"}\'` arriva come `{title:x}`, errore 400 invalid_json). Si risolve con il backslash (`-d \'{\\"title\\":\\"x\\"}\'`), meglio con un file, o con i cmdlet: `@{ title = $t } | ConvertTo-Json` e `Invoke-RestMethod -Uri URL -Body $corpo`.',
+      'In PowerShell un apice dentro un testo tra apici singoli si raddoppia (`\'l\'\'ultima\'`). `ConvertTo-Json` scrive l\'apostrofo come `\\u0027`: è JSON valido.',
     ],
     shells: ['bash', 'pwsh'],
     setup: (c) => setupApi(c, { token: 'valid' }),

@@ -365,7 +365,7 @@ export const m1: Lesson[] = [
     title: 'Opzioni, help e lettura dei file',
     objective: 'Riconoscere comando, opzioni e argomenti; consultare man; leggere file con cat/head; capire i file nascosti.',
     explain: [
-      'Un comando ha la forma `comando [opzioni] [argomenti]`. Le opzioni (`-l`, `-a`, `-t`) cambiano il comportamento e si possono combinare (`-la`).',
+      'Un comando ha la forma `comando [opzioni] [argomenti]`. Le opzioni (`-l`, `-a`, `-t`) cambiano il comportamento e si possono combinare (`-la`; `-lat` = lungo, nascosti inclusi, ordinati dal più recente: `ls -lat`).',
       'Non devi ricordarle tutte: `man ls` (o `ls --help`) le elenca. Nel laboratorio `man` stampa una pagina sintetica; sul tuo terminale si naviga con le frecce, `/` cerca, `q` esce.',
       'I file il cui nome inizia con il punto sono "nascosti": `ls` li mostra solo con `-a`. Non sono solo file di sistema: anche i tuoi file di configurazione.',
     ],
