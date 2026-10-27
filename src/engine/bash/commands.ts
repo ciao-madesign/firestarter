@@ -2033,7 +2033,7 @@ reg('nc', (args, io, rt) => {
     if (o.flags.has('v')) io.err(`Connection to ${host} ${port} port [tcp/*] succeeded!\n`);
     return 0;
   }
-  io.err(`nc: connect to ${host} port ${port} (tcp) failed: Connection refused\n`);
+  io.err(`nc: connect to ${host} (${info.ip}) port ${port} (tcp) failed: Connection refused\n`);
   return 1;
 });
 reg('ss', (args, io, rt) => {

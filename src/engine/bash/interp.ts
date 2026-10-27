@@ -296,16 +296,19 @@ export class BashRuntime {
   }
 
   private procN = 0;
+  /** esito dell'ultima sostituzione di comando: `x=$(cmd)` termina con quello stato */
+  private subStatus: number | null = null;
 
   capture(src: string, io: Io, keepNl = false): string {
     let buf = '';
     const sub: Io = { stdin: '', out: (t) => (buf += t), err: (t) => io.err(t), tty: false };
     const savedCwd = this.ss.cwd;
     try {
-      this.runSource(src, sub);
+      this.subStatus = this.runSource(src, sub);
     } catch (e) {
       if (!(e instanceof ExitSignal)) throw e;
       this.ss.lastExit = e.code;
+      this.subStatus = e.code;
     }
     this.ss.cwd = savedCwd;
     return keepNl ? buf : buf.replace(/\n+$/, '');
@@ -985,6 +988,7 @@ export class BashRuntime {
 
   // ---------- comando semplice ----------
   private execSimple(node: Extract<Node, { type: 'simple' }>, io: Io): number {
+    this.subStatus = null;
     const assigns = node.assigns.filter((a) => !a.index && !a.array).map((a) => ({ name: a.name, value: this.expandStr(a.value, io), append: a.append }));
     // name[i]=v e name=(...): assegnazioni persistenti (non possono essere esportate nell'ambiente del comando)
     for (const a of node.assigns) {
@@ -1022,7 +1026,8 @@ export class BashRuntime {
       if (node.redirs.length && !r) return 1;
       for (const a of assigns) this.set(a.name, a.append ? (this.get(a.name) ?? '') + a.value : a.value);
       r?.finish();
-      return 0;
+      // come Bash: un'assegnazione con $(comando) termina con lo stato di quel comando
+      return this.subStatus ?? 0;
     }
     // assegnazioni temporanee per il comando
     const saved: { name: string; had: boolean; inEnv: boolean; old: string | undefined }[] = [];

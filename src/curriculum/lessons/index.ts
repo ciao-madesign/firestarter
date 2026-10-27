@@ -6,9 +6,13 @@ import { m2b } from './m2b.ts';
 import { m3 } from './m3.ts';
 import { m3b } from './m3b.ts';
 import { m4 } from './m4.ts';
+import { m4b } from './m4b.ts';
 import { m5 } from './m5.ts';
+import { m5b } from './m5b.ts';
 import { m6 } from './m6.ts';
+import { m6b } from './m6b.ts';
 import { m7 } from './m7.ts';
+import { m7b } from './m7b.ts';
 import { m8 } from './m8.ts';
 import { m9 } from './m9.ts';
 import { m10 } from './m10.ts';
@@ -39,7 +43,7 @@ export const CURRICULUM_VERSION = '0.1.0';
 
 const EXTRA_GUIDED = { ...guidedM12, ...guidedM34, ...guidedM5678 };
 
-export const LESSONS: Lesson[] = [...m1, ...m2, ...m2b, ...m3, ...m3b, ...m4, ...m5, ...m6, ...m7, ...m8, ...m9, ...m10, ...m11, ...scenarios, ...diagnosi]
+export const LESSONS: Lesson[] = [...m1, ...m2, ...m2b, ...m3, ...m3b, ...m4, ...m4b, ...m5, ...m5b, ...m6, ...m6b, ...m7, ...m7b, ...m8, ...m9, ...m10, ...m11, ...scenarios, ...diagnosi]
   .map((l) => (EXTRA_GUIDED[l.id] ? { ...l, guided: [...l.guided, ...EXTRA_GUIDED[l.id]] } : l)).sort((a, b) => lessonIndex(a.id) - lessonIndex(b.id) || (a.review ? -1 : 1));
 
 export function getLesson(id: string): Lesson | undefined {

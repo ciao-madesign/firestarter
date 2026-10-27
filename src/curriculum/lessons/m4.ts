@@ -203,14 +203,14 @@ export const m4: Lesson[] = [
     concepts: ['CRUD con HTTP', 'Content-Type e Accept', 'PATCH vs PUT', '409 conflitto', 'Location header'],
   },
   {
-    id: 'M4.L5',
+    id: 'M4.L6',
     module: 4,
-    n: 5,
-    title: 'Validazione, paginazione e idempotenza',
-    objective: 'Leggere pagine di risultati, riconoscere gli errori di validazione e verificare l\'idempotenza di DELETE.',
+    n: 6,
+    title: 'Paginazione e idempotenza',
+    objective: 'Leggere pagine di risultati, calcolare l\'offset di una pagina e verificare l\'idempotenza di DELETE.',
     explain: [
       'Le liste lunghe sono paginate: `limit` (quanti) e `offset` (da dove). La risposta riporta `total`, utile per sapere quante pagine ci sono.',
-      'La validazione rifiuta i dati non conformi con 422 e un elenco `errors` (campo e motivo). Un buon test negativo verifica che l\'errore sia quello giusto, non solo "un errore".',
+      'L\'offset di una pagina si calcola così: `offset = limit × (numero pagina − 1)`. Chiedere una pagina oltre la fine NON è un errore: l\'elenco è vuoto, e solo `total` dice che i dati sono finiti.',
       "Un'operazione è idempotente se ripeterla dà lo stesso stato finale. DELETE lo è nello stato (il task non c'è più) ma NON nella risposta: la prima volta 204, la seconda 404.",
     ],
     shells: ['bash', 'pwsh'],
@@ -220,19 +220,19 @@ export const m4: Lesson[] = [
     ],
     predict: [
       {
-        prompt: 'Cosa stampa l\'elenco errors per priority=9 e titolo di 2 lettere?',
-        cmd: { bash: `curl -s -X POST ${AUTH_H} ${JSON_H} -d '{"title":"ab","priority":9}' $TASKFLOW_URL/v1/tasks`, pwsh: 'try { irm "$env:TASKFLOW_URL/v1/tasks" -Method Post -Headers @{Authorization="Bearer $env:TASKFLOW_TOKEN"} -ContentType "application/json" -Body \'{"title":"ab","priority":9}\' } catch { $_.ErrorDetails.Message }' },
-        expect: '422 con DUE errori: title (lunghezza minima 3) e priority (valore massimo 5).',
-        why: 'La validazione riporta tutti i problemi, non solo il primo.',
+        prompt: 'Con limit=2, quale offset serve per la TERZA pagina? E cosa restituisce se i task sono 5?',
+        cmd: { bash: `curl -s ${AUTH_H} "$TASKFLOW_URL/v1/tasks?limit=2&offset=4"`, pwsh: '(Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks?limit=2&offset=4" -Headers @{Authorization="Bearer $env:TASKFLOW_TOKEN"}).data | Select-Object id,title' },
+        expect: 'offset 4 (2 × (3 − 1)): un solo elemento, il task 5, perché ne restano 5 − 4 = 1.',
+        why: 'L\'ultima pagina può essere più corta. Per sapere quando fermarsi si confronta offset + limit con total.',
       },
     ],
     negative: {
-      prompt: 'JSON malformato: cosa risponde?',
-      cmd: { bash: `curl -s -X POST ${AUTH_H} ${JSON_H} -d '{"title": }' $TASKFLOW_URL/v1/tasks`, pwsh: 'try { irm "$env:TASKFLOW_URL/v1/tasks" -Method Post -Headers @{Authorization="Bearer $env:TASKFLOW_TOKEN"} -ContentType "application/json" -Body \'{"title": }\' } catch { $_.ErrorDetails.Message }' },
-      explain: '400 invalid_json: il body non è JSON (errore di formato), diverso dal 422 (JSON valido ma dati non validi).',
+      prompt: 'Una pagina oltre la fine dei dati:',
+      cmd: { bash: `curl -s ${AUTH_H} "$TASKFLOW_URL/v1/tasks?limit=2&offset=100" | jq '{total, quanti: (.data | length)}'`, pwsh: '$r = Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks?limit=2&offset=100" -Headers @{Authorization="Bearer $env:TASKFLOW_TOKEN"}; "total $($r.total), elementi $($r.data.Count)"' },
+      explain: '200 con elenco vuoto e total invariato: non è un errore. Un ciclo che scorre le pagine deve fermarsi quando i dati finiscono, non quando arriva un errore.',
     },
     task: {
-      text: 'In ~/corso-cli/m4l5: (1) salva in `pagina2.json` la SECONDA pagina di task con 2 elementi per pagina; (2) elimina il task 5 due volte e annota in `idempotenza.txt` i due status ricevuti (nell\'ordine, separati da uno spazio).',
+      text: 'In ~/corso-cli/m4l6: (1) salva in `pagina2.json` la SECONDA pagina di task con 2 elementi per pagina; (2) elimina il task 5 due volte e annota in `idempotenza.txt` i due status ricevuti (nell\'ordine, separati da uno spazio).',
       criterion: 'pagina2.json contiene i task con id 3 e 4; idempotenza.txt contiene "204 404"; il server ha registrato DELETE 204 e poi DELETE 404.',
     },
     checks: [
@@ -271,8 +271,8 @@ export const m4: Lesson[] = [
     example: { text: 'Esempio analogo: terza pagina con 1 elemento per pagina.', cmd: { bash: `curl -s ${AUTH_H} "$TASKFLOW_URL/v1/tasks?limit=1&offset=2"`, pwsh: 'irm "$env:TASKFLOW_URL/v1/tasks?limit=1&offset=2" -Headers $h' } },
     hints: ['offset = limit × (numero pagina − 1): per la pagina 2 con 2 elementi, offset=2.', 'Con curl: -o /dev/null -w "%{http_code} " per stampare solo lo status; aggiungi in append con >> per il secondo.'],
     solutions: {
-      bash: ['cd ~/corso-cli/m4l5', `curl -s ${AUTH_H} "$TASKFLOW_URL/v1/tasks?limit=2&offset=2" -o pagina2.json`, `curl -s -o /dev/null -w "%{http_code} " -X DELETE ${AUTH_H} $TASKFLOW_URL/v1/tasks/5 > idempotenza.txt`, `curl -s -o /dev/null -w "%{http_code}\\n" -X DELETE ${AUTH_H} $TASKFLOW_URL/v1/tasks/5 >> idempotenza.txt`],
-      pwsh: ['cd ~/corso-cli/m4l5', '$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks?limit=2&offset=2" -Headers $h | ConvertTo-Json -Depth 5 > pagina2.json', '$a = (Invoke-WebRequest "$env:TASKFLOW_URL/v1/tasks/5" -Method Delete -Headers $h -UseBasicParsing).StatusCode', 'try { Invoke-WebRequest "$env:TASKFLOW_URL/v1/tasks/5" -Method Delete -Headers $h -UseBasicParsing } catch { $b = $_.Exception.Response.StatusCode.value__ }', '"$a $b" > idempotenza.txt'],
+      bash: ['cd ~/corso-cli/m4l6', `curl -s ${AUTH_H} "$TASKFLOW_URL/v1/tasks?limit=2&offset=2" -o pagina2.json`, `curl -s -o /dev/null -w "%{http_code} " -X DELETE ${AUTH_H} $TASKFLOW_URL/v1/tasks/5 > idempotenza.txt`, `curl -s -o /dev/null -w "%{http_code}\\n" -X DELETE ${AUTH_H} $TASKFLOW_URL/v1/tasks/5 >> idempotenza.txt`],
+      pwsh: ['cd ~/corso-cli/m4l6', '$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks?limit=2&offset=2" -Headers $h | ConvertTo-Json -Depth 5 > pagina2.json', '$a = (Invoke-WebRequest "$env:TASKFLOW_URL/v1/tasks/5" -Method Delete -Headers $h -UseBasicParsing).StatusCode', 'try { Invoke-WebRequest "$env:TASKFLOW_URL/v1/tasks/5" -Method Delete -Headers $h -UseBasicParsing } catch { $b = $_.Exception.Response.StatusCode.value__ }', '"$a $b" > idempotenza.txt'],
     },
     summary: ['limit/offset/total', '422 validazione vs 400 JSON non valido', 'DELETE idempotente nello stato, non nella risposta'],
     skills: ['http', 'testing', 'output'],

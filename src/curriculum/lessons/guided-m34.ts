@@ -289,7 +289,7 @@ export const guidedM34: Record<string, GuidedStep[]> = {
       risk: 'Nessuno: il task resta com\'è.',
     },
   ],
-  'M4.L5': [
+  'M4.L6': [
     {
       title: 'Capire quanti risultati ci sono',
       cmd: { bash: `curl -s ${AUTH_SH} "$TASKFLOW_URL/v1/tasks?limit=1" | jq '{total,limit,offset}'`, pwsh: `$r = Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks?limit=1" -Headers ${AUTH_PS}; "$($r.total) totali, limit $($r.limit), offset $($r.offset)"` },
@@ -308,16 +308,6 @@ export const guidedM34: Record<string, GuidedStep[]> = {
       parts: ['`offset=100`'],
       expect: 'Un elenco vuoto `[]` (in PowerShell il conteggio 0).',
       risk: 'Nessuno.',
-    },
-    {
-      title: 'Validazione: titolo vuoto',
-      cmd: { bash: `curl -s -i -X POST ${AUTH_SH} -H "Content-Type: application/json" -d '{"title":""}' $TASKFLOW_URL/v1/tasks | head -1`, pwsh: `try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Method Post -Headers ${AUTH_PS} -ContentType "application/json" -Body '{"title":""}' } catch { $_.Exception.Response.StatusCode.value__ }` },
-      what: 'Un campo obbligatorio vuoto viene rifiutato dalla validazione prima di salvare qualsiasi cosa.',
-      who: 'Il server.',
-      parts: ['status 422 Unprocessable Entity'],
-      expect: 'Status 422: il task non viene creato.',
-      contains: '422',
-      risk: 'Nessuno: la richiesta è rifiutata.',
     },
     {
       title: 'DELETE su qualcosa che non c\'è',
