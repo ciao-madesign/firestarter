@@ -663,9 +663,18 @@ def('Test-NetConnection', 'ComputerName:0, Port:1, InformationLevel', (c) => {
     c.rt.io.out(`WARNING: Name resolution of ${host} failed\n`);
     return [custom({ ComputerName: host, RemoteAddress: null, NameResolutionSucceeded: false, PingSucceeded: false })];
   }
-  if (port === null) return [custom({ ComputerName: host, RemoteAddress: info.ip, InterfaceAlias: 'Ethernet', SourceAddress: '10.0.0.15', PingSucceeded: true, PingReplyDetails: `${pingMs(info, 0)}ms` })];
+  const pingOk = !info.unreachable;
+  if (port === null) {
+    if (!pingOk) c.rt.io.out(`WARNING: Ping to ${info.ip} failed with status: DestinationHostUnreachable\n`);
+    return [custom({ ComputerName: host, RemoteAddress: info.ip, InterfaceAlias: 'Ethernet', SourceAddress: '10.0.0.15', PingSucceeded: pingOk, 'PingReplyDetails (RTT)': pingOk ? `${pingMs(info, 0)} ms` : '0 ms' })];
+  }
   const ok = info.ports.includes(port);
-  if (!ok) c.rt.io.out(`WARNING: TCP connect to (${info.ip} : ${port}) failed\n`);
+  if (!ok) {
+    c.rt.io.out(`WARNING: TCP connect to (${info.ip} : ${port}) failed\n`);
+    if (!pingOk) c.rt.io.out(`WARNING: Ping to ${info.ip} failed with status: DestinationHostUnreachable\n`);
+    if (info.filtered?.includes(port) || info.unreachable) c.rt.state.clock += 21;
+    return [custom({ ComputerName: host, RemoteAddress: info.ip, RemotePort: port, InterfaceAlias: 'Ethernet', SourceAddress: '10.0.0.15', PingSucceeded: pingOk, 'PingReplyDetails (RTT)': pingOk ? `${pingMs(info, 0)} ms` : '0 ms', TcpTestSucceeded: false })];
+  }
   return [custom({ ComputerName: host, RemoteAddress: info.ip, RemotePort: port, InterfaceAlias: 'Ethernet', SourceAddress: '10.0.0.15', TcpTestSucceeded: ok })];
 });
 def('Resolve-DnsName', 'Name:0, Type', (c) => {
@@ -872,8 +881,8 @@ function webRequest(c: CmdCtx, cmd: 'Invoke-RestMethod' | 'Invoke-WebRequest'): 
   if (!r.ok) {
     const msg =
       r.kind === 'dns' ? `The remote name could not be resolved: '${r.host}'`
-      : r.kind === 'refused' ? 'Unable to connect to the remote server'
-      : r.kind === 'timeout' ? 'The operation has timed out.'
+      : r.kind === 'refused' || r.kind === 'unreachable' ? 'Unable to connect to the remote server'
+      : r.kind === 'timeout' || r.kind === 'ctimeout' ? 'The operation has timed out.'
       : r.kind === 'cert' ? 'The underlying connection was closed: Could not establish trust relationship for the SSL/TLS secure channel.'
       : r.kind === 'tls' ? 'The underlying connection was closed: An unexpected error occurred on a send.'
       : `Invalid URI: The hostname could not be parsed.`;

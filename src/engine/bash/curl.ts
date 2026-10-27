@@ -4,6 +4,8 @@ import { parseUrl, statusText, type HttpRequest } from '../api/server.ts';
 import type { BashRuntime, Io } from './interp.ts';
 import type { ShellId } from '../types.ts';
 
+/** codifica percentuale come curl: restano solo A-Z a-z 0-9 - . _ ~ */
+const urlenc = (t: string): string => encodeURIComponent(t).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
 const SHORT_WITH_ARG = new Set(['X', 'H', 'd', 'u', 'A', 'o', 'w', 'm', 'e', 'b', 'c', 'F', 'T', 'K']);
 
 interface Cookie {
@@ -52,9 +54,11 @@ export function curl(args: string[], io: Io, rt: BashRuntime, shell: ShellId = '
   let outFile: string | null = null;
   let writeOut: string | null = null;
   let maxTime: number | null = null;
+  let connectTime: number | null = null;
   let user: string | null = null;
   let agent = 'curl/8.4.0';
   let json = false;
+  let getMode = false;
 
   const optErr = (msg: string): number => {
     io.err(`${name}: ${msg}\n${name}: try '${name} --help' or '${name} --manual' for more information\n`);
@@ -82,6 +86,19 @@ export function curl(args: string[], io: Io, rt: BashRuntime, shell: ShellId = '
           if ((v = val()) === null) return 2;
           data.push(flag === '--data-raw' ? v : readData(v, rt, io, name, flag !== '--data-binary') ?? '');
           break;
+        case '--data-urlencode': {
+          if ((v = val()) === null) return 2;
+          // come curl: "nome=contenuto" codifica il contenuto, "=contenuto" e "contenuto" codificano tutto, "nome@file" legge da file
+          const at = v.indexOf('@');
+          const eq = v.indexOf('=');
+          let enc: string;
+          if (eq >= 0) enc = (eq > 0 ? v.slice(0, eq) + '=' : '') + urlenc(v.slice(eq + 1));
+          else if (at > 0) enc = v.slice(0, at) + '=' + urlenc(readData('@' + v.slice(at + 1), rt, io, name) ?? '');
+          else enc = urlenc(v);
+          data.push(enc);
+          break;
+        }
+        case '--get': getMode = true; break;
         case '--json':
           if ((v = val()) === null) return 2;
           json = true;
@@ -92,7 +109,7 @@ export function curl(args: string[], io: Io, rt: BashRuntime, shell: ShellId = '
         case '--output': if ((v = val()) === null) return 2; outFile = v; break;
         case '--write-out': if ((v = val()) === null) return 2; writeOut = v; break;
         case '--max-time': if ((v = val()) === null) return 2; maxTime = parseFloat(v); break;
-        case '--connect-timeout': if ((v = val()) === null) return 2; break;
+        case '--connect-timeout': if ((v = val()) === null) return 2; connectTime = parseFloat(v); break;
         case '--silent': silent = true; break;
         case '--show-error': showErr = true; break;
         case '--include': include = true; break;
@@ -144,6 +161,7 @@ export function curl(args: string[], io: Io, rt: BashRuntime, shell: ShellId = '
           case 'f': fail = true; break;
           case 'L': follow = true; break;
           case 'k': insecure = true; break;
+          case 'G': getMode = true; break;
           case 'g': case '#': break;
           default:
             return optErr(`option -${c}: is unknown`);
@@ -171,6 +189,11 @@ export function curl(args: string[], io: Io, rt: BashRuntime, shell: ShellId = '
   }
   if (user) hdr['authorization'] = 'Basic ' + base64(user);
   let body: string | null = data.length ? data.join('&') : null;
+  if (getMode && body !== null) {
+    // -G: i dati diventano query string e la richiesta resta GET
+    url += (url.includes('?') ? '&' : '?') + body;
+    body = null;
+  }
   if (body !== null) {
     if (json) {
       hdr['content-type'] ??= 'application/json';
@@ -206,6 +229,7 @@ export function curl(args: string[], io: Io, rt: BashRuntime, shell: ShellId = '
     client: 'curl',
     shell,
     timeoutMs: maxTime !== null ? Math.round(maxTime * 1000) : undefined,
+    connectTimeoutMs: connectTime !== null ? Math.round(connectTime * 1000) : undefined,
     ...(insecure ? { insecure: true } : {}),
   };
   const u = parseUrl(url)!;
@@ -324,6 +348,10 @@ export function netError(r: { kind: string; host: string; port: number; ms: numb
       return { text: `${name}: (6) Could not resolve host: ${r.host}\n`, code: 6 };
     case 'refused':
       return { text: `${name}: (7) Failed to connect to ${r.host} port ${r.port} after 0 ms: Couldn't connect to server\n`, code: 7 };
+    case 'ctimeout':
+      return { text: `${name}: (28) Failed to connect to ${r.host} port ${r.port} after ${r.ms} ms: Timeout was reached\n`, code: 28 };
+    case 'unreachable':
+      return { text: `${name}: (7) Failed to connect to ${r.host} port ${r.port} after ${r.ms} ms: Couldn't connect to server\n`, code: 7 };
     case 'timeout':
       return { text: `${name}: (28) Operation timed out after ${r.ms + 1} milliseconds with 0 bytes received\n`, code: 28 };
     case 'cert':

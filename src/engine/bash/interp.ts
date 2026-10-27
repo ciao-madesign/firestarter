@@ -382,7 +382,7 @@ export class BashRuntime {
         return { v: seg.v };
       case 'tilde': {
         const n = next;
-        if (!n || (n.t === 'text' && n.v.startsWith('/') && !n.q)) return { v: this.get('HOME') ?? HOME };
+        if (!n || (n.t === 'text' && (n.v.startsWith('/') || n.v.startsWith(':')) && !n.q)) return { v: this.get('HOME') ?? HOME };
         return { v: '~' };
       }
       case 'cmd': {
@@ -1066,6 +1066,17 @@ export class BashRuntime {
     }
   }
 
+  /** primo file eseguibile con quel nome nelle cartelle del PATH (comandi simulati esclusi) */
+  pathLookup(name: string): string | null {
+    for (const dir of (this.ss.env.PATH ?? '').split(':')) {
+      if (!dir) continue;
+      const cand = (dir.endsWith('/') ? dir : dir + '/') + name;
+      const abs = this.resolve(cand);
+      if (this.vfs.isFile(abs) && this.vfs.canExec(abs)) return abs;
+    }
+    return null;
+  }
+
   runCommand(name: string, args: string[], io: Io): number {
     this.tick();
     if (name.includes('/')) return this.runPath(name, args, io);
@@ -1087,6 +1098,12 @@ export class BashRuntime {
         }
         throw e;
       }
+    }
+    // ricerca nel PATH (solo file nel filesystem della simulazione); come Bash: un file non eseguibile dà "Permission denied"
+    for (const dir of (this.ss.env.PATH ?? '').split(':')) {
+      if (!dir) continue;
+      const cand = (dir.endsWith('/') ? dir : dir + '/') + name;
+      if (this.vfs.isFile(this.resolve(cand))) return this.runPath(cand, args, io);
     }
     io.err(`bash: ${name}: command not found\n`);
     return 127;

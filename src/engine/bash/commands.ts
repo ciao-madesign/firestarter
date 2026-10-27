@@ -579,6 +579,7 @@ reg('type', (args, io, rt) => {
     if (rt.ss.functions[a]) io.out(`${a} is a function\n`);
     else if (BUILTINS.has(a)) io.out(`${a} is a shell builtin\n`);
     else if (COMMANDS.has(a)) io.out(`${a} is /usr/bin/${a}\n`);
+    else if (rt.pathLookup(a)) io.out(`${a} is ${rt.pathLookup(a)}\n`);
     else {
       io.err(`bash: type: ${a}: not found\n`);
       code = 1;
@@ -591,6 +592,7 @@ reg('which', (args, io, rt) => {
   let code = 0;
   for (const a of args) {
     if (COMMANDS.has(a) && !BUILTINS.has(a)) io.out(`/usr/bin/${a}\n`);
+    else if (rt.pathLookup(a)) io.out(`${rt.pathLookup(a)}\n`);
     else code = 1;
   }
   return code;
@@ -601,6 +603,7 @@ reg('command', (args, io, rt) => {
     let code = 0;
     for (const a of args.slice(1)) {
       if (COMMANDS.has(a)) io.out((BUILTINS.has(a) ? a : `/usr/bin/${a}`) + '\n');
+      else if (rt.pathLookup(a)) io.out(`${rt.pathLookup(a)}\n`);
       else code = 1;
     }
     return code;
@@ -1867,6 +1870,35 @@ reg('ps', (args, io) => {
   return 0;
 });
 reg('git', (args, io, rt) => git(args, io, rt));
+reg('base64', (args, io, rt) => {
+  const o = getopt(args, { flags: 'di', values: 'w', alias: { decode: 'd', wrap: 'w' } });
+  if (o.error) return badOpt('base64', io, o.error.replace('opzione non valida', 'invalid option'));
+  const { inputs, failed } = readInputs(rt, io, 'base64', o.rest.slice(0, 1));
+  if (failed) return 1;
+  const text = inputs[0]?.text ?? io.stdin;
+  if (!o.flags.has('d')) {
+    const enc = Buffer.from(text, 'utf8').toString('base64');
+    const w = o.values.w?.[0] !== undefined ? parseInt(o.values.w[0], 10) : 76;
+    io.out(w > 0 ? (enc.match(new RegExp(`.{1,${w}}`, 'g')) ?? []).join('\n') + (enc ? '\n' : '') : enc + (enc ? '\n' : ''));
+    return 0;
+  }
+  // decodifica come GNU base64: i gruppi completi vengono stampati; senza il padding corretto l'ultimo gruppo dà "invalid input"
+  const clean = text.replace(/\n/g, '');
+  if (/[^A-Za-z0-9+/=]/.test(clean)) {
+    io.err('base64: invalid input\n');
+    return 1;
+  }
+  const body = clean.replace(/=+$/, '');
+  const full = body.slice(0, body.length - (body.length % 4));
+  const rest = body.slice(full.length);
+  const padded = clean.length % 4 === 0;
+  io.out(Buffer.from(padded ? clean : full + (rest.length >= 2 ? rest : ''), 'base64').toString('utf8'));
+  if (!padded) {
+    io.err('base64: invalid input\n');
+    return 1;
+  }
+  return 0;
+});
 reg('openssl', (args, io, rt) => {
   if (args[0] !== 'dgst') {
     io.err('openssl: nel laboratorio è supportato solo "openssl dgst -sha256 [-hmac chiave] [file]"\n');
@@ -1915,6 +1947,13 @@ reg('ping', (args, io, rt) => {
     return 2;
   }
   io.out(`PING ${host} (${info.ip}) 56(84) bytes of data.\n`);
+  if (info.unreachable) {
+    // indirizzo senza nodo: nessuno risponde all'ARP e il ping dà "Destination Host Unreachable"
+    for (let i = 0; i < count; i++) io.out(`From 192.168.50.20 icmp_seq=${i + 1} Destination Host Unreachable\n`);
+    rt.state.clock += count + 2;
+    io.out(`\n--- ${host} ping statistics ---\n${count} packets transmitted, 0 received, +${count} errors, 100% packet loss, time ${(count - 1) * 1000 + 50}ms\n\n`);
+    return 1;
+  }
   const times: number[] = [];
   for (let i = 0; i < count; i++) {
     const t = pingMs(info, i);
@@ -1931,7 +1970,7 @@ reg('nslookup', (args, io, rt) => {
     io.err('nslookup: missing host name\n');
     return 1;
   }
-  const info = lookupHost(host, rt.state);
+  const info = lookupHost(host, rt.state, true);
   io.out(`Server:\t\t${DNS_SERVER}\nAddress:\t${DNS_SERVER}#53\n\n`);
   if (!info) {
     io.out(`** server can't find ${host}: NXDOMAIN\n\n`);
@@ -1947,7 +1986,7 @@ reg('dig', (args, io, rt) => {
     io.out('; <<>> DiG 9.18 <<>>\n');
     return 0;
   }
-  const info = lookupHost(host, rt.state);
+  const info = lookupHost(host, rt.state, true);
   if (short) {
     if (info) io.out(info.ip + '\n');
     return 0;
@@ -1976,6 +2015,18 @@ reg('nc', (args, io, rt) => {
   const info = lookupHost(host, rt.state);
   if (!info) {
     io.err(`nc: getaddrinfo for host "${host}" port ${port}: Name or service not known\n`);
+    return 1;
+  }
+  const secs = o.values.w?.[0] !== undefined ? parseInt(o.values.w[0], 10) || 0 : 0;
+  if (info.unreachable) {
+    rt.state.clock += 3;
+    io.err(`nc: connect to ${host} (${info.ip}) port ${port} (tcp) failed: No route to host\n`);
+    return 1;
+  }
+  if (info.filtered?.includes(port)) {
+    // senza -w nc aspetta il timeout del sistema (circa 2 minuti)
+    rt.state.clock += secs || 127;
+    io.err(`nc: connect to ${host} (${info.ip}) port ${port} (tcp) timed out: Operation now in progress\n`);
     return 1;
   }
   if (info.ports.includes(port)) {

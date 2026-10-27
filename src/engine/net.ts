@@ -8,10 +8,15 @@ export interface HostInfo {
   name: string;
   ip: string;
   ports: number[];
+  /** porte che non rispondono né rifiutano (firewall con DROP): la connessione scade */
+  filtered?: number[];
+  /** l'indirizzo non corrisponde ad alcun nodo: "No route to host" */
+  unreachable?: boolean;
 }
 
+
 const HOSTS: HostInfo[] = [
-  { name: 'localhost', ip: '127.0.0.1', ports: [22, 8080] },
+  { name: 'localhost', ip: '127.0.0.1', ports: [22, 8080], filtered: [8089] },
   { name: new URL(BASE_URLS.testing).hostname, ip: '203.0.113.20', ports: [80, 443] },
   { name: new URL(BASE_URLS.staging).hostname, ip: '203.0.113.30', ports: [80, 443] },
   { name: EXPIRED_CERT_HOST, ip: '203.0.113.40', ports: [443] },
@@ -19,8 +24,9 @@ const HOSTS: HostInfo[] = [
 
 export const DNS_SERVER = '10.0.0.2';
 
-export function lookupHost(host: string, state?: WorkspaceState): HostInfo | null {
-  const lab = state ? labHostInfo(state, host) : null;
+/** `dnsOnly`: come nslookup/dig, che interrogano il DNS e ignorano /etc/hosts. */
+export function lookupHost(host: string, state?: WorkspaceState, dnsOnly = false): HostInfo | null {
+  const lab = state ? labHostInfo(state, host, dnsOnly) : null;
   if (lab) return lab;
   const h = host.toLowerCase();
   if (h === '127.0.0.1') return HOSTS[0];

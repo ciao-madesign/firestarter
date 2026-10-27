@@ -2,6 +2,7 @@
  * Exercise Engine: avvio, reset, verifica deterministica, aiuti e valutazione.
  * Non dipende dall'interfaccia: opera solo su WorkspaceState e CourseProgress.
  */
+import { resetClientHosts } from '../engine/lab.ts';
 import { createWorkspace, execute } from '../engine/index.ts';
 import { resetApiEnv } from '../engine/api/server.ts';
 import { Vfs, HOME } from '../engine/vfs.ts';
@@ -74,7 +75,10 @@ export function startLesson(state: WorkspaceState, id: string, forceSetup = fals
       const abs = a.startsWith('~') ? HOME + a.slice(1) : a;
       if (vfs.exists(abs)) vfs.remove(abs, true);
     }
-    if (lesson.module !== 11) state.lab = undefined;
+    if (lesson.module !== 11 && state.lab) {
+      state.lab = undefined;
+      resetClientHosts(state);
+    }
     // ambiente base dei laboratori: sviluppo, dati iniziali, credenziali nelle variabili d'ambiente
     lesson.setup(makeSetupCtx(state, dir));
     p.startClock = state.clock;

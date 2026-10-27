@@ -621,6 +621,8 @@ export class PsRuntime {
     this.prevOk = prevOk;
     this.lastOk = true;
     let streamErr: string[] | null = null;
+    // errori reindirizzati nel flusso di output (2>&1, *>): si uniscono al risultato a fine pipeline
+    const merged: unknown[] = [];
     const redirErr = s.redirs.find((r) => r.fd === 2 || r.fd === 0);
     const errCapture = (): void => undefined;
     void errCapture;
@@ -628,12 +630,17 @@ export class PsRuntime {
     if (redirErr) {
       if (redirErr.target === '&1') {
         this.io.err = (t) => {
-          items.push(t.replace(/\n$/, ''));
+          merged.push(t.replace(/\n$/, ''));
         };
       } else {
         const tv = this.evalExpr(redirErr.target);
         if (tv === null || psToString(tv).toLowerCase() === '$null' || (redirErr.target.k === 'var' && redirErr.target.name.toLowerCase() === 'null')) this.io.err = () => undefined;
-        else {
+        else if (redirErr.fd === 0) {
+          // *> file: tutti i flussi nello stesso file (errori e output nell'ordine in cui arrivano)
+          this.io.err = (t) => {
+            merged.push(t.replace(/\n$/, ''));
+          };
+        } else {
           streamErr = [];
           this.io.err = (t) => streamErr!.push(t);
         }
@@ -646,6 +653,7 @@ export class PsRuntime {
     } finally {
       this.io.err = savedErr;
     }
+    if (merged.length) items = [...merged, ...items];
     if (streamErr && redirErr && redirErr.target !== '&1') {
       const path = this.rp(psToString(this.evalExpr(redirErr.target)));
       this.writeFile(path, streamErr.join(''), redirErr.append);
@@ -738,6 +746,12 @@ export class PsRuntime {
     }
     // script o applicazione
     if (/[\\/]/.test(name)) return this.runScript(name, evald, input, cmd.dot);
+    // ricerca nel PATH: solo script .ps1 (come PowerShell, che non cerca nella cartella corrente)
+    for (const dir of (this.env('PATH') ?? '').split(':')) {
+      if (!dir) continue;
+      const cand = `${dir.replace(/\/$/, '')}/${/\.ps1$/i.test(name) ? name : name + '.ps1'}`;
+      if (this.vfs.isFile(this.rp(cand))) return this.runScript(cand, evald, input, cmd.dot);
+    }
     const ext = this.nativeCommand(lower, evald, input);
     if (ext) return ext;
     const sug = this.vfs.isFile(this.rp(name)) && /\.ps1$/i.test(name) ? `\nSuggestion [3,General]: The command ${name} was not found, but does exist in the current location. Windows PowerShell does not load commands from the current location by default. If you trust this command, instead type: ".\\${name}". See "get-help about_Command_Precedence" for more details.` : '';

@@ -4,6 +4,7 @@ import { sshMain } from '../lab-node.ts';
 import { UNITS, unitActive, unitAction, stamp } from '../lab.ts';
 import { getopt } from '../util.ts';
 import { USER } from '../vfs.ts';
+import { lookupHost } from '../net.ts';
 
 function reg(name: string, fn: CmdFn): void {
   COMMANDS.set(name, fn);
@@ -17,7 +18,8 @@ const notFound = (name: string, io: { err(t: string): void }): number => {
 };
 
 reg('sudo', (args, io, rt) => {
-  if (rt.state.lab?.viewAs !== 'server') {
+  // nel laboratorio a due nodi learner è amministratore sia sul client sia sul server; altrove non è nel file sudoers
+  if (!rt.state.lab) {
     io.err(`${USER} is not in the sudoers file.\n`);
     return 1;
   }
@@ -106,4 +108,50 @@ reg('journalctl', (args, io, rt) => {
   if (unit) lines = lines.filter((l) => l.includes(unit === 'taskflow' ? ' taskflow[' : unit === 'taskflow-db' ? ' postgres[' : ' ?[?'));
   io.out(`-- Journal (simulato) --\n${lines.slice(-n).join('\n')}${lines.length ? '\n' : ''}`);
   return 0;
+});
+
+reg('getent', (args, io, rt) => {
+  if (args[0] !== 'hosts' || args.length < 2) {
+    io.err('getent: nel laboratorio è supportato solo "getent hosts nome"\n');
+    return 1;
+  }
+  let code = 0;
+  for (const name of args.slice(1)) {
+    // come la libreria di sistema: prima /etc/hosts, poi il DNS
+    const info = lookupHost(name, rt.state);
+    if (!info) code = 2;
+    else io.out(`${info.ip.padEnd(15)} ${info.name === 'localhost' && name !== 'localhost' ? name : info.name}\n`);
+  }
+  return code;
+});
+
+reg('ufw', (args, io, rt) => {
+  if (rt.state.lab?.viewAs !== 'server') return notFound('ufw', io);
+  const lab = rt.state.lab;
+  if (!lab.sudo) {
+    io.err('ERROR: You need to be root to run this script\n');
+    return 1;
+  }
+  const [verb, ...rest] = args;
+  const port = lab.port;
+  if (verb === 'status') {
+    io.out(`Status: active\n\nTo                         Action      From\n--                         ------      ----\n22/tcp                     ALLOW       Anywhere\n${port}/tcp${' '.repeat(Math.max(1, 27 - `${port}/tcp`.length))}${lab.firewall ? 'DENY' : 'ALLOW'}${lab.firewall ? '        ' : '       '}Anywhere\n`);
+    return 0;
+  }
+  const target = rest.find((a) => /^\d+(\/tcp)?$/.test(a));
+  if ((verb === 'allow' || verb === 'deny') && target) {
+    if (parseInt(target, 10) !== port) {
+      io.out('Skipping adding existing rule\n');
+      return 0;
+    }
+    const deny = verb === 'deny';
+    if (lab.firewall === deny) io.out('Skipping adding existing rule\n');
+    else {
+      lab.firewall = deny;
+      io.out('Rule updated\n');
+    }
+    return 0;
+  }
+  io.err('ufw: nel laboratorio sono supportati: status, allow PORTA/tcp, deny PORTA/tcp\n');
+  return 1;
 });

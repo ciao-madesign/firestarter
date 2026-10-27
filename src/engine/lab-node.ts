@@ -36,6 +36,13 @@ export function runOnServer(state: WorkspaceState, command: string, io: SimpleIo
     return r.exit;
   } finally {
     state.clock = srv.clock;
+    // i file creati dallo studente sul server (in /tmp e in /home/learner) restano per i comandi ssh successivi
+    lab.files = {};
+    for (const [path, n] of Object.entries(srv.fs)) {
+      if ((path.startsWith('/tmp/') || path.startsWith('/home/learner/')) && path !== '/home/learner/README.txt' && Object.keys(lab.files).length < 60) {
+        lab.files[path] = n.type === 'dir' ? { dir: true, content: '' } : { content: n.content.slice(0, 20000) };
+      }
+    }
     delete lab.viewAs;
     delete lab.sudo;
   }
@@ -73,6 +80,11 @@ export function sshMain(state: WorkspaceState, args: string[], io: SimpleIo): nu
     return 255;
   }
   const info = state.lab ? labHostInfo(state, dest) : null;
+  if (info?.unreachable) {
+    state.clock += 3;
+    io.err(`ssh: connect to host ${dest} port ${port}: No route to host\n`);
+    return 255;
+  }
   if (!info || info.name !== 'server.lab' || port !== 22) {
     io.err(`ssh: connect to host ${dest} port ${port}: Connection refused\n`);
     return 255;

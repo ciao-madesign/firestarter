@@ -409,7 +409,17 @@ export function staticMember(rt: PsRuntime, type: string, member: string, args: 
         return psToString(a[0]);
       }
       if (m === 'tobase64string') return Buffer.from(toArray(a[0]).map((x) => Number(x))).toString('base64');
-      if (m === 'frombase64string') return [...Buffer.from(s(0), 'base64')];
+      if (m === 'frombase64string') {
+        // .NET è rigoroso: la lunghezza deve essere multiplo di 4 (padding con =) e ammessi solo i caratteri base64 standard
+        const t = s(0).replace(/\s/g, '');
+        if (t.length % 4 !== 0 || /[^A-Za-z0-9+/=]/.test(t)) throw new PSError('Exception calling "FromBase64String" with "1" argument(s): "Invalid length for a Base-64 char array or string."', 'NotSpecified', 'FormatException');
+        return [...Buffer.from(t, 'base64')];
+      }
+      break;
+    case 'uri':
+    case 'system.uri':
+      if (m === 'escapedatastring') return encodeURIComponent(s(0)).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+      if (m === 'unescapedatastring') return decodeURIComponent(s(0));
       break;
     case 'text.encoding':
       if (m === 'utf8' || m === 'ascii') return new PSObject('Encoding', {});

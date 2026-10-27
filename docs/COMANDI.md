@@ -832,14 +832,54 @@ Differenze rispetto al comando reale:
 
 ### `sudo`
 
-Esegue un comando con i privilegi di amministratore, sul SERVER del laboratorio.
+Esegue un comando con i privilegi di amministratore (nel laboratorio a due nodi, su client e server).
 
 Sintassi: `sudo comando [argomenti...]`
 
 Esempio: `ssh learner@server.lab "sudo systemctl restart taskflow"`
 
 Differenze rispetto al comando reale:
-- Sul client risponde "learner is not in the sudoers file". Sul server non chiede la password. Rende scrivibili i file di root solo per la durata del comando.
+- Funziona solo nelle lezioni M11 (altrove risponde "learner is not in the sudoers file"). Non chiede mai la password. Rende scrivibili i file di root solo per la durata del comando.
+
+### `ufw`
+
+Firewall del SERVER (laboratorio a due nodi): mostra le regole o apre/chiude la porta del servizio. Richiede sudo.
+
+Sintassi: `ufw status | allow PORTA/tcp | deny PORTA/tcp`
+
+- `status`: elenco delle regole
+- `allow 8080/tcp`: accetta le connessioni sulla porta
+- `deny 8080/tcp`: scarta i pacchetti: il client non riceve risposta e la connessione scade
+
+Esempio: `ssh learner@server.lab "sudo ufw status"`
+
+Differenze rispetto al comando reale:
+- Esiste solo sul server (via ssh). Gestisce solo la porta del servizio TaskFlow; il vero ufw ha molte più opzioni.
+
+### `getent`
+
+Risolve un nome come fanno i programmi: prima /etc/hosts, poi il DNS.
+
+Sintassi: `getent hosts nome`
+
+Esempio: `getent hosts server.lab`
+
+Differenze rispetto al comando reale:
+- Solo "getent hosts". A differenza di nslookup e dig, che interrogano solo il DNS, tiene conto di /etc/hosts (come ping e curl).
+
+### `base64`
+
+Codifica in base64 o, con -d, decodifica.
+
+Sintassi: `base64 [-d] [-w N] [file]`
+
+- `-d`: decodifica
+- `-w N`: manda a capo ogni N caratteri (0 = mai; default 76)
+
+Esempio: `echo -n ciao | base64`
+
+Differenze rispetto al comando reale:
+- La decodifica segue GNU base64: senza il padding finale (=) stampa ciò che riesce a decodificare e termina con "invalid input". Il base64url dei JWT (- e _) va prima convertito con tr. Su macOS l'opzione è -D o --decode.
 
 ### `kill`
 

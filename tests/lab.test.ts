@@ -75,11 +75,58 @@ describe('laboratorio a due nodi', () => {
     expect(s.lab!.dbUp).toBe(true);
   });
 
-  it('i comandi del server non esistono sul client e il client non è sudoer', () => {
+  it('i comandi del server non esistono sul client; fuori dal laboratorio sudo non è disponibile', () => {
     const s = ws('ok');
     expect(run(s, 'systemctl status taskflow').exit).toBe(127);
     expect(run(s, 'journalctl -u taskflow').exit).toBe(127);
-    expect(run(s, 'sudo ls').out).toContain('sudoers');
+    expect(run(s, 'ufw status').exit).toBe(127);
+    expect(run(ws(null), 'sudo ls').out).toContain('sudoers');
+  });
+
+  it('firewall: la porta non rifiuta, la connessione scade; in locale sul server funziona', () => {
+    const s = ws('firewall');
+    expect(run(s, 'ping -c1 server.lab').exit).toBe(0);
+    const nc = run(s, 'nc -zv -w 2 server.lab 8080');
+    expect(nc.out).toContain('timed out');
+    const c = run(s, 'curl -sS -m 3 $TASKFLOW_URL/v1/health');
+    expect(c.exit).toBe(28);
+    expect(c.out).toContain('Timeout was reached');
+    expect(run(s, 'ssh server.lab "curl -s localhost:8080/v1/health"').exit).toBe(0);
+    expect(run(s, 'ssh server.lab "systemctl is-active taskflow"').out).toContain('active');
+    expect(run(s, 'ssh server.lab "ufw status"').out).toContain('root');
+    expect(run(s, 'ssh server.lab "sudo ufw status"').out).toContain('DENY');
+    run(s, 'ssh server.lab "sudo ufw allow 8080/tcp"');
+    expect(run(s, 'curl -s $TASKFLOW_URL/v1/health').exit).toBe(0);
+  });
+
+  it('nome sbagliato in /etc/hosts: ping e curl falliscono, nslookup risponde bene, si risolve sul client', () => {
+    const s = ws('dns_wrong');
+    expect(run(s, 'getent hosts server.lab').out).toContain('192.168.50.11');
+    expect(run(s, 'nslookup server.lab').out).toContain('192.168.50.10');
+    expect(run(s, 'ping -c1 server.lab').out).toContain('Destination Host Unreachable');
+    expect(run(s, 'nc -zv server.lab 8080').out).toContain('No route to host');
+    expect(run(s, 'curl -sS $TASKFLOW_URL/v1/health').exit).toBe(7);
+    expect(run(s, 'ssh server.lab hostname').out).toContain('No route to host');
+    expect(run(s, 'ssh learner@192.168.50.10 hostname').out).toContain('server');
+    expect(run(s, 'curl -s http://192.168.50.10:8080/v1/health').exit).toBe(0);
+    run(s, "sudo sed -i '/192.168.50.11/d' /etc/hosts");
+    expect(run(s, 'getent hosts server.lab').out).toContain('192.168.50.10');
+    expect(run(s, 'curl -s $TASKFLOW_URL/v1/health').exit).toBe(0);
+  });
+
+  it('i file creati sul server persistono; le redirezioni locali restano sul client', () => {
+    const s = ws('ok');
+    run(s, 'ssh server.lab "echo uno > /tmp/nota.txt"');
+    expect(run(s, 'ssh server.lab "cat /tmp/nota.txt"').out).toBe('uno\n');
+    run(s, 'ssh server.lab "cat /etc/hostname" > locale.txt');
+    expect(run(s, 'cat locale.txt').out).toBe('server\n');
+    expect(run(s, 'cat /tmp/nota.txt').exit).not.toBe(0);
+  });
+
+  it('virgolette: $(hostname) tra apici doppi si espande sul client, tra apici singoli sul server', () => {
+    const s = ws('ok');
+    expect(run(s, 'ssh server.lab "echo $(hostname)"').out).toBe('lab\n');
+    expect(run(s, "ssh server.lab 'echo $(hostname)'").out).toBe('server\n');
   });
 
   it('ssh: limiti dichiarati', () => {

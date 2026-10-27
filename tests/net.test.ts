@@ -20,7 +20,7 @@ describe('rete simulata', () => {
     const c = run('bash', 'nc -zv localhost 9999');
     expect(c.exit).toBe(1);
     expect(c.out).toMatch(/Connection refused/);
-    expect(run('pwsh', 'Test-NetConnection localhost -Port 9999').out).toMatch(/TcpTestSucceeded : False/);
+    expect(run('pwsh', 'Test-NetConnection localhost -Port 9999').out).toMatch(/TcpTestSucceeded\s+: False/);
     expect(run('bash', 'ss -tlnp').out).toMatch(/127\.0\.0\.1:8080/);
     expect(run('bash', 'ss -x').exit).toBe(1);
   });

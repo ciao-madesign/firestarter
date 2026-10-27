@@ -3,7 +3,7 @@
  * Deterministico: tempi, id, token e rate limit dipendono solo dallo stato (clock simulato).
  */
 import { labGate, labLog } from '../lab.ts';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import type { ApiEnvState, ApiLogEntry, ApiState, ApiTask, EnvName, ShellId, WorkspaceState } from '../types.ts';
 import { Vfs } from '../vfs.ts';
 import { API_VERSION, BASE_URLS, ENDPOINTS, TASK_FIELDS, buildOpenApi, findEndpoint, type FieldSpec } from './spec.ts';
@@ -88,6 +88,8 @@ export interface HttpRequest {
   client: string;
   shell: ShellId | null;
   timeoutMs?: number;
+  /** timeout di connessione (curl --connect-timeout) */
+  connectTimeoutMs?: number;
   /** ignora gli errori di certificato (curl -k); Windows PowerShell 5.1 non ha un equivalente */
   insecure?: boolean;
 }
@@ -103,7 +105,7 @@ export interface HttpResponse {
 
 export type NetResult =
   | { ok: true; res: HttpResponse; env: EnvName | null }
-  | { ok: false; kind: 'dns' | 'refused' | 'timeout' | 'tls' | 'cert' | 'badurl'; host: string; port: number; ms: number };
+  | { ok: false; kind: 'dns' | 'refused' | 'timeout' | 'ctimeout' | 'unreachable' | 'tls' | 'cert' | 'badurl'; host: string; port: number; ms: number };
 
 const STATUS_TEXT: Record<number, string> = {
   200: 'OK', 201: 'Created', 204: 'No Content', 301: 'Moved Permanently', 400: 'Bad Request', 401: 'Unauthorized',
@@ -137,6 +139,9 @@ export function parseUrl(url: string): ParsedUrl | null {
   }
   return { scheme, host: m[2].toLowerCase(), port, path: m[4] || '/', query, rawQuery: m[5] ?? '' };
 }
+
+/** porte filtrate dei servizi simulati (la connessione scade invece di essere rifiutata) */
+export const FILTERED_PORTS = [{ host: 'localhost', port: 8089 }];
 
 /** host con certificato scaduto (stessi dati dello staging): serve per esercitarsi sugli errori TLS */
 export const EXPIRED_CERT_HOST = 'expired.api.taskflow.test';
@@ -375,6 +380,32 @@ function methodNotAllowed(allow: string[]): Raw {
   return err(405, 'method_not_allowed', `Metodo non consentito. Metodi ammessi: ${allow.join(', ')}.`, {}, { Allow: allow.join(', ') });
 }
 
+/** Token anti-CSRF legato al cookie di sessione (deterministico). */
+function csrfToken(cookie: string): string {
+  return 'csrf_' + createHash('sha256').update('csrf:' + cookie).digest('hex').slice(0, 16);
+}
+
+/** Legge e valida il cookie di sessione: utente e scadenza, oppure la risposta di errore. */
+function readSession(ctx: Ctx): { user: string; exp: number; cookie: string } | { fail: Raw } {
+  const tag = ENV_TAG[ctx.env];
+  const m = /(?:^|;\s*)session=([^;]*)/.exec(ctx.req.headers['cookie'] ?? '');
+  if (!m || !m[1]) {
+    appLog(ctx, 'WARN ', 'session: cookie di sessione assente');
+    return { fail: err(401, 'no_session', 'Nessuna sessione: esegui prima POST /v1/login e invia il cookie.') };
+  }
+  const t = /^sess_(dev|test|stg)_([a-z]+)_(\d+)$/.exec(m[1]);
+  if (!t || t[1] !== tag) {
+    appLog(ctx, 'WARN ', 'session: cookie non valido per questo ambiente');
+    return { fail: err(401, 'invalid_session', 'Cookie di sessione non valido per questo ambiente.') };
+  }
+  const exp = parseInt(t[3], 10);
+  if (exp <= ctx.state.clock) {
+    appLog(ctx, 'WARN ', `session: sessione scaduta (exp=${iso(exp)})`);
+    return { fail: err(401, 'session_expired', 'Sessione scaduta: esegui di nuovo il login.') };
+  }
+  return { user: t[2], exp, cookie: m[1] };
+}
+
 /** Area dimostrativa (non nella specifica OpenAPI): login con cookie di sessione e ricezione di webhook firmati. */
 function demoRoute(ctx: Ctx, head: string, rest: string[], method: string): Raw {
   const { req, u } = ctx;
@@ -394,23 +425,35 @@ function demoRoute(ctx: Ctx, head: string, rest: string[], method: string): Raw 
   }
   if (head === 'session' && rest.length === 1) {
     if (method !== 'GET') return methodNotAllowed(['GET']);
-    const cookie = req.headers['cookie'] ?? '';
-    const m = /(?:^|;\s*)session=([^;]*)/.exec(cookie);
-    if (!m || !m[1]) {
-      appLog(ctx, 'WARN ', 'session: cookie di sessione assente');
-      return err(401, 'no_session', 'Nessuna sessione: esegui prima POST /v1/login e invia il cookie.');
+    const ses = readSession(ctx);
+    if ('fail' in ses) return ses.fail;
+    return json(200, { user: ses.user, expires_at: iso(ses.exp), csrfToken: csrfToken(ses.cookie), displayName: ctx.e.displayName ?? ses.user });
+  }
+  if (head === 'session' && rest[1] === 'profile' && rest.length === 2) {
+    // modifica che usa il cookie: per questo serve una difesa dal CSRF (token nell'header e controllo dell'origine)
+    if (method !== 'POST') return methodNotAllowed(['POST']);
+    const ses = readSession(ctx);
+    if ('fail' in ses) return ses.fail;
+    const origin = req.headers['origin'];
+    if (origin && !CORS_ALLOWED_ORIGINS.includes(origin)) {
+      appLog(ctx, 'WARN ', `csrf: origine non consentita ${origin}`);
+      return err(403, 'csrf_origin_mismatch', `Richiesta da un'origine non consentita: ${origin}.`);
     }
-    const t = /^sess_(dev|test|stg)_([a-z]+)_(\d+)$/.exec(m[1]);
-    if (!t || t[1] !== tag) {
-      appLog(ctx, 'WARN ', 'session: cookie non valido per questo ambiente');
-      return err(401, 'invalid_session', 'Cookie di sessione non valido per questo ambiente.');
+    const tok = req.headers['x-csrf-token'];
+    if (!tok) {
+      appLog(ctx, 'WARN ', 'csrf: header X-CSRF-Token assente');
+      return err(403, 'csrf_token_missing', 'Header X-CSRF-Token assente: leggi il token con GET /v1/session.');
     }
-    const exp = parseInt(t[3], 10);
-    if (exp <= ctx.state.clock) {
-      appLog(ctx, 'WARN ', `session: sessione scaduta (exp=${iso(exp)})`);
-      return err(401, 'session_expired', 'Sessione scaduta: esegui di nuovo il login.');
+    if (tok !== csrfToken(ses.cookie)) {
+      appLog(ctx, 'WARN ', 'csrf: token non valido');
+      return err(403, 'csrf_token_invalid', 'Token CSRF non valido per questa sessione.');
     }
-    return json(200, { user: t[2], expires_at: iso(exp) });
+    const p = parseBody(ctx, true);
+    if ('fail' in p) return p.fail;
+    if (typeof p.data.displayName !== 'string' || !p.data.displayName.trim()) return err(422, 'validation_failed', 'La richiesta non supera la validazione.', { errors: [{ field: 'displayName', message: 'campo obbligatorio' }] });
+    ctx.e.displayName = p.data.displayName;
+    appLog(ctx, 'INFO ', `session: nome visualizzato di ${ses.user} aggiornato`);
+    return json(200, { user: ses.user, displayName: ctx.e.displayName });
   }
   if (head === 'logout' && rest.length === 1) {
     if (method !== 'POST') return methodNotAllowed(['POST']);
@@ -555,7 +598,22 @@ export function sendRequest(state: WorkspaceState, req: HttpRequest): NetResult 
   if (!env) {
     return { ok: false, kind: 'dns', host: u.host, port: u.port, ms: 0 };
   }
+  if (gate.lab && gate.fail === 'ctimeout') {
+    // porta filtrata: nessuna risposta, la connessione scade (127 s se il client non imposta un limite)
+    const ms = req.connectTimeoutMs ?? req.timeoutMs ?? 127000;
+    state.clock += Math.ceil(ms / 1000);
+    return { ok: false, kind: 'ctimeout', host: u.host, port: u.port, ms };
+  }
+  if (gate.lab && gate.fail === 'unreachable') {
+    state.clock += 3;
+    return { ok: false, kind: 'unreachable', host: u.host, port: u.port, ms: 3012 };
+  }
   if (gate.lab && gate.fail) return { ok: false, kind: gate.fail, host: u.host, port: u.port, ms: gate.fail === 'tls' ? 3 : 0 };
+  if (!gate.lab && FILTERED_PORTS.some((f) => f.host === u.host && f.port === u.port)) {
+    const ms = req.connectTimeoutMs ?? req.timeoutMs ?? 127000;
+    state.clock += Math.ceil(ms / 1000);
+    return { ok: false, kind: 'ctimeout', host: u.host, port: u.port, ms };
+  }
   const baseUrl = parseUrl(gate.lab ? 'http://lab.invalid' : BASE_URLS[env])!;
   const reachable =
     gate.lab ||

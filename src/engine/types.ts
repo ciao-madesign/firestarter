@@ -60,6 +60,8 @@ export interface ApiEnvState {
   flakyCounter: number;
   /** istanti (secondi simulati) delle richieste a /search, per il rate limit */
   searchHits: number[];
+  /** nome visualizzato del profilo di sessione (area dimostrativa CSRF), per ambiente */
+  displayName?: string;
 }
 
 export interface ApiState {

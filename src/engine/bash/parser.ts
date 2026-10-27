@@ -515,6 +515,7 @@ export class Parser {
           if (this.peekc() === '(' && index === undefined) {
             assigns.push({ name: am[1], value: [], append: am[3] === '+', array: this.readArrayLiteral(), post });
           } else {
+            this.tildeAssign = true;
             const value = this.readWord();
             assigns.push({ name: am[1], value, append: am[3] === '+', ...(index ? { index } : {}), ...(post ? { post } : {}) });
           }
@@ -522,7 +523,9 @@ export class Parser {
         }
       }
       if ((c === '<' || c === '>') && !this.src.startsWith('<(', this.pos)) throw new BashSyntaxError("syntax error near unexpected token `newline'");
+      this.tildeAssign = sawCommand && words.length > 0 && /^(declare|local|typeset|readonly|export)$/.test(this.wordText(words[0])) && /^[A-Za-z_][A-Za-z0-9_]*\+?=/.test(this.src.slice(this.pos));
       const word = this.readWord(sawCommand ? false : false);
+      this.tildeAssign = false;
       if (!word.length) {
         throw new BashSyntaxError(`syntax error near unexpected token \`${this.peekc()}'`);
       }
@@ -563,11 +566,15 @@ export class Parser {
   }
 
   private budget = 0;
+  /** la parola in lettura è un'assegnazione (NOME=valore): `~` si espande anche dopo `=` e `:` */
+  private tildeAssign = false;
 
   /** Legge una parola con quoting ed espansioni. */
   readWord(_cmdStart = false): Word {
     if (++this.budget > 400_000) throw new BashSyntaxError('syntax error: riga troppo complessa');
     const segs: Word = [];
+    const asg = this.tildeAssign;
+    this.tildeAssign = false;
     let buf = '';
     const flush = (): void => {
       if (buf) {
@@ -589,7 +596,7 @@ export class Parser {
       if (/[\s|&;<>()]/.test(c)) {
         break;
       }
-      if (c === '~' && first) {
+      if (c === '~' && (first || (asg && (this.src[this.pos - 1] === ':' || this.src[this.pos - 1] === '=')))) {
         flush();
         segs.push({ t: 'tilde' });
         this.pos++;
