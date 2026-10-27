@@ -456,6 +456,14 @@ Concetti: gestione di errori e retry; rate limit; concatenazione di operazioni.
 
 Verifica (criterio): L'esecuzione stampa "completate 8 ricerche" con almeno un 429 gestito ed esce con 0.
 
+### M7.L6 — Scenario nuovo: controllare un elenco di endpoint
+
+Obiettivo: Applicare ciclo, lettura riga per riga, argomenti e codici di uscita a un problema nuovo: uno script che verifica una lista di endpoint con lo status atteso.
+
+Concetti: trasferimento: ciclo + argomenti + codici di uscita; curl -w http_code.
+
+Verifica (criterio): Con endpoint.txt: 3 PASS, riepilogo 3 passati / 0 falliti, uscita 0; con un file che si aspetta lo status sbagliato: FAIL e uscita 1; con un file inesistente: uscita 2.
+
 ## M8 — Portfolio (estensione facoltativa)
 
 Quattro artefatti da portfolio verificati dal laboratorio: guida rapida, specifica OpenAPI, bug report con troubleshooting, script di test con report.
@@ -543,6 +551,14 @@ Obiettivo: Ricavare dal solo codice il contratto di un endpoint non documentato,
 Concetti: documentare da codice; autenticazione con firma HMAC; domande aperte; fatto e ipotesi.
 
 Verifica (criterio): Il documento riporta POST, /api/webhook-polar, x-polar-signature, HMAC SHA-256 del body grezzo, i tre status con i corpi, POLAR_WEBHOOK_SECRET e almeno due domande aperte; hai letto il file del codice.
+
+### M9.L7 — Scenario nuovo: ricostruire una modifica dalla cronologia
+
+Obiettivo: Usare Git in sola lettura per ricostruire chi, quando e perché ha cambiato un comportamento, e verificare se la documentazione è stata aggiornata.
+
+Concetti: trasferimento: cronologia Git in sola lettura; documentazione disallineata.
+
+Verifica (criterio): ricostruzione.md contiene l'hash 09c6cb1, l'autore Bruno Verdi, la data 15 settembre 2026 e la conclusione che la documentazione non è stata aggiornata; hai usato git log o git show.
 
 ## M10 — Sessioni, webhook e autenticazione (estensione facoltativa)
 

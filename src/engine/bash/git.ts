@@ -160,6 +160,16 @@ export function git(args: string[], io: Io, rt: BashRuntime): number {
 
   if (sub === 'log') {
     let list = DEMO_COMMITS.map((_, i) => i).reverse();
+    const nOpt = opts.indexOf('-n') >= 0 ? opts[opts.indexOf('-n') + 1] : undefined;
+    const revArg = pos.find((x) => x !== nOpt);
+    if (revArg !== undefined) {
+      const from = resolveRev(revArg);
+      if (from === null) {
+        io.err(`fatal: ambiguous argument '${revArg}': unknown revision or path not in the working tree.\n`);
+        return 128;
+      }
+      list = list.filter((i) => i <= from);
+    }
     if (paths.length) list = list.filter((i) => changedFiles(i).some((f) => paths.some((p) => f === p || f.startsWith(p + '/'))));
     const author = flags.find((f) => f.startsWith('--author='))?.slice(9).toLowerCase();
     if (author) list = list.filter((i) => DEMO_COMMITS[i].author.toLowerCase().includes(author));

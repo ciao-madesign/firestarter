@@ -1143,6 +1143,25 @@
             "bash",
             "pwsh"
           ]
+        },
+        {
+          "id": "M7.L6",
+          "title": "Scenario nuovo: controllare un elenco di endpoint",
+          "objective": "Applicare ciclo, lettura riga per riga, argomenti e codici di uscita a un problema nuovo: uno script che verifica una lista di endpoint con lo status atteso.",
+          "concepts": [
+            "trasferimento: ciclo + argomenti + codici di uscita",
+            "curl -w http_code"
+          ],
+          "skills": [
+            "comandi",
+            "testing",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
         }
       ]
     },
@@ -1353,6 +1372,24 @@
           "skills": [
             "docs",
             "diagnosi",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M9.L7",
+          "title": "Scenario nuovo: ricostruire una modifica dalla cronologia",
+          "objective": "Usare Git in sola lettura per ricostruire chi, quando e perché ha cambiato un comportamento, e verificare se la documentazione è stata aggiornata.",
+          "concepts": [
+            "trasferimento: cronologia Git in sola lettura",
+            "documentazione disallineata"
+          ],
+          "skills": [
+            "docs",
             "autonomia"
           ],
           "review": false,

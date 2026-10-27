@@ -13,7 +13,7 @@ export const ripassi: Lesson[] = [
     title: 'Ripasso: formattare e sommare colonne (printf, awk)',
     objective: 'Riprendere in 5 minuti la lettura di un CSV, la stampa formattata e il totale di una colonna.',
     explain: [
-      'Un file CSV ha un valore per colonna, separati da virgola. In Bash `awk -F, \'{ ... }\'` legge le righe dividendole alla virgola: `$1` è la prima colonna, `$2` la seconda, `NR` il numero di riga. `printf` stampa con un formato (`%s` testo, `%d` numero, `\\n` a capo). `END { ... }` viene eseguito dopo l\'ultima riga: è il posto per i totali.',
+      'Un file CSV ha un valore per colonna, separati da virgola. In Bash `awk -F, \'{ ... }\'` legge le righe dividendole alla virgola: `$1` è la prima colonna, `$2` la seconda, `NR` il numero di riga. `printf` stampa con un formato (`%s` testo, `%d` numero, `\\n` a capo). `END { ... }` viene eseguito dopo l\'ultima riga: è il posto per i totali. `>` crea (o sovrascrive) il file, `>>` aggiunge in coda.',
       'In PowerShell `Import-Csv` legge il file e dà un oggetto per riga con una proprietà per colonna (`$_.nome`); `Measure-Object punti -Sum` somma una colonna; `Add-Content` aggiunge una riga a un file.',
     ],
     shells: ['bash', 'pwsh'],

@@ -697,7 +697,7 @@ Git in SOLA LETTURA sul repository d'esempio del corso (cinque commit di un prog
 Sintassi: `git status | log | show | diff | blame | branch`
 
 - `log --oneline`: una riga per commit
-- `log -n N, --author=X, -- percorso`: filtri
+- `log [commit], -n N, --author=X, -- percorso`: filtri (log <commit> parte da quel commit)
 - `show <commit> [-- percorso]`: modifiche di un commit
 - `diff [<a> [<b>]] [-- percorso]`: differenze tra commit o con la copia di lavoro
 - `blame [-L a,b] file`: chi ha scritto ogni riga
@@ -950,7 +950,7 @@ Git in SOLA LETTURA sul repository d'esempio del corso (cinque commit di un prog
 Sintassi: `git status | log | show | diff | blame | branch`
 
 - `log --oneline`: una riga per commit
-- `log -n N, --author=X, -- percorso`: filtri
+- `log [commit], -n N, --author=X, -- percorso`: filtri (log <commit> parte da quel commit)
 - `show <commit> [-- percorso]`: modifiche di un commit
 - `diff [<a> [<b>]] [-- percorso]`: differenze tra commit o con la copia di lavoro
 - `blame [-L a,b] file`: chi ha scritto ogni riga
