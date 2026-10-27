@@ -50,7 +50,7 @@ Verifica (criterio): Un output contiene .nascosto e i file ordinati recente → 
 
 ## M2 — Comporre e testare
 
-Pipe, redirezione, filtri, variabili d'ambiente, codici di uscita, test positivi e negativi.
+Pipe, redirezione, i due canali di uscita (stdout e stderr), filtri, variabili d'ambiente, codici di uscita anche nelle pipeline, PATH e permessi di esecuzione, test positivi e negativi.
 
 ### M2.L1 — Pipe e redirezione dell'output
 
@@ -118,7 +118,7 @@ Verifica (criterio): report.txt ha i conteggi corretti in ordine decrescente; er
 
 ## M3 — HTTP e API
 
-Client e server, URL, metodi, status code, header, body, JSON, parametri, errore HTTP ed errore applicativo.
+Client e server, URL e codifica dei parametri, metodi, status code, header, body JSON e virgolette tra Bash e PowerShell 5.1, errore HTTP ed errore applicativo.
 
 ### M3.L1 — Client e server, URL e metodi
 
@@ -178,7 +178,7 @@ Verifica (criterio): Le richieste reali esistono nel registro del server e il fi
 
 ## M4 — Testing API REST + OpenAPI
 
-Specifica OpenAPI, autenticazione e segreti, CRUD, validazione, paginazione, idempotenza, timeout, rate limit, confronto con PowerShell.
+Specifica OpenAPI, jq a più livelli, autenticazione e segreti, CRUD, validazione (400, 415, 422), paginazione e idempotenza, timeout e rate limit, confronto con PowerShell.
 
 ### M4.L1 — Leggere una specifica OpenAPI
 
@@ -254,7 +254,7 @@ Verifica (criterio): Il registro del server mostra POST /v1/tasks con 201 e 422;
 
 ## M5 — Integrazioni e diagnosi
 
-DNS, connessioni rifiutate, 4xx e 5xx, log, individuare il punto di rottura, retry e script elementari.
+DNS, porta chiusa o filtrata e timeout, 4xx e 5xx, log e X-Request-Id, individuare il punto di rottura, retry e script elementari, errori intermittenti.
 
 ### M5.L1 — DNS e raggiungibilità: il nome non si risolve
 
@@ -346,7 +346,7 @@ Verifica (criterio): Il registro mostra almeno 12 chiamate a /v1/flaky; analisi.
 
 ## M6 — Documentazione professionale + progetto finale
 
-Test case e test plan, bug report riproducibili, documentazione con esempi verificabili, troubleshooting, procedura da ambiente pulito, progetto finale.
+Test case e test plan, bug report riproducibili, documentazione con esempi verificabili, verifica manuale di una guida, troubleshooting, procedura da ambiente pulito, progetto finale.
 
 ### M6.L1 — Test case e test plan
 
@@ -398,7 +398,7 @@ Verifica (criterio): Tutti i controlli oggettivi sotto sono superati.
 
 ## M7 — Automazione (estensione facoltativa) (estensione facoltativa)
 
-Cicli e funzioni, suite di test ripetibili con report, retry e rate limit.
+Cicli e funzioni, lettura di file riga per riga, argomenti e codici di uscita negli script, suite di test ripetibili con report, retry e rate limit.
 
 ### M7.L1 — Cicli e funzioni per ripetere le operazioni
 
@@ -478,7 +478,7 @@ Verifica (criterio): Esecuzione con PASS ≥ 6 e FAIL: 0, exit 0; con token sbag
 
 ## M9 — Dal codice alla documentazione (estensione facoltativa)
 
-Sola lettura su un progetto d'esempio: trovare le rotte, ricavare il contratto da un handler, confrontare codice e documentazione, cronologia Git, OpenAPI in YAML e JSON Schema di base.
+Sola lettura su un progetto d'esempio: trovare le rotte, ricavare il contratto da un handler, confrontare codice e documentazione, documentare un endpoint che non ha documentazione, cronologia Git, OpenAPI in YAML e JSON Schema di base.
 
 ### M9.L1 — Trovare le rotte nel codice
 
@@ -530,7 +530,7 @@ Verifica (criterio): Il documento riporta POST, /api/webhook-polar, x-polar-sign
 
 ## M10 — Sessioni, webhook e autenticazione (estensione facoltativa)
 
-Cookie di sessione, webhook firmati con HMAC, confronto dei flussi di autenticazione (Bash).
+Cookie di sessione, CSRF e SameSite, lettura di un JWT, webhook firmati con HMAC e mappa dei flussi di autenticazione (queste ultime due solo in Bash).
 
 ### M10.L1 — Sessioni con cookie
 
@@ -574,7 +574,7 @@ Verifica (criterio): Il registro mostra i tre 200; la tabella ha le colonne rich
 
 ## M11 — Laboratorio a due nodi (estensione facoltativa)
 
-Un server che ospita il servizio e un client che lo usa, su una rete simulata: ssh, servizi, porte, registro del server; guasti controllati (servizio fermo, porta sbagliata, database) e rapporto di diagnosi. Equivale al laboratorio con due macchine virtuali (kit reale in course/lab-vm/).
+Un server che ospita il servizio e un client che lo usa, su una rete simulata: ssh, interpretazione dei comandi (client o server), servizi, porte, firewall, nome (DNS e file hosts), registro del server; guasti controllati e due verifiche finali con rapporto di diagnosi. Equivale al laboratorio con due macchine virtuali (kit reale in course/lab-vm/).
 
 ### M11.L1 — Due nodi: chi serve e chi usa
 

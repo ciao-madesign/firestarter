@@ -29,16 +29,16 @@ import { guidedExtra } from './guided-extra.ts';
 
 const UNSORTED: ModuleInfo[] = [
   { n: 1, title: 'Fondamenti', summary: 'Terminale e shell, variabili, prompt, percorsi, quoting, opzioni, man, lettura file.' },
-  { n: 2, title: 'Comporre e testare', summary: 'Pipe, redirezione, filtri, variabili d\'ambiente, codici di uscita, test positivi e negativi.' },
-  { n: 3, title: 'HTTP e API', summary: 'Client e server, URL, metodi, status code, header, body, JSON, parametri, errore HTTP ed errore applicativo.' },
-  { n: 5, title: 'Integrazioni e diagnosi', summary: 'DNS, connessioni rifiutate, 4xx e 5xx, log, individuare il punto di rottura, retry e script elementari.' },
-  { n: 6, title: 'Documentazione professionale + progetto finale', summary: 'Test case e test plan, bug report riproducibili, documentazione con esempi verificabili, troubleshooting, procedura da ambiente pulito, progetto finale.' },
-  { n: 7, title: 'Automazione (estensione facoltativa)', summary: 'Cicli e funzioni, suite di test ripetibili con report, retry e rate limit.', optional: true },
+  { n: 2, title: 'Comporre e testare', summary: 'Pipe, redirezione, i due canali di uscita (stdout e stderr), filtri, variabili d\'ambiente, codici di uscita anche nelle pipeline, PATH e permessi di esecuzione, test positivi e negativi.' },
+  { n: 3, title: 'HTTP e API', summary: 'Client e server, URL e codifica dei parametri, metodi, status code, header, body JSON e virgolette tra Bash e PowerShell 5.1, errore HTTP ed errore applicativo.' },
+  { n: 5, title: 'Integrazioni e diagnosi', summary: 'DNS, porta chiusa o filtrata e timeout, 4xx e 5xx, log e X-Request-Id, individuare il punto di rottura, retry e script elementari, errori intermittenti.' },
+  { n: 6, title: 'Documentazione professionale + progetto finale', summary: 'Test case e test plan, bug report riproducibili, documentazione con esempi verificabili, verifica manuale di una guida, troubleshooting, procedura da ambiente pulito, progetto finale.' },
+  { n: 7, title: 'Automazione (estensione facoltativa)', summary: 'Cicli e funzioni, lettura di file riga per riga, argomenti e codici di uscita negli script, suite di test ripetibili con report, retry e rate limit.', optional: true },
   { n: 8, title: 'Portfolio', summary: 'Quattro artefatti da portfolio verificati dal laboratorio: guida rapida, specifica OpenAPI, bug report con troubleshooting, script di test con report.', optional: true },
-  { n: 9, title: 'Dal codice alla documentazione', summary: 'Sola lettura su un progetto d\'esempio: trovare le rotte, ricavare il contratto da un handler, confrontare codice e documentazione, cronologia Git, OpenAPI in YAML e JSON Schema di base.', optional: true },
-  { n: 10, title: 'Sessioni, webhook e autenticazione', summary: 'Cookie di sessione, webhook firmati con HMAC, confronto dei flussi di autenticazione (Bash).', optional: true },
-  { n: 11, title: 'Laboratorio a due nodi', summary: 'Un server che ospita il servizio e un client che lo usa, su una rete simulata: ssh, servizi, porte, registro del server; guasti controllati (servizio fermo, porta sbagliata, database) e rapporto di diagnosi. Equivale al laboratorio con due macchine virtuali (kit reale in course/lab-vm/).', optional: true },
-  { n: 4, title: 'Testing API REST + OpenAPI', summary: 'Specifica OpenAPI, autenticazione e segreti, CRUD, validazione, paginazione, idempotenza, timeout, rate limit, confronto con PowerShell.' },
+  { n: 9, title: 'Dal codice alla documentazione', summary: 'Sola lettura su un progetto d\'esempio: trovare le rotte, ricavare il contratto da un handler, confrontare codice e documentazione, documentare un endpoint che non ha documentazione, cronologia Git, OpenAPI in YAML e JSON Schema di base.', optional: true },
+  { n: 10, title: 'Sessioni, webhook e autenticazione', summary: 'Cookie di sessione, CSRF e SameSite, lettura di un JWT, webhook firmati con HMAC e mappa dei flussi di autenticazione (queste ultime due solo in Bash).', optional: true },
+  { n: 11, title: 'Laboratorio a due nodi', summary: 'Un server che ospita il servizio e un client che lo usa, su una rete simulata: ssh, interpretazione dei comandi (client o server), servizi, porte, firewall, nome (DNS e file hosts), registro del server; guasti controllati e due verifiche finali con rapporto di diagnosi. Equivale al laboratorio con due macchine virtuali (kit reale in course/lab-vm/).', optional: true },
+  { n: 4, title: 'Testing API REST + OpenAPI', summary: 'Specifica OpenAPI, jq a più livelli, autenticazione e segreti, CRUD, validazione (400, 415, 422), paginazione e idempotenza, timeout e rate limit, confronto con PowerShell.' },
 ];
 
 export const MODULES: ModuleInfo[] = [...UNSORTED].sort((a, b) => a.n - b.n);

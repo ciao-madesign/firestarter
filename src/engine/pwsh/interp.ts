@@ -291,7 +291,7 @@ export class PsRuntime {
     const { line, col, lineText } = lineCol(this.src, e.pos);
     const tok = e.token || this.src.slice(e.pos, e.pos + 1);
     this.io.err(
-      `${e.message}\nAt line:${line} char:${col}\n+ ${lineText}\n+ ${' '.repeat(Math.max(0, col - 1))}${'~'.repeat(Math.max(1, tok.length))}\n    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException\n    + FullyQualifiedErrorId : ${e.message.includes('not a valid statement separator') ? 'InvalidEndOfLine' : 'UnexpectedToken'}\n`,
+      `${e.message}\nAt line:${line} char:${col}\n+ ${lineText}\n+ ${' '.repeat(Math.max(0, col - 1))}${'~'.repeat(Math.max(1, tok.length))}\n    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException\n    + FullyQualifiedErrorId : ${e.message.includes('not a valid statement separator') ? 'InvalidEndOfLine' : e.message.startsWith('The ampersand') ? 'AmpersandNotAllowed' : 'UnexpectedToken'}\n`,
     );
   }
 

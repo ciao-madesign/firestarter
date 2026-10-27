@@ -1,13 +1,16 @@
 /** Parser PowerShell (sottoinsieme di Windows PowerShell 5.1). */
 
 export class PsIncomplete extends Error {}
+const AMPERSAND_MSG = 'The ampersand (&) character is not allowed. The & operator is reserved for future use; wrap an ampersand in double quotation marks ("&") to pass it as part of a string.';
+
 export class PsSyntaxError extends Error {
   constructor(
     message: string,
     public pos: number,
     public token = '',
   ) {
-    super(message);
+    // Windows PowerShell 5.1: una & isolata dentro un indirizzo o un argomento è «riservata»
+    super(/^Unexpected token '&'/.test(message) ? AMPERSAND_MSG : message);
   }
 }
 
@@ -155,6 +158,10 @@ export class PsParser {
       if (c && c !== '\n' && c !== ';' && c !== close) {
         if (this.starts('&&') || this.starts('||')) {
           throw new PsSyntaxError(`The token '${this.src.slice(this.pos, this.pos + 2)}' is not a valid statement separator in this version.`, this.pos, this.src.slice(this.pos, this.pos + 2));
+        }
+        if (c === '&') {
+          // Windows PowerShell 5.1: la & fuori dalle virgolette in un indirizzo è riservata
+          throw new PsSyntaxError('The ampersand (&) character is not allowed. The & operator is reserved for future use; wrap an ampersand in double quotation marks ("&") to pass it as part of a string.', this.pos, '&');
         }
         throw new PsSyntaxError(`Unexpected token '${this.readUntilSpace()}' in expression or statement.`, this.pos, this.readUntilSpace());
       }
