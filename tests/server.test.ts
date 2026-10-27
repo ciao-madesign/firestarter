@@ -49,7 +49,7 @@ describe('Backend applicativo', () => {
     expect(e.json.live.every((c: any) => c.pass)).toBe(true);
     const v = await call('POST', '/api/lessons/M2.L1/verify', { shell: 'bash' });
     expect(v.json.result.pass).toBe(true);
-    expect(v.json.session.course.next.lesson).toBe('M2.L3');
+    expect(v.json.session.course.next.lesson).toBe('M2.L2');
     expect(v.json.lesson.completions.bash.mode).toBe('autonomous');
   });
   it('la soluzione è registrata come aiuto e declassa il completamento', async () => {

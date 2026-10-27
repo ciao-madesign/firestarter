@@ -33,6 +33,8 @@ export interface GuidedStep {
   risk?: string;
   /** solo per i test: frammento che l'output reale deve contenere (verifica che `expect` sia veritiero) */
   contains?: string | { bash?: string; pwsh?: string };
+  /** il passo mostra volutamente «command not found»: il test non lo tratta come comando inesistente */
+  notFound?: boolean;
   /** il passo è un errore voluto: l'uscita diversa da 0 è attesa */
   fails?: boolean | { bash?: boolean; pwsh?: boolean };
 }

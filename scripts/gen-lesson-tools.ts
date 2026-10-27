@@ -13,6 +13,11 @@ const ALIAS: Record<string, string> = { 'ssh -n': 'ssh', 'ssh -i': 'ssh', 'ssh -
 const DROP = new Set(['then', 'fi', 'else', 'elif', 'Write-Output', 'foreach', 'content-type', '>>', 'abc', 'mostra', 'ls -lat']);
 /** aggiunte manuali per lezione/shell (costrutti richiesti ma non rilevabili automaticamente) */
 const EXTRA: Record<string, Partial<Record<ShellId, string[]>>> = {
+  'M2.L2': { bash: ['2>', '2>&1', '/dev/null'], pwsh: ['2>', '*>', '$null'] },
+  'M2.L5': { bash: ['PIPESTATUS', 'set', '$?'], pwsh: ['-Command', 'Test-Path'] },
+  'M2.L6': { bash: ['which', 'type', 'chmod', 'export'], pwsh: ['Get-Command', '$env:'] },
+  'M3.L3': { bash: ['curl -G', '--data-urlencode'], pwsh: ['[Tipo]::'] },
+  'M3.L5': { bash: ['jq --arg', 'heredoc'], pwsh: ['-Uri', 'here-string'] },
   // ssh in PowerShell è un'applicazione esterna: l'analisi automatica non la vede
   'M11.L1': { bash: ['systemctl', 'ss'], pwsh: ['ssh', 'Test-NetConnection', '-Port'] },
   'M11.L2': { bash: ['tail'], pwsh: ['ssh'] },

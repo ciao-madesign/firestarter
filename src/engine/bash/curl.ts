@@ -327,6 +327,7 @@ function titleCase(h: string): string {
 }
 
 function readData(v: string, rt: BashRuntime, io: Io, name: string, strip = false): string | null {
+  if (v === '@-') return strip ? io.stdin.replace(/[\r\n]/g, '') : io.stdin;
   if (v.startsWith('@')) {
     const f = v.slice(1);
     try {

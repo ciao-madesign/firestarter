@@ -93,6 +93,12 @@ function tokenize(src: string): Tok[] {
       i += m[0].length;
       continue;
     }
+    if (c === '$' && /[A-Za-z_]/.test(src[i + 1] ?? '')) {
+      const m = /^\$[A-Za-z_][A-Za-z0-9_]*/.exec(src.slice(i))!;
+      toks.push({ t: 'id', v: m[0] });
+      i += m[0].length;
+      continue;
+    }
     if (/[A-Za-z_]/.test(c)) {
       const m = /^[A-Za-z_][A-Za-z0-9_]*/.exec(src.slice(i))!;
       toks.push({ t: 'id', v: m[0] });
@@ -391,7 +397,14 @@ class Parser {
       let key: Expr;
       let val: Expr | null = null;
       let keyName: string | null = null;
-      if (t.t === 'id' || t.t === 'str') {
+      if (t.t === 'id' && t.v.startsWith('$') && !(this.toks[this.p + 1]?.t === 'punct' && this.toks[this.p + 1].v === ':')) {
+        // {$nome} equivale a {"nome": $nome}
+        this.p++;
+        const nm = t.v.slice(1);
+        key = () => [nm];
+        val = this.func(t.v);
+        keyName = nm;
+      } else if (t.t === 'id' || t.t === 'str') {
         this.p++;
         keyName = t.v;
         key = () => [t.v];
@@ -426,6 +439,14 @@ class Parser {
     return e;
   }
   private func(name: string): Expr {
+    if (name.startsWith('$')) {
+      // variabile passata con --arg / --argjson
+      const n = name.slice(1);
+      return () => {
+        if (!(n in JQ_VARS)) throw new JqError(`$${n} is not defined`, 3);
+        return [JQ_VARS[n]];
+      };
+    }
     switch (name) {
       case 'null':
         return () => [null];
@@ -657,6 +678,33 @@ function index(x: J, k: J): J {
   if (Array.isArray(x) && typeof k === 'number') return x[k < 0 ? x.length + k : k] ?? null;
   if (x && typeof x === 'object' && !Array.isArray(x) && typeof k === 'string') return (x as Record<string, J>)[k] ?? null;
   throw new JqError(`Cannot index ${typeName(x)} with ${typeof k === 'string' ? `"${k}"` : typeName(k)}`);
+}
+
+/** Variabili di `--arg` e `--argjson` per l'esecuzione corrente. */
+let JQ_VARS: Record<string, J> = {};
+
+/** Estrae `--arg nome valore` e `--argjson nome json` dagli argomenti e li rende disponibili come $nome. */
+export function takeJqVars(args: string[]): string[] {
+  JQ_VARS = {};
+  const rest: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === '--arg' || a === '--argjson') {
+      const name = args[i + 1];
+      const val = args[i + 2];
+      if (name === undefined || val === undefined) throw new JqError(`${a} takes two parameters (e.g. ${a} varname value)`, 2);
+      if (a === '--arg') JQ_VARS[name] = val;
+      else {
+        try {
+          JQ_VARS[name] = JSON.parse(val);
+        } catch {
+          throw new JqError(`Invalid JSON text passed to --argjson`, 2);
+        }
+      }
+      i += 2;
+    } else rest.push(a);
+  }
+  return rest;
 }
 
 export function compileJq(src: string): Expr {

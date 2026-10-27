@@ -1,5 +1,5 @@
 /** Builtin e comandi esterni simulati di Bash. Vedi catalog.ts per sintassi e differenze dichiarate. */
-import { runJq, formatJson, parseJsonStream, JqError } from '../jq.ts';
+import { runJq, formatJson, parseJsonStream, JqError, takeJqVars } from '../jq.ts';
 import { FsError, HOME, basename, dirname, fsErrorMessage, glob, resolvePath } from '../vfs.ts';
 import {
   byteLen, columns, dateDefault, getopt, grepRegex, humanSize, joinLines, lsDate, modeString, splitLines, strftime, unifiedDiff,
@@ -2069,7 +2069,17 @@ reg('kill', (args, io) => {
 // ---------------- rete / JSON ----------------
 reg('curl', (args, io, rt) => curl(args, io, rt, 'bash', 'curl'));
 
-reg('jq', (args, io, rt) => {
+reg('jq', (args0, io, rt) => {
+  let args: string[];
+  try {
+    args = takeJqVars(args0);
+  } catch (e) {
+    if (e instanceof JqError) {
+      io.err(`jq: error: ${e.message}\n`);
+      return e.code;
+    }
+    throw e;
+  }
   const o = getopt(args, { flags: 'rcsenj' });
   if (o.error) {
     io.err(`jq: error: ${o.error}\n`);

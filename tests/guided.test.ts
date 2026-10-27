@@ -18,7 +18,7 @@ describe('passi guidati', () => {
           const out = r.out.map((o) => o.t).join('');
           const label = `${g.title}: ${g.cmd[shell]}`;
           expect(r.exit, `${label} (errore interno)`).not.toBe(70);
-          expect(out, `${label} (comando non riconosciuto)`).not.toMatch(/command not found|is not recognized|The term '/);
+          if (!g.notFound) expect(out, `${label} (comando non riconosciuto)`).not.toMatch(/command not found|is not recognized|The term '/);
           const fails = typeof g.fails === 'object' ? !!g.fails[shell] : !!g.fails;
           if (!fails) expect(r.exit, `${label}\n${out}`).toBe(0);
           if (fails) expect(r.exit, `${label} doveva fallire`).not.toBe(0);

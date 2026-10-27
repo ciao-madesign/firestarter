@@ -222,7 +222,7 @@ export const scenarios: Lesson[] = [
     ],
     negative: {
       prompt: 'E senza Content-Type? Provalo.',
-      cmd: { bash: 'curl -s -i -X POST $TASKFLOW_URL/v1/tasks -H "Authorization: Bearer $TASKFLOW_TOKEN" -d \'{"title":"x"}\'', pwsh: 'curl.exe -s -i -X POST "$env:TASKFLOW_URL/v1/tasks" -H "Authorization: Bearer $env:TASKFLOW_TOKEN" -d "{\\"title\\":\\"x\\"}"' },
+      cmd: { bash: 'curl -s -i -X POST $TASKFLOW_URL/v1/tasks -H "Authorization: Bearer $TASKFLOW_TOKEN" -d \'{"title":"x"}\'', pwsh: 'curl.exe -s -i -X POST "$env:TASKFLOW_URL/v1/tasks" -H "Authorization: Bearer $env:TASKFLOW_TOKEN" -d \'{\\"title\\":\\"x\\"}\'' },
       explain: 'Senza Content-Type: application/json il server rifiuta il body (415).',
     },
     task: {

@@ -1021,7 +1021,7 @@ export class PsRuntime {
   }
 
   private nativeCommand(lower: string, ev: ReturnType<PsRuntime['evalArgs']>, input: unknown[]): unknown[] | null {
-    const strArgs = ev.order.flatMap((o) => (o.t === 'p' ? [`-${ev.params[o.i].name}`, ...(ev.params[o.i].has ? [psToString(ev.params[o.i].value)] : [])] : [psToString(ev.pos[o.i])]));
+    const strArgs = nativeArgv(ev.order.flatMap((o) => (o.t === 'p' ? [`-${ev.params[o.i].name}`, ...(ev.params[o.i].has ? [psToString(ev.params[o.i].value)] : [])] : [psToString(ev.pos[o.i])])));
     const fsish = { state: this.state, vfs: this.vfs, resolve: (p: string) => this.rp(p), cwd: this.ss.cwd };
     const stdin = input.map(psToString).join('\n');
     return runNative(this, lower, strArgs, stdin, fsish);
@@ -1341,9 +1341,52 @@ export class PsRuntime {
 }
 
 // ---------- comandi nativi ----------
+/**
+ * Passaggio degli argomenti ai programmi esterni in Windows PowerShell 5.1: gli argomenti con spazi vengono racchiusi tra
+ * virgolette SENZA fare l'escape delle virgolette interne; il programma poi ricostruisce gli argomenti con le regole della
+ * libreria C. Effetto noto: `-d '{"a":"b c"}'` arriva come `{a:b c}` (virgolette perse); serve `-d '{\"a\":\"b c\"}'`.
+ */
+export function nativeArgv(args: string[]): string[] {
+  const line = args.map((a) => (/\s/.test(a) && !(a.length >= 2 && a.startsWith('"') && a.endsWith('"')) ? `"${a}"` : a === '' ? '""' : a)).join(' ');
+  const out: string[] = [];
+  let cur = '';
+  let has = false;
+  let inQ = false;
+  for (let i = 0; i < line.length; ) {
+    const c = line[i];
+    if (c === '\\') {
+      let k = 0;
+      while (line[i + k] === '\\') k++;
+      i += k;
+      has = true;
+      if (line[i] === '"') {
+        cur += '\\'.repeat(k >> 1);
+        if (k & 1) cur += '"';
+        else inQ = !inQ;
+        i++;
+      } else cur += '\\'.repeat(k);
+    } else if (c === '"') {
+      inQ = !inQ;
+      has = true;
+      i++;
+    } else if ((c === ' ' || c === '\t') && !inQ) {
+      if (has) out.push(cur);
+      cur = '';
+      has = false;
+      i++;
+    } else {
+      cur += c;
+      has = true;
+      i++;
+    }
+  }
+  if (has) out.push(cur);
+  return out;
+}
+
 import { curl } from '../bash/curl.ts';
 import { git } from '../bash/git.ts';
-import { runJq, formatJson, parseJsonStream, JqError } from '../jq.ts';
+import { runJq, formatJson, parseJsonStream, JqError, takeJqVars } from '../jq.ts';
 import { getopt } from '../util.ts';
 import { renderHelp } from '../catalog.ts';
 import { sshMain } from '../lab-node.ts';
@@ -1357,6 +1400,15 @@ function runNative(rt: PsRuntime, name: string, args: string[], stdin: string, f
     code = curl(args, io, fsish as never, 'pwsh', 'curl.exe');
   } else if (name === 'jq' || name === 'jq.exe') {
     code = 0;
+    try {
+      args = takeJqVars(args);
+    } catch (e) {
+      if (e instanceof JqError) {
+        err += `jq: error: ${e.message}\n`;
+        return finishNative(rt, out, err, e.code);
+      }
+      throw e;
+    }
     const o = getopt(args, { flags: 'rcsenj' });
     const filter = o.rest.shift();
     if (filter === undefined) {

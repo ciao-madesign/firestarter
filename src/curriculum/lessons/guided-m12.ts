@@ -296,7 +296,7 @@ export const guidedM12: Record<string, GuidedStep[]> = {
   'M2.L4': [
     {
       title: 'Una variabile non esportata resta locale',
-      cmd: { bash: 'LOCALE=ciao; bash -c \'echo "figlio: [$LOCALE]"\'', pwsh: '$LOCALE = "ciao"; powershell -Command \'echo "figlio: [$env:LOCALE]"\'' },
+      cmd: { bash: 'LOCALE=ciao; bash -c \'echo "figlio: [$LOCALE]"\'', pwsh: '$LOCALE = "ciao"; powershell -Command \'echo \\"figlio: [$env:LOCALE]\\"\'' },
       what: 'Un processo figlio vede solo le variabili d\'AMBIENTE, non quelle semplici della shell.',
       who: 'La shell e il processo figlio.',
       parts: ['`LOCALE=ciao`: variabile della shell', 'il figlio non la eredita'],
@@ -306,7 +306,7 @@ export const guidedM12: Record<string, GuidedStep[]> = {
     },
     {
       title: 'export la passa ai figli',
-      cmd: { bash: 'export CONDIVISA=si; bash -c \'echo "figlio: [$CONDIVISA]"\'', pwsh: '$env:CONDIVISA = "si"; powershell -Command \'echo "figlio: [$env:CONDIVISA]"\'' },
+      cmd: { bash: 'export CONDIVISA=si; bash -c \'echo "figlio: [$CONDIVISA]"\'', pwsh: '$env:CONDIVISA = "si"; powershell -Command \'echo \\"figlio: [$env:CONDIVISA]\\"\'' },
       what: 'Con `export` (o `$env:` in PowerShell) la variabile entra nell\'ambiente ed è ereditata.',
       who: 'La shell.',
       parts: ['`export` / `$env:`'],
