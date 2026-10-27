@@ -39,6 +39,7 @@ async function main(): Promise<void> {
     for (const id of order) {
       const lesson = LESSONS.find((l) => l.id === id)!;
       if (!lesson.shells.includes(shell)) continue;
+      if (process.env.ONLY && !new RegExp(process.env.ONLY).test(id)) continue;
       const t0 = Date.now();
       const tag = (m: string): string => m;
       try {
@@ -62,7 +63,7 @@ async function main(): Promise<void> {
         for (const line of probes) {
           const r = await exec(line);
           if (r.exit === 70) add('ERRORE', id, shell, `errore interno del simulatore: ${line.slice(0, 80)}`);
-          if (r.incomplete) add('ERRORE', id, shell, `comando di esempio incompleto: ${line.slice(0, 80)}`);
+          if (r.incomplete && line !== lesson.negative.cmd[shell]) add('ERRORE', id, shell, `comando di esempio incompleto: ${line.slice(0, 80)}`); // il test negativo può restare in attesa di continuazione (come la shell reale)
         }
         // 3. dopo aver eseguito gli esempi (senza soluzione) la verifica non deve passare
         const v1 = await call('POST', `/lessons/${id}/verify`, {});

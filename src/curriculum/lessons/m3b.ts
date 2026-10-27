@@ -189,7 +189,7 @@ export const m3b: Lesson[] = [
     negative: {
       prompt: 'Un apostrofo dentro un testo tra apici singoli in Bash:',
       cmd: { bash: "echo 'l'ultima'", pwsh: "'l'ultima'" },
-      explain: 'La shell vede un testo chiuso a metà e chiede di continuare (prompt >) oppure errore di sintassi: in Bash l\'apostrofo non si può scrivere tra apici singoli; PowerShell lo raddoppia (\'\'). Per testi con entrambi i tipi di virgolette conviene il file.',
+      explain: 'La shell vede un testo chiuso a metà e chiede di continuare (prompt >: premi Ctrl+C per annullare la riga) oppure errore di sintassi: in Bash l\'apostrofo non si può scrivere tra apici singoli; PowerShell lo raddoppia (\'\'). Per testi con entrambi i tipi di virgolette conviene il file.',
     },
     task: {
       text: `In ~/corso-cli/m3l5 crea DUE task con titolo esattamente: ${TITOLO}\n(1) con un FILE JSON inviato con -d @file; (2) costruendo il JSON da una variabile (Bash: jq -n --arg; PowerShell: ConvertTo-Json). Prima prova almeno una volta a metterlo direttamente nel comando e osserva l'errore. Scrivi approcci.md: i tre approcci (testo nel comando, file, costruzione automatica) con quando conviene ciascuno e il rischio.`,

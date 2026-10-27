@@ -179,4 +179,13 @@ describe('riepilogo per Claude (senza API)', () => {
     expect(r.json.text).toContain('# Titolo');
     expect(r.json.text).toContain('Esito del controllo automatico');
   });
+  it('il ripristino di una lezione non cambia URL e credenziali impostati dalla lezione (M11)', async () => {
+    const ws = 'reset-m11';
+    await call('POST', '/api/lessons/M11.L1/start', {}, ws);
+    const before = (await call('POST', '/api/exec', { command: 'echo $TASKFLOW_URL' }, ws)).json.out.map((o: any) => o.t).join('');
+    await call('POST', '/api/lessons/M11.L1/reset', {}, ws);
+    const after = (await call('POST', '/api/exec', { command: 'echo $TASKFLOW_URL' }, ws)).json.out.map((o: any) => o.t).join('');
+    expect(after).toBe(before);
+    expect(after).toContain('server.lab');
+  });
 });

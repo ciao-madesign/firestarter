@@ -40,7 +40,7 @@ export const diagnosi: Lesson[] = [
     id: 'M5.L8',
     artifacts: [],
     module: 5,
-    n: 7,
+    n: 8,
     title: 'Più cause insieme: correggerne una ne rivela un\'altra',
     objective: 'Diagnosticare uno script che fallisce per quattro cause successive (nome host, redirect, token scaduto, Content-Type) e documentarle nell\'ordine in cui emergono.',
     explain: [

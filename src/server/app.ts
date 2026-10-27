@@ -341,8 +341,7 @@ export function createApp(cfg: AppConfig): Server {
       }
       if (action === 'reset' && method === 'POST') {
         if (inTest(ws, lid)) throw new HttpError(409, 'Durante il test intermedio non puoi resettare la lezione.');
-        resetLesson(ws, lid);
-        applyEnvToShells(ws);
+        resetLesson(ws, lid); // la preparazione della lezione imposta già URL e credenziali: non sovrascriverli
         persist(id, c);
         return sendJson(res, 200, { lesson: lessonView(ws, lid, sh), session: sessionView(ws, course) });
       }

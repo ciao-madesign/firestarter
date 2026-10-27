@@ -548,7 +548,7 @@ export const m6: Lesson[] = [
     id: 'M6.L5',
     artifacts: ['~/docs/troubleshooting.md'],
     module: 6,
-    n: 4,
+    n: 5,
     title: 'Troubleshooting e verifica da un ambiente pulito',
     objective: 'Scrivere una guida di troubleshooting e una procedura ripetibile che funziona da un ambiente pulito.',
     explain: [
@@ -636,7 +636,7 @@ export const m6: Lesson[] = [
     id: 'M6.L6',
     artifacts: ['~/docs/final'],
     module: 6,
-    n: 5,
+    n: 6,
     title: 'Progetto finale: testare e documentare staging',
     objective: 'Testare un\'API, individuare un\'anomalia rispetto alla documentazione e consegnare piano di test, bug report, guida corretta e procedura ripetibile.',
     explain: [
