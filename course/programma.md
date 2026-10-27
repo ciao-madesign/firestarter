@@ -60,6 +60,14 @@ Concetti: pipe |; redirezione > e >>; rischio di sovrascrittura con >; grep come
 
 Verifica (criterio): errori.txt ha esattamente 5 righe, tutte con ERROR; importante.txt è invariato.
 
+### M2.L2 — Due canali: output ed errori
+
+Obiettivo: Separare, unire e scartare i due canali di uscita di un comando (stdout e stderr) e prevedere dove finisce ogni messaggio.
+
+Concetti: stdout e stderr; redirezione 2> e 2>&1; ordine delle redirezioni; /dev/null.
+
+Verifica (criterio): ok.txt ha solo le righe dei dati; errori.txt solo il messaggio di errore; tutto.txt entrambi; hai usato 2>/dev/null (PowerShell: 2>$null); canali.md cita stdout, stderr e 2>&1.
+
 ### M2.L3 — Filtri: grep, sort, uniq, cut, wc
 
 Obiettivo: Comporre filtri in pipeline per estrarre, ordinare e contare dati da un log.
@@ -75,6 +83,22 @@ Obiettivo: Impostare una variabile d'ambiente e leggere l'esito dell'ultimo coma
 Concetti: variabili d'ambiente; codici di uscita ($?); differenza Bash/PowerShell sugli esiti.
 
 Verifica (criterio): STAGE vale testing; esito.txt contiene il numero 2 (Bash; anche con una breve etichetta) oppure False (PowerShell).
+
+### M2.L5 — Codici di uscita nelle pipeline e negli script
+
+Obiettivo: Prevedere il codice di uscita di una pipeline, sapere che «nessuna corrispondenza» non è sempre un errore e scrivere uno script con codici di uscita corretti.
+
+Concetti: codici di uscita nelle pipeline; pipefail; grep -c e codice 1; $LASTEXITCODE.
+
+Verifica (criterio): Lo script stampa 3 per log.txt (uscita 0), 0 per pulito.txt (uscita 0) ed esce con 2 per un file inesistente; codici.md contiene i tre valori corretti per la tua shell.
+
+### M2.L6 — PATH, permessi di esecuzione e «command not found»
+
+Obiettivo: Capire come la shell trova i comandi, distinguere i tre errori più comuni e rendere eseguibile uno script richiamabile per nome.
+
+Concetti: PATH; permesso di esecuzione; tre errori di avvio dei comandi; which e type.
+
+Verifica (criterio): bin/ contiene lo script (eseguibile in Bash); il PATH della sessione contiene la cartella bin; hai eseguito lo script per nome con successo; percorso.md spiega i messaggi e la persistenza.
 
 ### M2.L7 — Test positivi e negativi: atteso ed effettivo
 
@@ -112,6 +136,14 @@ Concetti: status code; header; curl -i, -I, -w; X-Request-Id; differenza 404/405
 
 Verifica (criterio): status.txt contiene 404; request-id.txt contiene un identificativo del tipo req_000123 che il server ha realmente assegnato a una richiesta a /v1/health.
 
+### M3.L3 — URL, query string e caratteri da codificare
+
+Obiettivo: Leggere le parti di un URL, costruire query string corrette e codificare i caratteri speciali (spazio, &, apostrofo).
+
+Concetti: query string; codifica percentuale; curl -G --data-urlencode; [uri]::EscapeDataString.
+
+Verifica (criterio): esatto.json ha total 1 e il titolo R&D; sbagliato.json ha total 6; url.md contiene %20, %26, %27 e spiega perché il secondo risultato è sbagliato; il token non è scritto nei comandi.
+
 ### M3.L4 — Body JSON, parametri e Content-Type
 
 Obiettivo: Usare query parameter e inviare un body JSON dichiarando il Content-Type, con l'URL correttamente quotato.
@@ -119,6 +151,14 @@ Obiettivo: Usare query parameter e inviare un body JSON dichiarando il Content-T
 Concetti: query parameter; body JSON; Content-Type; quoting degli URL; header Authorization.
 
 Verifica (criterio): aperti.json ha 2 task, tutti open; il server ha ricevuto un POST /v1/tasks con titolo "Imparare curl" e ha risposto 201.
+
+### M3.L5 — Il JSON tra virgolette: Bash e Windows PowerShell 5.1
+
+Obiettivo: Inviare un body JSON che contiene virgolette e apostrofi nelle due shell, scegliendo tra testo nel comando, file e costruzione automatica.
+
+Concetti: quoting del JSON; curl -d @file; jq --arg; ConvertTo-Json; argomenti verso programmi esterni in PowerShell 5.1.
+
+Verifica (criterio): Nel servizio ci sono almeno due task con quel titolo esatto; hai visto un errore invalid_json; hai usato un file e una costruzione automatica; approcci.md confronta i tre approcci.
 
 ### M3.L6 — Errore HTTP ed errore applicativo a confronto
 
@@ -148,6 +188,14 @@ Concetti: struttura di una specifica OpenAPI; jq di base; ConvertFrom-Json.
 
 Verifica (criterio): elenco.txt contiene esattamente i tre percorsi con POST: /auth/token, /projects, /tasks.
 
+### M4.L2 — jq a più livelli: filtrare, ordinare, raggruppare
+
+Obiettivo: Estrarre, filtrare, ordinare e contare i dati di una risposta JSON con una pipeline di filtri (jq in Bash, oggetti in PowerShell).
+
+Concetti: jq select e sort_by; group_by; interpolazione di stringhe; Where-Object, Sort-Object, Group-Object.
+
+Verifica (criterio): aperti.txt ha i tre titoli nell'ordine Correggere il bug di login, Rivedere le API, Preparare le release notes; per-stato.txt ha done 1, in_progress 1, open 3; sintesi.md nomina i filtri usati; il token non è scritto nei comandi.
+
 ### M4.L3 — Autenticazione Bearer e segreti
 
 Obiettivo: Ottenere un access token senza scrivere i segreti nei comandi e usarlo in una richiesta autenticata.
@@ -164,9 +212,17 @@ Concetti: CRUD con HTTP; Content-Type e Accept; PATCH vs PUT; 409 conflitto; Loc
 
 Verifica (criterio): Esiste un task "Scrivere la guida API" con status done; il server ha registrato POST 201, GET 200 su quell'id e PATCH 200.
 
-### M4.L5 — Validazione, paginazione e idempotenza
+### M4.L5 — Validazione: 400, 415 e 422 e il motivo dell'errore
 
-Obiettivo: Leggere pagine di risultati, riconoscere gli errori di validazione e verificare l'idempotenza di DELETE.
+Obiettivo: Distinguere gli errori di formato (400, 415) da quelli di validazione (422), leggere l'elenco errors e provare i valori ai limiti.
+
+Concetti: validazione 422; 400 contro 422 contro 415; valori ai limiti; test negativi mirati.
+
+Verifica (criterio): Il registro mostra 400, 415, 201 e 422 con i campi title, priority, status e projectId; casi.md ha la tabella con almeno 6 righe.
+
+### M4.L6 — Paginazione e idempotenza
+
+Obiettivo: Leggere pagine di risultati, calcolare l'offset di una pagina e verificare l'idempotenza di DELETE.
 
 Concetti: paginazione; validazione 422; 400 vs 422; idempotenza.
 
@@ -216,6 +272,14 @@ Concetti: connessione rifiutata (curl 7); ps e processi; configurazione del serv
 
 Verifica (criterio): porta.txt contiene 8080; TASKFLOW_URL usa quella porta; GET /v1/health → 200.
 
+### M5.L3 — Timeout, porta chiusa o nome sbagliato: tre sintomi di rete
+
+Obiettivo: Distinguere dal messaggio e dal codice di uscita di curl un nome inesistente, una porta chiusa, una porta filtrata e un server lento.
+
+Concetti: porta chiusa e porta filtrata; timeout di connessione e di risposta; codici di uscita di curl; nc -w e Test-NetConnection.
+
+Verifica (criterio): codici.txt = nome 6, rifiutata 7, filtrata 28, lenta 28; hai usato il timeout (-m) e un controllo di porta su 8081 e 8089; sintomi.md ha la tabella.
+
 ### M5.L4 — Un 401 inatteso: leggere risposta e log
 
 Obiettivo: Diagnosticare un 401 usando il corpo della risposta e il log applicativo, e ripristinare il funzionamento.
@@ -240,6 +304,14 @@ Concetti: analisi di log; pipeline di conteggio; separatore --.
 
 Verifica (criterio): top-errori.txt contiene il percorso corretto; totale-5xx.txt contiene il numero corretto.
 
+### M5.L7 — Seguire una richiesta tra client e log del server (X-Request-Id)
+
+Obiettivo: Usare l'identificativo di richiesta per ritrovare nei log del server cosa è successo a una chiamata specifica.
+
+Concetti: X-Request-Id; correlazione tra client e log; access.log e app.log.
+
+Verifica (criterio): Il registro mostra un 200, un 404 e un 401; hai cercato gli identificativi nei log; tracce.md contiene gli identificativi reali delle tre richieste e nomina access.log e app.log.
+
 ### M5.L8 — Più cause insieme: correggerne una ne rivela un'altra
 
 Obiettivo: Diagnosticare uno script che fallisce per quattro cause successive (nome host, redirect, token scaduto, Content-Type) e documentarle nell'ordine in cui emergono.
@@ -263,6 +335,14 @@ Obiettivo: Diagnosticare da soli un 401 in un ambiente diverso da quello usato f
 Concetti: 401 invalid_token; ambienti diversi; trasferimento.
 
 Verifica (criterio): Il server ha registrato su staging un 401 e poi un 200 su /v1/tasks; hai letto app.log; diagnosi.md nomina la causa (token di un altro ambiente) e l'ambiente.
+
+### M5.L11 — Scenario nuovo: l'errore intermittente
+
+Obiettivo: Misurare un errore che compare solo ogni tanto, trovarne il pattern nei log e proporre una politica di retry motivata.
+
+Concetti: errore intermittente; misurare un tasso di errore; politica di retry; idempotenza.
+
+Verifica (criterio): Il registro mostra almeno 12 chiamate a /v1/flaky; analisi.md riporta i numeri osservati, il pattern, la causa dal log e una politica di retry con tentativi, attesa e limiti sull'idempotenza.
 
 ## M6 — Documentazione professionale + progetto finale
 
@@ -292,6 +372,14 @@ Concetti: documentazione di un endpoint; esempi verificabili; coerenza tra docum
 
 Verifica (criterio): Zero errori e zero avvisi verificabili; almeno 2 esempi eseguiti, tutti con lo status dichiarato.
 
+### M6.L4 — Verificare una guida a mano: ciò che il controllo automatico non vede
+
+Obiettivo: Controllare una per una le affermazioni di una guida (porta, autenticazione, paginazione, campi, status) provandole sul servizio e documentare le prove.
+
+Concetti: verifica manuale della documentazione; prova per ogni affermazione; tabella delle verifiche.
+
+Verifica (criterio): La guida corretta contiene i fatti giusti (porta 8080, Bearer, limit e offset, solo title obbligatorio, priority 1-5, 201, 204) e nessun errore della bozza; le verifiche hanno 7 righe e le prove sono state davvero eseguite.
+
 ### M6.L5 — Troubleshooting e verifica da un ambiente pulito
 
 Obiettivo: Scrivere una guida di troubleshooting e una procedura ripetibile che funziona da un ambiente pulito.
@@ -319,6 +407,22 @@ Obiettivo: Automatizzare richieste ripetitive con un ciclo e raccogliere un coma
 Concetti: cicli; funzioni; chiamate API da script.
 
 Verifica (criterio): Esistono i tre task; hai usato un ciclo; la funzione `mostra` è definita e ha stampato i tre titoli.
+
+### M7.L2 — Leggere un file riga per riga
+
+Obiettivo: Eseguire un'operazione per ogni riga di un file, saltando righe vuote e commenti, e gestire i fine riga di Windows.
+
+Concetti: ciclo riga per riga; read -r; fine riga CRLF; tr -d.
+
+Verifica (criterio): risultati.txt: /v1/health 200, /v1/projects 200, /v1/tasks 200, /v1/nonesiste 404; risultati-win.txt: health 200, projects 200, nonesiste 404; hai usato un ciclo; appunti.md cita CRLF o \r.
+
+### M7.L3 — Argomenti e codici di uscita negli script
+
+Obiettivo: Scrivere uno script che riceve argomenti (con un valore predefinito), segnala l'uso errato e restituisce codici di uscita diversi per ogni esito.
+
+Concetti: argomenti degli script; valori predefiniti; codici di uscita come contratto; $LASTEXITCODE.
+
+Verifica (criterio): Lo script rispetta i quattro esiti (prova con /v1/health, /v1/nonesiste, la porta 8081, la porta 8089 con 1 secondo e nessun argomento).
 
 ### M7.L4 — Una suite di test ripetibile con report
 
@@ -416,6 +520,14 @@ Concetti: OpenAPI in YAML; JSON Schema di base; validazione di un documento.
 
 Verifica (criterio): Il YAML è valido e contiene tutti gli elementi richiesti.
 
+### M9.L6 — Documentare un endpoint che non ha documentazione
+
+Obiettivo: Ricavare dal solo codice il contratto di un endpoint non documentato, separando ciò che il codice dice da ciò che non dice, e scrivere la pagina con le domande aperte.
+
+Concetti: documentare da codice; autenticazione con firma HMAC; domande aperte; fatto e ipotesi.
+
+Verifica (criterio): Il documento riporta POST, /api/webhook-polar, x-polar-signature, HMAC SHA-256 del body grezzo, i tre status con i corpi, POLAR_WEBHOOK_SECRET e almeno due domande aperte; hai letto il file del codice.
+
 ## M10 — Sessioni, webhook e autenticazione (estensione facoltativa)
 
 Cookie di sessione, webhook firmati con HMAC, confronto dei flussi di autenticazione (Bash).
@@ -427,6 +539,22 @@ Obiettivo: Eseguire un login che restituisce un cookie di sessione, riusarlo, ch
 Concetti: cookie di sessione; curl -c e -b; attributi dei cookie.
 
 Verifica (criterio): Il registro mostra login 200, session 200, logout 204, session 401 in quest'ordine; sessione.md spiega gli attributi; nessuna password nei comandi.
+
+### M10.L2 — CSRF e SameSite: perché il cookie da solo non basta
+
+Obiettivo: Vedere come una richiesta con cookie valido può essere rifiutata e spiegare le difese: token anti-CSRF, controllo dell'origine e SameSite.
+
+Concetti: CSRF; SameSite; token anti-CSRF; header Origin.
+
+Verifica (criterio): Il registro mostra csrf_token_missing, csrf_origin_mismatch e un 200; csrf.md ha la tabella a tre righe e nomina SameSite, X-CSRF-Token, Origin e Bearer; nessuna password nei comandi.
+
+### M10.L3 — Leggere un JWT: cosa si vede e cosa no
+
+Obiettivo: Decodificare header e payload di un JWT, interpretare scadenza e firma e spiegare perché leggere un token non equivale a verificarlo.
+
+Concetti: JWT; base64url; firma e scadenza; leggere non è verificare.
+
+Verifica (criterio): Il registro mostra 200 per il valido, token_expired per lo scaduto e invalid_signature per il manomesso; hai decodificato il payload; jwt.md ha la tabella e le conclusioni.
 
 ### M10.L4 — Webhook firmati: la callback di un servizio esterno
 
@@ -464,6 +592,14 @@ Concetti: client e server nelle integrazioni; registro del server; esempio di do
 
 Verifica (criterio): Il registro API mostra 200, 401 e 404 verso server.lab; hai letto il registro del server; esempio-api.md contiene richiesta, Authorization, risposta e almeno 401 e 404.
 
+### M11.L3 — Dove viene interpretato il comando: client o server?
+
+Obiettivo: Prevedere, dal tipo di virgolette e dalla posizione di pipe e redirezioni, se un comando passato a ssh viene interpretato dal client o dal server.
+
+Concetti: quoting con ssh; espansione locale e remota; redirezione locale o remota; filesystem per nodo.
+
+Verifica (criterio): locale.txt contiene server; il file /tmp/nota.txt esiste sul server; virgolette.txt ha «doppie: lab» e «singole: server»; quoting.md ha la tabella con client e server citati.
+
 ### M11.L4 — Servizio fermo: dal sintomo alla correzione
 
 Obiettivo: Riconoscere una connessione rifiutata, trovare sul server il servizio fermo, riavviarlo e verificarlo.
@@ -488,6 +624,30 @@ Concetti: errore 500; dipendenze tra servizi; registro del server.
 
 Verifica (criterio): Il registro API mostra 500 poi 200 su GET /v1/tasks; il database è attivo; hai letto il registro del server; diagnosi.md cita 500, database, journalctl o service.log e systemctl.
 
+### M11.L7 — Collegare i log di client e server con l'identificativo di richiesta
+
+Obiettivo: Associare ogni risposta vista dal client alla riga corrispondente del registro del server, usando X-Request-Id.
+
+Concetti: correlazione client-server; registro del server via ssh; variabili nei comandi ssh.
+
+Verifica (criterio): Il registro mostra 200, 404 e 401 verso server.lab; hai letto il registro del server; tracce.md riporta gli identificativi reali e, per ognuno, lo status sia del client sia del server.
+
+### M11.L8 — Timeout: la porta è filtrata dal firewall del server
+
+Obiettivo: Riconoscere un timeout come sintomo diverso dalla porta chiusa, dimostrare che il servizio funziona in locale e aprire la porta nel firewall.
+
+Concetti: porta filtrata e firewall; prova di contrasto locale/remoto; ufw; timeout di connessione.
+
+Verifica (criterio): Il firewall non blocca più la porta; il registro mostra un 200 dal client; hai usato un timeout, la prova in locale sul server e ufw status; diagnosi.md spiega timeout, firewall e la prova in locale.
+
+### M11.L9 — Il nome del server punta all'indirizzo sbagliato
+
+Obiettivo: Scoprire che DNS e file hosts danno risposte diverse, individuare la riga errata e correggerla (o aggirarla con l'indirizzo).
+
+Concetti: risoluzione dei nomi; file hosts e DNS; getent e nslookup; No route to host.
+
+Verifica (criterio): Bash: la riga errata non c'è più e la richiesta per nome risponde 200. PowerShell: la richiesta verso 192.168.50.10 risponde 200. diagnosi.md spiega DNS, hosts, 192.168.50.11 e 192.168.50.10.
+
 ### M11.L10 — Verifica finale: integrazione documentata
 
 Obiettivo: Partire da un sistema che non funziona, individuare più cause in sequenza, ripristinarlo e consegnare un rapporto utilizzabile da un altro tecnico.
@@ -495,4 +655,12 @@ Obiettivo: Partire da un sistema che non funziona, individuare più cause in seq
 Concetti: diagnosi con più cause su due nodi; rapporto di diagnosi.
 
 Verifica (criterio): GET /v1/tasks risponde 200 dal client sulla 8080; configurazione, servizio e database sono a posto; rapporto.md elenca le tre cause (servizio fermo, porta, database), le correzioni e un esempio di richiesta.
+
+### M11.L11 — Seconda verifica finale: integrazione documentata
+
+Obiettivo: Diagnosticare e ripristinare un sistema con tre guasti a livelli diversi (nome, rete, applicazione), senza guida, e consegnare il rapporto.
+
+Concetti: diagnosi su più livelli; nome, firewall e applicazione; rapporto di diagnosi.
+
+Verifica (criterio): GET /v1/tasks risponde 200 dal client; firewall aperto e database attivo; il nome è corretto (Bash) o si usa l'indirizzo (PowerShell); rapporto.md elenca le tre cause nell'ordine, le correzioni e un esempio di richiesta.
 

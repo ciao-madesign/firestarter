@@ -53,6 +53,8 @@ export class BashRuntime {
   errexit = false;
   pipefail = false;
   nounset = false;
+  /** set -a: ogni variabile assegnata viene esportata */
+  allexport = false;
   /** codici di uscita degli stadi dell'ultima pipeline (PIPESTATUS) */
   lastPipe: number[] | undefined;
   xtrace = false;
@@ -68,6 +70,19 @@ export class BashRuntime {
   constructor(public state: WorkspaceState) {
     this.vfs = new Vfs(state.fs, () => state.clock);
     this.ss = state.shells.bash;
+    const o = this.ss.opts;
+    if (o) {
+      this.errexit = !!o.errexit;
+      this.pipefail = !!o.pipefail;
+      this.nounset = !!o.nounset;
+      this.xtrace = !!o.xtrace;
+      this.allexport = !!o.allexport;
+    }
+  }
+
+  /** Salva le opzioni della shell: valgono finché la finestra resta aperta. */
+  persistOpts(): void {
+    this.ss.opts = { errexit: this.errexit, pipefail: this.pipefail, nounset: this.nounset, xtrace: this.xtrace, allexport: this.allexport };
   }
 
   get cwd(): string {
@@ -224,7 +239,7 @@ export class BashRuntime {
     const cur = this.ss.vars[name];
     if (Array.isArray(cur)) cur[0] = value;
     else if (isAssoc(cur)) cur.__assoc['0'] = value;
-    else if (name in this.ss.env) this.ss.env[name] = value;
+    else if (name in this.ss.env || this.allexport) this.ss.env[name] = value;
     else this.ss.vars[name] = value;
   }
 
@@ -255,6 +270,8 @@ export class BashRuntime {
     const saved = { cwd: this.ss.cwd, vars: this.ss.vars, env: { ...this.ss.env }, fns: this.ss.functions, last: this.ss.lastExit };
     const savedName = this.scriptName;
     const savedErr = this.errexit;
+    const savedOpts = { pipefail: this.pipefail, nounset: this.nounset, xtrace: this.xtrace, allexport: this.allexport };
+    this.pipefail = this.nounset = this.xtrace = this.allexport = false;
     this.ss.vars = {};
     this.ss.functions = {};
     this.frames.push({ args, locals: {}, fn: null });
@@ -290,6 +307,7 @@ export class BashRuntime {
       this.ss.functions = saved.fns;
       this.scriptName = savedName;
       this.errexit = savedErr;
+      Object.assign(this, savedOpts);
     }
     this.ss.lastExit = saved.last;
     return code;

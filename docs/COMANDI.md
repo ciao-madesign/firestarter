@@ -64,8 +64,9 @@ Differenze rispetto al comando reale:
 
 Opzioni della shell e parametri posizionali.
 
-Sintassi: `set [-eux] [-o opzione] [-- argomenti...]`
+Sintassi: `set [-aeux] [-o opzione] [-- argomenti...]`
 
+- `-a`: esporta ogni variabile assegnata (utile con . file.env)
 - `-e`: esce al primo errore
 - `-u`: errore sulle variabili non definite
 - `-x`: stampa i comandi su stderr
@@ -505,6 +506,7 @@ Sintassi: `grep [opzioni] modello [file...]`
 - `-c`: conta le righe
 - `-l`: solo nomi dei file
 - `-r`: ricorsivo
+- `--include=GLOB, --exclude=GLOB, --exclude-dir=GLOB`: con -r, limita o esclude file e cartelle per nome
 - `-E`: espressioni regolari estese
 - `-F`: testo letterale
 - `-w`: parola intera
@@ -932,6 +934,7 @@ Sintassi: `jq [-rcsnje] 'filtro' [file...]`
 - `-e`: esce con 1 se l'ultimo valore è false o null
 - `-r`: stringhe senza virgolette
 - `-c`: output compatto
+- `--arg nome valore`: variabile di testo, usabile come $nome nel filtro (anche --argjson per JSON)
 - `.campo .[] .[0]`: percorsi
 - `select(cond) map(f) length keys sort`: funzioni
 
@@ -1325,9 +1328,11 @@ Differenze rispetto al comando reale:
 
 ### `Resolve-DnsName`
 
-Risolve un nome tramite DNS.
+Risolve un nome (prima il file hosts, poi il DNS).
 
-Sintassi: `Resolve-DnsName <nome>`
+Sintassi: `Resolve-DnsName <nome> [-DnsOnly]`
+
+- `-DnsOnly`: interroga solo il DNS e ignora il file hosts
 
 Esempio: `Resolve-DnsName staging.api.taskflow.test`
 

@@ -232,13 +232,14 @@ reg('set', (args, io, rt) => {
     else if (name === 'pipefail') rt.pipefail = on;
     else if (name === 'nounset') rt.nounset = on;
     else if (name === 'xtrace') rt.xtrace = on;
+    else if (name === 'allexport') rt.allexport = on;
     else {
       io.err(`bash: set: ${name}: opzione non supportata nel laboratorio\n`);
       return false;
     }
     return true;
   };
-  const LONG: Record<string, string> = { e: 'errexit', u: 'nounset', x: 'xtrace' };
+  const LONG: Record<string, string> = { e: 'errexit', u: 'nounset', x: 'xtrace', a: 'allexport' };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === '--') {
@@ -266,6 +267,7 @@ reg('set', (args, io, rt) => {
       }
     }
   }
+  rt.persistOpts();
   return 0;
 }, true);
 

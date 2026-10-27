@@ -100,6 +100,8 @@ export interface ShellState {
   /** PowerShell: ultimo esito `$?` */
   lastOk: boolean;
   transcript: TranscriptBlock[];
+  /** opzioni di Bash attive nella finestra (set -e, -u, -x, -o pipefail, -a): restano tra un comando e l'altro */
+  opts?: { errexit?: boolean; nounset?: boolean; xtrace?: boolean; pipefail?: boolean; allexport?: boolean };
 }
 
 export interface CommandLogEntry {

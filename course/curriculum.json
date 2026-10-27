@@ -142,6 +142,27 @@
           ]
         },
         {
+          "id": "M2.L2",
+          "title": "Due canali: output ed errori",
+          "objective": "Separare, unire e scartare i due canali di uscita di un comando (stdout e stderr) e prevedere dove finisce ogni messaggio.",
+          "concepts": [
+            "stdout e stderr",
+            "redirezione 2> e 2>&1",
+            "ordine delle redirezioni",
+            "/dev/null"
+          ],
+          "skills": [
+            "comandi",
+            "output",
+            "testing"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
           "id": "M2.L3",
           "title": "Filtri: grep, sort, uniq, cut, wc",
           "objective": "Comporre filtri in pipeline per estrarre, ordinare e contare dati da un log.",
@@ -174,6 +195,48 @@
             "comandi",
             "output",
             "testing"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M2.L5",
+          "title": "Codici di uscita nelle pipeline e negli script",
+          "objective": "Prevedere il codice di uscita di una pipeline, sapere che «nessuna corrispondenza» non è sempre un errore e scrivere uno script con codici di uscita corretti.",
+          "concepts": [
+            "codici di uscita nelle pipeline",
+            "pipefail",
+            "grep -c e codice 1",
+            "$LASTEXITCODE"
+          ],
+          "skills": [
+            "comandi",
+            "output",
+            "testing"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M2.L6",
+          "title": "PATH, permessi di esecuzione e «command not found»",
+          "objective": "Capire come la shell trova i comandi, distinguere i tre errori più comuni e rendere eseguibile uno script richiamabile per nome.",
+          "concepts": [
+            "PATH",
+            "permesso di esecuzione",
+            "tre errori di avvio dei comandi",
+            "which e type"
+          ],
+          "skills": [
+            "comandi",
+            "output",
+            "diagnosi"
           ],
           "review": false,
           "shells": [
@@ -274,6 +337,27 @@
           ]
         },
         {
+          "id": "M3.L3",
+          "title": "URL, query string e caratteri da codificare",
+          "objective": "Leggere le parti di un URL, costruire query string corrette e codificare i caratteri speciali (spazio, &, apostrofo).",
+          "concepts": [
+            "query string",
+            "codifica percentuale",
+            "curl -G --data-urlencode",
+            "[uri]::EscapeDataString"
+          ],
+          "skills": [
+            "http",
+            "output",
+            "comandi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
           "id": "M3.L4",
           "title": "Body JSON, parametri e Content-Type",
           "objective": "Usare query parameter e inviare un body JSON dichiarando il Content-Type, con l'URL correttamente quotato.",
@@ -288,6 +372,28 @@
             "http",
             "comandi",
             "testing"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M3.L5",
+          "title": "Il JSON tra virgolette: Bash e Windows PowerShell 5.1",
+          "objective": "Inviare un body JSON che contiene virgolette e apostrofi nelle due shell, scegliendo tra testo nel comando, file e costruzione automatica.",
+          "concepts": [
+            "quoting del JSON",
+            "curl -d @file",
+            "jq --arg",
+            "ConvertTo-Json",
+            "argomenti verso programmi esterni in PowerShell 5.1"
+          ],
+          "skills": [
+            "http",
+            "comandi",
+            "output"
           ],
           "review": false,
           "shells": [
@@ -364,6 +470,27 @@
           ]
         },
         {
+          "id": "M4.L2",
+          "title": "jq a più livelli: filtrare, ordinare, raggruppare",
+          "objective": "Estrarre, filtrare, ordinare e contare i dati di una risposta JSON con una pipeline di filtri (jq in Bash, oggetti in PowerShell).",
+          "concepts": [
+            "jq select e sort_by",
+            "group_by",
+            "interpolazione di stringhe",
+            "Where-Object, Sort-Object, Group-Object"
+          ],
+          "skills": [
+            "comandi",
+            "output",
+            "http"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
           "id": "M4.L3",
           "title": "Autenticazione Bearer e segreti",
           "objective": "Ottenere un access token senza scrivere i segreti nei comandi e usarlo in una richiesta autenticata.",
@@ -408,8 +535,29 @@
         },
         {
           "id": "M4.L5",
-          "title": "Validazione, paginazione e idempotenza",
-          "objective": "Leggere pagine di risultati, riconoscere gli errori di validazione e verificare l'idempotenza di DELETE.",
+          "title": "Validazione: 400, 415 e 422 e il motivo dell'errore",
+          "objective": "Distinguere gli errori di formato (400, 415) da quelli di validazione (422), leggere l'elenco errors e provare i valori ai limiti.",
+          "concepts": [
+            "validazione 422",
+            "400 contro 422 contro 415",
+            "valori ai limiti",
+            "test negativi mirati"
+          ],
+          "skills": [
+            "testing",
+            "http",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M4.L6",
+          "title": "Paginazione e idempotenza",
+          "objective": "Leggere pagine di risultati, calcolare l'offset di una pagina e verificare l'idempotenza di DELETE.",
           "concepts": [
             "paginazione",
             "validazione 422",
@@ -537,6 +685,27 @@
           ]
         },
         {
+          "id": "M5.L3",
+          "title": "Timeout, porta chiusa o nome sbagliato: tre sintomi di rete",
+          "objective": "Distinguere dal messaggio e dal codice di uscita di curl un nome inesistente, una porta chiusa, una porta filtrata e un server lento.",
+          "concepts": [
+            "porta chiusa e porta filtrata",
+            "timeout di connessione e di risposta",
+            "codici di uscita di curl",
+            "nc -w e Test-NetConnection"
+          ],
+          "skills": [
+            "diagnosi",
+            "http",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
           "id": "M5.L4",
           "title": "Un 401 inatteso: leggere risposta e log",
           "objective": "Diagnosticare un 401 usando il corpo della risposta e il log applicativo, e ripristinare il funzionamento.",
@@ -601,6 +770,26 @@
           ]
         },
         {
+          "id": "M5.L7",
+          "title": "Seguire una richiesta tra client e log del server (X-Request-Id)",
+          "objective": "Usare l'identificativo di richiesta per ritrovare nei log del server cosa è successo a una chiamata specifica.",
+          "concepts": [
+            "X-Request-Id",
+            "correlazione tra client e log",
+            "access.log e app.log"
+          ],
+          "skills": [
+            "diagnosi",
+            "http",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
           "id": "M5.L8",
           "title": "Più cause insieme: correggerne una ne rivela un'altra",
           "objective": "Diagnosticare uno script che fallisce per quattro cause successive (nome host, redirect, token scaduto, Content-Type) e documentarle nell'ordine in cui emergono.",
@@ -654,6 +843,27 @@
             "diagnosi",
             "http",
             "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M5.L11",
+          "title": "Scenario nuovo: l'errore intermittente",
+          "objective": "Misurare un errore che compare solo ogni tanto, trovarne il pattern nei log e proporre una politica di retry motivata.",
+          "concepts": [
+            "errore intermittente",
+            "misurare un tasso di errore",
+            "politica di retry",
+            "idempotenza"
+          ],
+          "skills": [
+            "diagnosi",
+            "autonomia",
+            "docs"
           ],
           "review": false,
           "shells": [
@@ -729,6 +939,26 @@
           ]
         },
         {
+          "id": "M6.L4",
+          "title": "Verificare una guida a mano: ciò che il controllo automatico non vede",
+          "objective": "Controllare una per una le affermazioni di una guida (porta, autenticazione, paginazione, campi, status) provandole sul servizio e documentare le prove.",
+          "concepts": [
+            "verifica manuale della documentazione",
+            "prova per ogni affermazione",
+            "tabella delle verifiche"
+          ],
+          "skills": [
+            "docs",
+            "testing",
+            "http"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
           "id": "M6.L5",
           "title": "Troubleshooting e verifica da un ambiente pulito",
           "objective": "Scrivere una guida di troubleshooting e una procedura ripetibile che funziona da un ambiente pulito.",
@@ -789,6 +1019,48 @@
             "comandi",
             "autonomia",
             "testing"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M7.L2",
+          "title": "Leggere un file riga per riga",
+          "objective": "Eseguire un'operazione per ogni riga di un file, saltando righe vuote e commenti, e gestire i fine riga di Windows.",
+          "concepts": [
+            "ciclo riga per riga",
+            "read -r",
+            "fine riga CRLF",
+            "tr -d"
+          ],
+          "skills": [
+            "comandi",
+            "testing",
+            "diagnosi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M7.L3",
+          "title": "Argomenti e codici di uscita negli script",
+          "objective": "Scrivere uno script che riceve argomenti (con un valore predefinito), segnala l'uso errato e restituisce codici di uscita diversi per ogni esito.",
+          "concepts": [
+            "argomenti degli script",
+            "valori predefiniti",
+            "codici di uscita come contratto",
+            "$LASTEXITCODE"
+          ],
+          "skills": [
+            "comandi",
+            "testing",
+            "autonomia"
           ],
           "review": false,
           "shells": [
@@ -1031,6 +1303,27 @@
             "bash",
             "pwsh"
           ]
+        },
+        {
+          "id": "M9.L6",
+          "title": "Documentare un endpoint che non ha documentazione",
+          "objective": "Ricavare dal solo codice il contratto di un endpoint non documentato, separando ciò che il codice dice da ciò che non dice, e scrivere la pagina con le domande aperte.",
+          "concepts": [
+            "documentare da codice",
+            "autenticazione con firma HMAC",
+            "domande aperte",
+            "fatto e ipotesi"
+          ],
+          "skills": [
+            "docs",
+            "diagnosi",
+            "autonomia"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
         }
       ]
     },
@@ -1057,6 +1350,48 @@
           "review": false,
           "shells": [
             "bash"
+          ]
+        },
+        {
+          "id": "M10.L2",
+          "title": "CSRF e SameSite: perché il cookie da solo non basta",
+          "objective": "Vedere come una richiesta con cookie valido può essere rifiutata e spiegare le difese: token anti-CSRF, controllo dell'origine e SameSite.",
+          "concepts": [
+            "CSRF",
+            "SameSite",
+            "token anti-CSRF",
+            "header Origin"
+          ],
+          "skills": [
+            "http",
+            "diagnosi",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M10.L3",
+          "title": "Leggere un JWT: cosa si vede e cosa no",
+          "objective": "Decodificare header e payload di un JWT, interpretare scadenza e firma e spiegare perché leggere un token non equivale a verificarlo.",
+          "concepts": [
+            "JWT",
+            "base64url",
+            "firma e scadenza",
+            "leggere non è verificare"
+          ],
+          "skills": [
+            "http",
+            "diagnosi",
+            "output"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
           ]
         },
         {
@@ -1148,6 +1483,27 @@
           ]
         },
         {
+          "id": "M11.L3",
+          "title": "Dove viene interpretato il comando: client o server?",
+          "objective": "Prevedere, dal tipo di virgolette e dalla posizione di pipe e redirezioni, se un comando passato a ssh viene interpretato dal client o dal server.",
+          "concepts": [
+            "quoting con ssh",
+            "espansione locale e remota",
+            "redirezione locale o remota",
+            "filesystem per nodo"
+          ],
+          "skills": [
+            "comandi",
+            "output",
+            "diagnosi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
           "id": "M11.L4",
           "title": "Servizio fermo: dal sintomo alla correzione",
           "objective": "Riconoscere una connessione rifiutata, trovare sul server il servizio fermo, riavviarlo e verificarlo.",
@@ -1210,11 +1566,93 @@
           ]
         },
         {
+          "id": "M11.L7",
+          "title": "Collegare i log di client e server con l'identificativo di richiesta",
+          "objective": "Associare ogni risposta vista dal client alla riga corrispondente del registro del server, usando X-Request-Id.",
+          "concepts": [
+            "correlazione client-server",
+            "registro del server via ssh",
+            "variabili nei comandi ssh"
+          ],
+          "skills": [
+            "diagnosi",
+            "docs",
+            "http"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M11.L8",
+          "title": "Timeout: la porta è filtrata dal firewall del server",
+          "objective": "Riconoscere un timeout come sintomo diverso dalla porta chiusa, dimostrare che il servizio funziona in locale e aprire la porta nel firewall.",
+          "concepts": [
+            "porta filtrata e firewall",
+            "prova di contrasto locale/remoto",
+            "ufw",
+            "timeout di connessione"
+          ],
+          "skills": [
+            "diagnosi",
+            "comandi",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M11.L9",
+          "title": "Il nome del server punta all'indirizzo sbagliato",
+          "objective": "Scoprire che DNS e file hosts danno risposte diverse, individuare la riga errata e correggerla (o aggirarla con l'indirizzo).",
+          "concepts": [
+            "risoluzione dei nomi",
+            "file hosts e DNS",
+            "getent e nslookup",
+            "No route to host"
+          ],
+          "skills": [
+            "diagnosi",
+            "comandi",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
           "id": "M11.L10",
           "title": "Verifica finale: integrazione documentata",
           "objective": "Partire da un sistema che non funziona, individuare più cause in sequenza, ripristinarlo e consegnare un rapporto utilizzabile da un altro tecnico.",
           "concepts": [
             "diagnosi con più cause su due nodi",
+            "rapporto di diagnosi"
+          ],
+          "skills": [
+            "diagnosi",
+            "autonomia",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M11.L11",
+          "title": "Seconda verifica finale: integrazione documentata",
+          "objective": "Diagnosticare e ripristinare un sistema con tre guasti a livelli diversi (nome, rete, applicazione), senza guida, e consegnare il rapporto.",
+          "concepts": [
+            "diagnosi su più livelli",
+            "nome, firewall e applicazione",
             "rapporto di diagnosi"
           ],
           "skills": [
