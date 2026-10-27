@@ -1422,7 +1422,8 @@
           ],
           "review": false,
           "shells": [
-            "bash"
+            "bash",
+            "pwsh"
           ]
         },
         {
