@@ -2,6 +2,7 @@
  * API Simulation Engine: server HTTP simulato "TaskFlow".
  * Deterministico: tempi, id, token e rate limit dipendono solo dallo stato (clock simulato).
  */
+import { labGate, labLog } from '../lab.ts';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { ApiEnvState, ApiLogEntry, ApiState, ApiTask, EnvName, ShellId, WorkspaceState } from '../types.ts';
 import { Vfs } from '../vfs.ts';
@@ -176,6 +177,8 @@ interface Ctx {
   user: { name: string; role: string } | null;
   vfs: Vfs;
   requestId: string;
+  /** host del laboratorio a due nodi (M11), se la richiesta è diretta al server */
+  labHost?: string;
 }
 
 function validateFields(data: Record<string, unknown>, fields: FieldSpec[], partial: boolean): { field: string; message: string }[] {
@@ -546,29 +549,35 @@ export function sendRequest(state: WorkspaceState, req: HttpRequest): NetResult 
     return { ok: false, kind: 'badurl', host: req.url, port: 0, ms: 0 };
   }
   state.clock += 1;
-  const env = envForHost(u);
+  // laboratorio a due nodi (M11): il servizio gira sul nodo "server" e usa i dati dell'ambiente testing
+  const gate = labGate(state, u.host, u.port, u.scheme);
+  const env = gate.lab ? 'testing' : envForHost(u);
   if (!env) {
     return { ok: false, kind: 'dns', host: u.host, port: u.port, ms: 0 };
   }
-  const baseUrl = parseUrl(BASE_URLS[env])!;
+  if (gate.lab && gate.fail) return { ok: false, kind: gate.fail, host: u.host, port: u.port, ms: gate.fail === 'tls' ? 3 : 0 };
+  const baseUrl = parseUrl(gate.lab ? 'http://lab.invalid' : BASE_URLS[env])!;
   const reachable =
-    baseUrl.scheme === 'https'
+    gate.lab ||
+    (baseUrl.scheme === 'https'
       ? (u.scheme === 'https' && u.port === 443) || (u.scheme === 'http' && u.port === 80)
-      : u.port === baseUrl.port;
+      : u.port === baseUrl.port);
   if (!reachable) return { ok: false, kind: 'refused', host: u.host, port: u.port, ms: 0 };
-  if (baseUrl.scheme === 'http' && u.scheme === 'https') return { ok: false, kind: 'tls', host: u.host, port: u.port, ms: 3 };
+  if (!gate.lab && baseUrl.scheme === 'http' && u.scheme === 'https') return { ok: false, kind: 'tls', host: u.host, port: u.port, ms: 3 };
   if (u.host === EXPIRED_CERT_HOST && u.scheme === 'https' && !req.insecure) return { ok: false, kind: 'cert', host: u.host, port: u.port, ms: 4 };
   const api = state.api;
   api.seq++;
   const requestId = `req_${String(api.seq).padStart(6, '0')}`;
-  const ctx: Ctx = { state, env, e: api.envs[env], req: { ...req, method: req.method.toUpperCase() }, u, user: null, vfs, requestId };
+  const ctx: Ctx = { state, env, e: api.envs[env], req: { ...req, method: req.method.toUpperCase() }, u, user: null, vfs, requestId, labHost: gate.lab ? u.host : undefined };
 
   let raw: Raw;
   if (u.scheme === 'http' && baseUrl.scheme === 'https') {
     raw = { status: 301, body: '', headers: { Location: BASE_URLS[env] + u.path + (u.rawQuery ? '?' + u.rawQuery : '') } };
   } else {
     const pre = ctx.req.method === 'OPTIONS' && ctx.req.headers['access-control-request-method'] && ctx.req.headers['origin'];
-    raw = applyCors(ctx, pre ? { status: 204, body: '', headers: {} } : route(ctx));
+    raw = gate.lab && state.lab && !state.lab.dbUp && u.path !== '/v1/health'
+      ? err(500, 'database_unavailable', 'Impossibile raggiungere il database (taskflow-db non risponde)', { requestId })
+      : applyCors(ctx, pre ? { status: 204, body: '', headers: {} } : route(ctx));
   }
   const ms = raw.ms ?? 6 + ((api.seq * 7) % 34);
   if (req.timeoutMs !== undefined && ms > req.timeoutMs) {
@@ -627,11 +636,17 @@ function logRequest(ctx: Ctx, raw: Raw, note?: string): void {
     client: req.client,
     shell: req.shell,
     note,
+    host: ctx.labHost,
     reqBody: req.body ? req.body.slice(0, 2000) : undefined,
     resBody: raw.body.slice(0, 2000),
   };
   state.api.log.push(entry);
   if (state.api.log.length > 400) state.api.log.splice(0, state.api.log.length - 400);
+  if (ctx.labHost) {
+    // nel laboratorio a due nodi il registro sta sul server (journalctl), non nel filesystem del client
+    labLog(state, `${raw.status >= 500 ? 'ERROR' : raw.status >= 400 ? 'WARN ' : 'INFO '} http: ${ctx.req.method} ${entry.path} -> ${raw.status} (${entry.ms}ms) user=${entry.user ?? '-'} req=${ctx.requestId}`);
+    return;
+  }
   const level = raw.status >= 500 ? 'ERROR' : raw.status >= 400 ? 'WARN ' : 'INFO ';
   ctx.vfs.systemWrite(
     `/var/log/taskflow/${ctx.env}/access.log`,

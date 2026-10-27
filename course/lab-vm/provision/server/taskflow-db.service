@@ -1,0 +1,9 @@
+[Unit]
+Description=Database di TaskFlow (laboratorio)
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/lab/taskflow-db.py
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

@@ -8,6 +8,7 @@ import { BASE_URLS } from './api/spec.ts';
 import { CLOCK_START, CREDENTIALS, createApiState } from './api/server.ts';
 import { BashRuntime, runBashLine, type Io } from './bash/interp.ts';
 import './bash/commands.ts';
+import './bash/lab-cmds.ts';
 import { runPwshLine } from './pwsh/interp.ts';
 import { CATALOG, psAliases } from './catalog.ts';
 import { COMMANDS } from './bash/interp.ts';

@@ -10,6 +10,7 @@ import { m7 } from './m7.ts';
 import { m8 } from './m8.ts';
 import { m9 } from './m9.ts';
 import { m10 } from './m10.ts';
+import { m11 } from './m11.ts';
 import { scenarios } from './scenarios.ts';
 import { diagnosi } from './diagnosi.ts';
 import { guidedM12 } from './guided-m12.ts';
@@ -26,6 +27,7 @@ const UNSORTED: ModuleInfo[] = [
   { n: 8, title: 'Portfolio', summary: 'Quattro artefatti da portfolio verificati dal laboratorio: guida rapida, specifica OpenAPI, bug report con troubleshooting, script di test con report.', optional: true },
   { n: 9, title: 'Dal codice alla documentazione', summary: 'Sola lettura su un progetto d\'esempio: trovare le rotte, ricavare il contratto da un handler, confrontare codice e documentazione, cronologia Git, OpenAPI in YAML e JSON Schema di base.', optional: true },
   { n: 10, title: 'Sessioni, webhook e autenticazione', summary: 'Cookie di sessione, webhook firmati con HMAC, confronto dei flussi di autenticazione (Bash).', optional: true },
+  { n: 11, title: 'Laboratorio a due nodi', summary: 'Un server che ospita il servizio e un client che lo usa, su una rete simulata: ssh, servizi, porte, registro del server; guasti controllati (servizio fermo, porta sbagliata, database) e rapporto di diagnosi. Equivale al laboratorio con due macchine virtuali (kit reale in course/lab-vm/).', optional: true },
   { n: 4, title: 'Testing API REST + OpenAPI', summary: 'Specifica OpenAPI, autenticazione e segreti, CRUD, validazione, paginazione, idempotenza, timeout, rate limit, confronto con PowerShell.' },
 ];
 
@@ -35,7 +37,7 @@ export const CURRICULUM_VERSION = '0.1.0';
 
 const EXTRA_GUIDED = { ...guidedM12, ...guidedM34, ...guidedM5678 };
 
-export const LESSONS: Lesson[] = [...m1, ...m2, ...m3, ...m4, ...m5, ...m6, ...m7, ...m8, ...m9, ...m10, ...scenarios, ...diagnosi]
+export const LESSONS: Lesson[] = [...m1, ...m2, ...m3, ...m4, ...m5, ...m6, ...m7, ...m8, ...m9, ...m10, ...m11, ...scenarios, ...diagnosi]
   .map((l) => (EXTRA_GUIDED[l.id] ? { ...l, guided: [...l.guided, ...EXTRA_GUIDED[l.id]] } : l)).sort((a, b) => lessonIndex(a.id) - lessonIndex(b.id) || (a.review ? -1 : 1));
 
 export function getLesson(id: string): Lesson | undefined {

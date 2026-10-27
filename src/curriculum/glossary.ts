@@ -29,6 +29,14 @@ const BASH: Record<string, ToolNote> = {
   'grep -c': { name: 'grep -c', text: '`grep -c testo file` stampa solo QUANTE righe contengono il testo.' },
   git: { name: 'git (sola lettura)', text: '`git log --oneline` elenca i commit; `git show <commit>` mostra cosa è cambiato; `git blame file` dice chi ha scritto ogni riga. Nel laboratorio Git è solo in lettura.' },
   nslookup: { name: 'nslookup', text: '`nslookup nome` chiede al DNS l\'indirizzo di un nome: se non esiste risponde NXDOMAIN.' },
+  ssh: { name: 'ssh', text: '`ssh learner@server.lab "comando"` esegue un comando su un altro computer (qui il server del laboratorio) e mostra l\'output sul tuo terminale. Il comando va tra apici; nel laboratorio si esegue un comando alla volta (la sessione interattiva non è disponibile).' },
+  systemctl: { name: 'systemctl', text: '`systemctl status taskflow` mostra se il servizio è attivo (active) o fermo (inactive); `is-active` stampa solo lo stato; `sudo systemctl start|stop|restart taskflow` lo avvia, lo ferma o lo riavvia. Esiste sul server, non sul tuo Mac.' },
+  journalctl: { name: 'journalctl', text: '`journalctl -u taskflow -n 10` mostra le ultime 10 righe del registro del servizio taskflow (`-u` sceglie il servizio, `-n` quante righe).' },
+  sudo: { name: 'sudo', text: '`sudo comando` esegue il comando con i privilegi di amministratore. Serve per avviare, fermare o riavviare servizi e per modificare i file di configurazione del sistema.' },
+  ss: { name: 'ss -tlnp', text: '`ss -tlnp` elenca le porte TCP in ascolto (`-t` TCP, `-l` in ascolto, `-n` numeri, `-p` il processo): dice quale servizio ascolta su quale porta. Su macOS non esiste: si usa `netstat -an` o `lsof -i`.' },
+  ping: { name: 'ping', text: '`ping -c 2 server.lab` verifica che un computer risponda in rete (`-c 2` = due pacchetti). Se risponde, la rete funziona; non dice nulla sul servizio.' },
+  sed: { name: 'sed -i', text: '`sed -i "s/vecchio/nuovo/" file` sostituisce il testo `vecchio` con `nuovo` direttamente nel file (`-i` = modifica sul posto). Senza `-i` stampa il risultato senza cambiare il file.' },
+  'curl -sS': { name: 'curl -sS', text: '`-s` toglie le barre di avanzamento e `-S` fa comunque mostrare gli errori (per esempio "Failed to connect"): con il solo `-s` un errore di connessione non stampa nulla.' },
   nc: { name: 'nc -zv', text: '`nc -zv host porta` verifica se una porta TCP accetta connessioni (`-z` solo test, `-v` messaggio).' },
   ps: { name: 'ps', text: '`ps aux` elenca i processi in esecuzione, con utente e comando.' },
   cd: { name: 'cd', text: '`cd percorso` ti sposta in una cartella (percorso assoluto o relativo). Senza argomenti torna alla home.' },
@@ -65,6 +73,7 @@ const BASH: Record<string, ToolNote> = {
 };
 
 const PWSH: Record<string, ToolNote> = {
+  ssh: { name: 'ssh', text: '`ssh learner@server.lab "comando"` esegue un comando sul server del laboratorio e ne mostra l\'output (in Windows 10 e successivi è l\'ssh.exe di OpenSSH). Il comando va tra apici; il comando eseguito è di Linux (systemctl, ss, journalctl), non PowerShell.' },
   if: { name: 'if', text: '`if ($code -eq 200) { "ok" } else { "errore" }` esegue il blocco solo se la condizione è vera. Condizioni con gli operatori `-eq -ne -gt -ge -lt -le`.' },
   for: { name: 'for', text: '`for ($i = 1; $i -le 5; $i++) { … }` ripete il blocco: inizio, condizione, passo. `$i++` aumenta di 1.' },
   while: { name: 'while', text: '`while ($i -lt 5) { … }` ripete finché la condizione è vera.' },
@@ -185,6 +194,12 @@ export const LESSON_TOOLS: Record<string, { bash?: string[]; pwsh?: string[] }> 
   'M10.L1': { bash: ['curl', 'curl -s', 'curl -i', 'curl -c', 'curl -X', 'curl -H', 'curl -d', 'heredoc'] },
   'M10.L2': { bash: ['$( )', 'curl', 'curl -s', 'curl -X', 'curl -d', 'curl -H', 'openssl', 'awk', 'heredoc'] },
   'M10.L3': { bash: ['curl', 'curl -s', 'curl -X', 'curl -H', 'curl -d', 'jq', 'curl -c', '$( )', 'openssl', 'awk', 'heredoc'] },
+  'M11.L1': { bash: ['ping', 'nc', 'ssh', 'curl', 'curl -s', 'heredoc', 'systemctl', 'ss'], pwsh: ['Test-NetConnection', '-Port', 'Invoke-RestMethod', '$env:', 'here-string', 'Set-Content', '-Value', 'ssh'] },
+  'M11.L2': { bash: ['curl', 'curl -s', 'curl -H', 'curl -i', 'ssh', 'heredoc', 'tail'], pwsh: ['Invoke-RestMethod', '-Headers', '@{ }', '$env:', 'here-string', 'Set-Content', '-Value', 'ssh'] },
+  'M11.L3': { bash: ['curl', 'curl -sS', 'ssh', 'curl -s', 'heredoc', 'systemctl', 'journalctl', 'sudo'], pwsh: ['Invoke-RestMethod', '$env:', 'here-string', 'Set-Content', '-Value', 'ssh'] },
+  'M11.L4': { bash: ['curl', 'curl -sS', 'ssh', 'sudo', 'curl -s', 'heredoc', 'systemctl', 'ss', 'sed'], pwsh: ['Invoke-RestMethod', '$env:', 'here-string', 'Set-Content', '-Value', 'ssh'] },
+  'M11.L5': { bash: ['curl', 'curl -s', 'curl -i', 'curl -H', 'ssh', 'heredoc', 'systemctl', 'journalctl', 'sudo'], pwsh: ['$env:', 'here-string', 'Set-Content', '-Value', 'ssh'] },
+  'M11.L6': { bash: ['curl', 'curl -sS', 'ssh', 'sudo', 'curl -s', 'curl -H', 'heredoc', 'systemctl', 'journalctl', 'ss', 'sed'], pwsh: ['Invoke-RestMethod', '$env:', 'here-string', 'Set-Content', '-Value', 'ssh'] },
 };
 
 export function toolsFor(lessonId: string, shell: ShellId): ToolNote[] {

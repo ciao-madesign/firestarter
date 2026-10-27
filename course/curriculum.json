@@ -1099,6 +1099,136 @@
           ]
         }
       ]
+    },
+    {
+      "n": 11,
+      "title": "Laboratorio a due nodi",
+      "summary": "Un server che ospita il servizio e un client che lo usa, su una rete simulata: ssh, servizi, porte, registro del server; guasti controllati (servizio fermo, porta sbagliata, database) e rapporto di diagnosi. Equivale al laboratorio con due macchine virtuali (kit reale in course/lab-vm/).",
+      "optional": true,
+      "lessons": [
+        {
+          "id": "M11.L1",
+          "title": "Due nodi: chi serve e chi usa",
+          "objective": "Distinguere il client dal server, verificare rete, porta e servizio e documentare la mappa del laboratorio.",
+          "concepts": [
+            "client e server",
+            "ssh",
+            "porte in ascolto",
+            "livelli di verifica"
+          ],
+          "skills": [
+            "diagnosi",
+            "comandi",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M11.L2",
+          "title": "Prima integrazione: chiamare il servizio dal client",
+          "objective": "Recuperare l'elenco dei task dal client, provare richieste non valide, distinguere gli errori e scrivere un esempio di documentazione.",
+          "concepts": [
+            "client e server nelle integrazioni",
+            "registro del server",
+            "esempio di documentazione API"
+          ],
+          "skills": [
+            "http",
+            "diagnosi",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M11.L3",
+          "title": "Servizio fermo: dal sintomo alla correzione",
+          "objective": "Riconoscere una connessione rifiutata, trovare sul server il servizio fermo, riavviarlo e verificarlo.",
+          "concepts": [
+            "connessione rifiutata",
+            "systemctl",
+            "journalctl",
+            "sudo"
+          ],
+          "skills": [
+            "diagnosi",
+            "comandi",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M11.L4",
+          "title": "Porta sbagliata: il servizio è attivo ma non dove ti aspetti",
+          "objective": "Scoprire che il servizio ascolta su una porta diversa da quella documentata e correggere la configurazione del server.",
+          "concepts": [
+            "porta in ascolto",
+            "file di configurazione",
+            "riavvio del servizio",
+            "sed -i"
+          ],
+          "skills": [
+            "diagnosi",
+            "comandi",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M11.L5",
+          "title": "Errore 500: la causa è su un altro servizio",
+          "objective": "Distinguere un errore del server da uno del client, trovare nel registro la dipendenza che manca e ripristinarla.",
+          "concepts": [
+            "errore 500",
+            "dipendenze tra servizi",
+            "registro del server"
+          ],
+          "skills": [
+            "diagnosi",
+            "http",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M11.L6",
+          "title": "Verifica finale: integrazione documentata",
+          "objective": "Partire da un sistema che non funziona, individuare più cause in sequenza, ripristinarlo e consegnare un rapporto utilizzabile da un altro tecnico.",
+          "concepts": [
+            "diagnosi con più cause su due nodi",
+            "rapporto di diagnosi"
+          ],
+          "skills": [
+            "diagnosi",
+            "autonomia",
+            "docs"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        }
+      ]
     }
   ]
 }

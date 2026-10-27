@@ -658,7 +658,7 @@ def('ConvertTo-Json', 'InputObject:0, Depth, Compress!', (c) => {
 def('Test-NetConnection', 'ComputerName:0, Port:1, InformationLevel', (c) => {
   const host = psToString(c.get('ComputerName') ?? 'internetbeacon.msedge.net');
   const port = c.has('Port') ? Number(c.get('Port')) : null;
-  const info = lookupHost(host);
+  const info = lookupHost(host, c.rt.state);
   if (!info) {
     c.rt.io.out(`WARNING: Name resolution of ${host} failed\n`);
     return [custom({ ComputerName: host, RemoteAddress: null, NameResolutionSucceeded: false, PingSucceeded: false })];
@@ -670,7 +670,7 @@ def('Test-NetConnection', 'ComputerName:0, Port:1, InformationLevel', (c) => {
 });
 def('Resolve-DnsName', 'Name:0, Type', (c) => {
   const host = psToString(c.get('Name'));
-  const info = lookupHost(host);
+  const info = lookupHost(host, c.rt.state);
   if (!info) {
     fail(c, new PSError(`${host} : DNS name does not exist`, 'ResourceUnavailable', 'DnsNameDoesNotExist,Microsoft.DnsClient.Commands.ResolveDnsName', host, 'Resolve-DnsName'));
     return [];

@@ -45,6 +45,8 @@ export interface ApiLogEntry {
   client: string; // curl | Invoke-RestMethod | Invoke-WebRequest | ...
   shell: ShellId | null;
   note?: string;
+  /** host di destinazione (valorizzato solo per il laboratorio a due nodi) */
+  host?: string;
   /** richiesta in forma sintetica per i report */
   reqBody?: string;
   resBody?: string;
@@ -210,6 +212,8 @@ export interface WorkspaceState {
   predictions: PredictionRecord[];
   /** test intermedio in corso (4 esercizi misti) */
   moduleTest?: ModuleTestState;
+  /** laboratorio a due nodi (M11): presente solo mentre una lezione del modulo è attiva */
+  lab?: import('./lab.ts').LabState;
   tutorChat: { role: 'user' | 'tutor'; text: string; at: number }[];
   changeLog: { at: number; what: string }[];
 }

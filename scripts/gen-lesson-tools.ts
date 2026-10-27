@@ -9,10 +9,17 @@ import type { ShellId } from '../src/engine/types.ts';
 import { tokensOf } from './audit-info.ts';
 
 const BASIC = new Set(['ls', 'pwd', 'echo', 'cat', 'Get-Content', 'Set-Location', 'mkdir', 'cp', 'mv', 'rm', 'touch', 'grep', 'sort', 'uniq', 'wc', 'man', 'date']);
-const ALIAS: Record<string, string> = { do: 'for', 'do -s': 'for', 'do -o': 'for', 'do -w': 'for', 'do -H': 'for', 'do -X': 'for', 'do -d': 'for', done: 'for', 'nc -zv': 'nc', 'find -type': 'find', 'curl -b': 'curl -c', 'openssl -hmac': 'openssl' };
+const ALIAS: Record<string, string> = { 'ssh -n': 'ssh', 'ssh -i': 'ssh', 'ssh -u': 'ssh', do: 'for', 'do -s': 'for', 'do -o': 'for', 'do -w': 'for', 'do -H': 'for', 'do -X': 'for', 'do -d': 'for', done: 'for', 'nc -zv': 'nc', 'find -type': 'find', 'curl -b': 'curl -c', 'openssl -hmac': 'openssl' };
 const DROP = new Set(['then', 'fi', 'else', 'elif', 'Write-Output', 'foreach', 'content-type', '>>', 'abc', 'mostra', 'ls -lat']);
 /** aggiunte manuali per lezione/shell (costrutti richiesti ma non rilevabili automaticamente) */
 const EXTRA: Record<string, Partial<Record<ShellId, string[]>>> = {
+  // ssh in PowerShell è un'applicazione esterna: l'analisi automatica non la vede
+  'M11.L1': { bash: ['systemctl', 'ss'], pwsh: ['ssh', 'Test-NetConnection', '-Port'] },
+  'M11.L2': { bash: ['tail'], pwsh: ['ssh'] },
+  'M11.L3': { bash: ['systemctl', 'journalctl', 'sudo'], pwsh: ['ssh'] },
+  'M11.L4': { bash: ['systemctl', 'ss', 'sudo', 'sed'], pwsh: ['ssh'] },
+  'M11.L5': { bash: ['systemctl', 'journalctl', 'sudo'], pwsh: ['ssh'] },
+  'M11.L6': { bash: ['systemctl', 'journalctl', 'ss', 'sudo', 'sed'], pwsh: ['ssh'] },
   'M2.L3': { pwsh: ['$?'] },
   'M2.L4': { pwsh: ['./script.ps1'] },
   // il contenuto della here-string è codice PowerShell: gli strumenti che usa vanno spiegati

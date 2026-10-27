@@ -16,7 +16,7 @@ describe('Catalogo dei comandi (fedeltà dichiarata)', () => {
   it('ogni cmdlet PowerShell ha una scheda e ogni scheda un cmdlet', () => {
     const missing = [...CMDLETS.values()].filter((c) => !findDoc(c.name, 'pwsh')).map((c) => c.name);
     expect(missing).toEqual([]);
-    const native = new Set(['curl.exe', 'jq.exe', 'git']);
+    const native = new Set(['curl.exe', 'jq.exe', 'git', 'ssh']);
     const orphan = CATALOG.filter((d) => d.shells.includes('pwsh') && !native.has(d.name) && !CMDLETS.has(d.name.toLowerCase())).map((d) => d.name);
     expect(orphan).toEqual([]);
   });

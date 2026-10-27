@@ -74,6 +74,7 @@ export function startLesson(state: WorkspaceState, id: string, forceSetup = fals
       const abs = a.startsWith('~') ? HOME + a.slice(1) : a;
       if (vfs.exists(abs)) vfs.remove(abs, true);
     }
+    if (lesson.module !== 11) state.lab = undefined;
     // ambiente base dei laboratori: sviluppo, dati iniziali, credenziali nelle variabili d'ambiente
     lesson.setup(makeSetupCtx(state, dir));
     p.startClock = state.clock;

@@ -1,0 +1,23 @@
+# Laboratorio con due macchine virtuali (client e server) su una rete privata.
+# Requisiti: VirtualBox e Vagrant sul PC di casa. Uso: vedi README.md
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/jammy64"
+  config.vm.synced_folder ".", "/vagrant"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = 512
+    vb.cpus = 1
+  end
+
+  config.vm.define "server" do |s|
+    s.vm.hostname = "server"
+    s.vm.network "private_network", ip: "192.168.50.10"
+    s.vm.provision "shell", path: "provision/server.sh"
+  end
+
+  config.vm.define "client" do |c|
+    c.vm.hostname = "client"
+    c.vm.network "private_network", ip: "192.168.50.20"
+    c.vm.provision "shell", path: "provision/client.sh"
+  end
+end

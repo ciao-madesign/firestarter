@@ -1332,6 +1332,7 @@ import { git } from '../bash/git.ts';
 import { runJq, formatJson, parseJsonStream, JqError } from '../jq.ts';
 import { getopt } from '../util.ts';
 import { renderHelp } from '../catalog.ts';
+import { sshMain } from '../lab-node.ts';
 
 function runNative(rt: PsRuntime, name: string, args: string[], stdin: string, fsish: { state: WorkspaceState; vfs: Vfs; resolve: (p: string) => string; cwd: string }): unknown[] | null {
   let out = '';
@@ -1367,6 +1368,8 @@ function runNative(rt: PsRuntime, name: string, args: string[], stdin: string, f
     }
   } else if (name === 'git' || name === 'git.exe') {
     code = git(args, io, fsish as never);
+  } else if (name === 'ssh' || name === 'ssh.exe') {
+    code = sshMain(rt.state, args, { out: (t) => (out += t), err: (t) => (err += t) });
   } else if (name === 'hostname') {
     out = 'lab\n';
     code = 0;

@@ -787,6 +787,60 @@ Esempio: `ss -tlnp`
 Differenze rispetto al comando reale:
 - Elenco fisso: sshd (22) e taskflow (8080). Su macOS non esiste `ss`: si usa `netstat -an` o `lsof -i`.
 
+### `ssh`
+
+Esegue UN comando sul server del laboratorio a due nodi (M11) e ne mostra l'output. In PowerShell 5.1 è l'ssh.exe di OpenSSH (Windows 10 e successivi).
+
+Sintassi: `ssh [utente@]host "comando"`
+
+- `-p porta`: porta del server (solo 22)
+- `-o, -i, -q`: accettate e ignorate
+
+Esempio: `ssh learner@server.lab "systemctl status taskflow"`
+
+Differenze rispetto al comando reale:
+- Solo comandi singoli: la sessione interattiva (ssh senza comando) non è disponibile. Autenticazione sempre riuscita per l'utente learner, nessuna chiave o password. Raggiunge solo server.lab / 192.168.50.10 durante le lezioni M11.
+
+### `systemctl`
+
+Gestisce i servizi del SERVER (taskflow, taskflow-db). Esiste solo nei comandi eseguiti via ssh: sul client risponde "command not found", come su macOS.
+
+Sintassi: `systemctl status|start|stop|restart|is-active UNITÀ`
+
+- `status`: stato del servizio e ultime righe del registro
+- `start, stop, restart`: richiedono sudo
+- `is-active`: stampa active o inactive (codice 3 se inattivo)
+
+Esempio: `ssh learner@server.lab "systemctl status taskflow"`
+
+Differenze rispetto al comando reale:
+- Solo le due unità del laboratorio e i cinque verbi indicati; l'output di status è ridotto rispetto al vero.
+
+### `journalctl`
+
+Mostra il registro (journal) dei servizi del SERVER.
+
+Sintassi: `journalctl [-u unità] [-n righe]`
+
+- `-u unità`: solo le righe di quel servizio
+- `-n righe`: ultime N righe
+
+Esempio: `ssh learner@server.lab "journalctl -u taskflow -n 20"`
+
+Differenze rispetto al comando reale:
+- Esiste solo sul server (via ssh). Non supporta -f, --since e filtri di priorità.
+
+### `sudo`
+
+Esegue un comando con i privilegi di amministratore, sul SERVER del laboratorio.
+
+Sintassi: `sudo comando [argomenti...]`
+
+Esempio: `ssh learner@server.lab "sudo systemctl restart taskflow"`
+
+Differenze rispetto al comando reale:
+- Sul client risponde "learner is not in the sudoers file". Sul server non chiede la password. Rende scrivibili i file di root solo per la durata del comando.
+
 ### `kill`
 
 Invia un segnale a un processo.
@@ -863,6 +917,20 @@ Esempio: `git log --oneline`
 Differenze rispetto al comando reale:
 - Solo repository d'esempio: git add, commit, push, checkout, pull e altri comandi che modificano danno un errore esplicito (si usano nel tutor in terminale, su repository veri).
 - Opzioni come --graph, --stat, -p non sono supportate. Il diff mostra tre righe di contesto; le date sono in UTC.
+
+### `ssh`
+
+Esegue UN comando sul server del laboratorio a due nodi (M11) e ne mostra l'output. In PowerShell 5.1 è l'ssh.exe di OpenSSH (Windows 10 e successivi).
+
+Sintassi: `ssh [utente@]host "comando"`
+
+- `-p porta`: porta del server (solo 22)
+- `-o, -i, -q`: accettate e ignorate
+
+Esempio: `ssh learner@server.lab "systemctl status taskflow"`
+
+Differenze rispetto al comando reale:
+- Solo comandi singoli: la sessione interattiva (ssh senza comando) non è disponibile. Autenticazione sempre riuscita per l'utente learner, nessuna chiave o password. Raggiunge solo server.lab / 192.168.50.10 durante le lezioni M11.
 
 ### `Get-Location`
 

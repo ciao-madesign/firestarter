@@ -12,6 +12,7 @@ import { git } from './git.ts';
 import { createHash, createHmac } from 'node:crypto';
 import { DNS_SERVER, LISTENING, lookupHost, pingMs } from '../net.ts';
 import { renderHelp } from '../catalog.ts';
+import { labListening } from '../lab.ts';
 import { BashSyntaxError } from './parser.ts';
 
 function reg(name: string, fn: CmdFn, builtin = false): void {
@@ -769,7 +770,7 @@ reg('date', (args, io, rt) => {
 });
 
 reg('whoami', (a, io) => (io.out('learner\n'), 0));
-reg('hostname', (a, io) => (io.out('lab\n'), 0));
+reg('hostname', (a, io, rt) => (io.out(rt.state.lab?.viewAs === 'server' ? 'server\n' : 'lab\n'), 0));
 reg('id', (a, io) => (io.out('uid=1000(learner) gid=1000(learner) groups=1000(learner)\n'), 0));
 reg('uname', (args, io) => {
   io.out(args.includes('-a') ? 'Linux lab 6.1.0-sim #1 SMP x86_64 GNU/Linux\n' : 'Linux\n');
@@ -1546,6 +1547,7 @@ reg('sed', (args, io, rt) => {
     }
   }
   const { inputs, failed } = readInputs(rt, io, 'sed', rest);
+  let writeFailed = false;
   inputs.forEach((inp, fi) => {
     const lines = splitLines(inp.text);
     const outLines: string[] = [];
@@ -1567,11 +1569,12 @@ reg('sed', (args, io, rt) => {
         rt.vfs.writeFile(rt.resolve(inp.name), joinLines(outLines));
       } catch (e) {
         io.err(`sed: ${inp.name}: ${e instanceof FsError ? fsErrorMessage(e, inp.name) : e}\n`);
+        writeFailed = true;
       }
     } else io.out(joinLines(outLines));
     void fi;
   });
-  return failed ? 2 : 0;
+  return failed ? 2 : writeFailed ? 4 : 0;
 });
 
 reg('tac', (args, io, rt) => {
@@ -1898,7 +1901,7 @@ reg('openssl', (args, io, rt) => {
   }
   return 0;
 });
-reg('ping', (args, io) => {
+reg('ping', (args, io, rt) => {
   const o = getopt(args, { flags: '', values: 'cW' });
   if (o.error || !o.rest.length) {
     io.err('Usage: ping [-c count] destination\n');
@@ -1906,7 +1909,7 @@ reg('ping', (args, io) => {
   }
   const host = o.rest[0];
   const count = Math.min(10, Math.max(1, parseInt(o.values.c?.[0] ?? '4', 10) || 4));
-  const info = lookupHost(host);
+  const info = lookupHost(host, rt.state);
   if (!info) {
     io.err(`ping: ${host}: Name or service not known\n`);
     return 2;
@@ -1922,13 +1925,13 @@ reg('ping', (args, io) => {
   io.out(`\n--- ${host} ping statistics ---\n${count} packets transmitted, ${count} received, 0% packet loss, time ${(count - 1) * 1000}ms\nrtt min/avg/max/mdev = ${Math.min(...times).toFixed(3)}/${avg}/${Math.max(...times).toFixed(3)}/0.100 ms\n`);
   return 0;
 });
-reg('nslookup', (args, io) => {
+reg('nslookup', (args, io, rt) => {
   const host = args.find((a) => !a.startsWith('-'));
   if (!host) {
     io.err('nslookup: missing host name\n');
     return 1;
   }
-  const info = lookupHost(host);
+  const info = lookupHost(host, rt.state);
   io.out(`Server:\t\t${DNS_SERVER}\nAddress:\t${DNS_SERVER}#53\n\n`);
   if (!info) {
     io.out(`** server can't find ${host}: NXDOMAIN\n\n`);
@@ -1937,14 +1940,14 @@ reg('nslookup', (args, io) => {
   io.out(`Non-authoritative answer:\nName:\t${info.name}\nAddress: ${info.ip}\n\n`);
   return 0;
 });
-reg('dig', (args, io) => {
+reg('dig', (args, io, rt) => {
   const short = args.includes('+short');
   const host = args.find((a) => !a.startsWith('-') && !a.startsWith('+') && !a.startsWith('@'));
   if (!host) {
     io.out('; <<>> DiG 9.18 <<>>\n');
     return 0;
   }
-  const info = lookupHost(host);
+  const info = lookupHost(host, rt.state);
   if (short) {
     if (info) io.out(info.ip + '\n');
     return 0;
@@ -1954,7 +1957,7 @@ reg('dig', (args, io) => {
   io.out(`;; SERVER: ${DNS_SERVER}#53(${DNS_SERVER})\n`);
   return 0;
 });
-reg('nc', (args, io) => {
+reg('nc', (args, io, rt) => {
   const o = getopt(args, { flags: 'zvw', values: 'w' });
   if (o.error || o.rest.length < 2) {
     io.err('usage: nc [-zv] [-w timeout] host port\n');
@@ -1970,7 +1973,7 @@ reg('nc', (args, io) => {
     io.err(`nc: port number invalid: ${portS}\n`);
     return 1;
   }
-  const info = lookupHost(host);
+  const info = lookupHost(host, rt.state);
   if (!info) {
     io.err(`nc: getaddrinfo for host "${host}" port ${port}: Name or service not known\n`);
     return 1;
@@ -1982,14 +1985,14 @@ reg('nc', (args, io) => {
   io.err(`nc: connect to ${host} port ${port} (tcp) failed: Connection refused\n`);
   return 1;
 });
-reg('ss', (args, io) => {
+reg('ss', (args, io, rt) => {
   const flags = args.filter((a) => a.startsWith('-')).join('').replace(/-/g, '');
   if (/[^tlnp]/.test(flags)) {
     io.err('ss: nel laboratorio sono supportate le opzioni -t -l -n -p (per esempio ss -tlnp)\n');
     return 1;
   }
   io.out(`State   Recv-Q  Send-Q   Local Address:Port   Peer Address:Port  Process\n`);
-  for (const l of LISTENING) io.out(`LISTEN  0       128      ${l.local.padEnd(20)} 0.0.0.0:*          ${flags.includes('p') ? `users:(("${l.proc}",pid=${l.proc === 'sshd' ? 410 : 622},fd=3))` : ''}\n`);
+  for (const l of labListening(rt.state) ?? LISTENING) io.out(`LISTEN  0       128      ${l.local.padEnd(20)} 0.0.0.0:*          ${flags.includes('p') ? `users:(("${l.proc}",pid=${l.proc === 'sshd' ? 410 : l.proc === 'postgres' ? 701 : 622},fd=3))` : ''}\n`);
   return 0;
 });
 reg('kill', (args, io) => {

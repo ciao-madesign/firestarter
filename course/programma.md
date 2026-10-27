@@ -444,3 +444,55 @@ Concetti: flussi di autenticazione; confronto di meccanismi; documentare la sicu
 
 Verifica (criterio): Il registro mostra i tre 200; la tabella ha le colonne richieste e le quattro righe; nessun segreto nei comandi o nel documento.
 
+## M11 — Laboratorio a due nodi (estensione facoltativa)
+
+Un server che ospita il servizio e un client che lo usa, su una rete simulata: ssh, servizi, porte, registro del server; guasti controllati (servizio fermo, porta sbagliata, database) e rapporto di diagnosi. Equivale al laboratorio con due macchine virtuali (kit reale in course/lab-vm/).
+
+### M11.L1 — Due nodi: chi serve e chi usa
+
+Obiettivo: Distinguere il client dal server, verificare rete, porta e servizio e documentare la mappa del laboratorio.
+
+Concetti: client e server; ssh; porte in ascolto; livelli di verifica.
+
+Verifica (criterio): Il registro mostra i comandi dei quattro livelli; mappa.md contiene gli indirizzi 192.168.50.10 e 192.168.50.20, le parole client e server, la porta 8080 e health.
+
+### M11.L2 — Prima integrazione: chiamare il servizio dal client
+
+Obiettivo: Recuperare l'elenco dei task dal client, provare richieste non valide, distinguere gli errori e scrivere un esempio di documentazione.
+
+Concetti: client e server nelle integrazioni; registro del server; esempio di documentazione API.
+
+Verifica (criterio): Il registro API mostra 200, 401 e 404 verso server.lab; hai letto il registro del server; esempio-api.md contiene richiesta, Authorization, risposta e almeno 401 e 404.
+
+### M11.L3 — Servizio fermo: dal sintomo alla correzione
+
+Obiettivo: Riconoscere una connessione rifiutata, trovare sul server il servizio fermo, riavviarlo e verificarlo.
+
+Concetti: connessione rifiutata; systemctl; journalctl; sudo.
+
+Verifica (criterio): Il registro mostra una richiesta fallita prima della correzione, systemctl status e journalctl sul server, l'avvio con sudo e un 200 finale; il servizio è attivo; diagnosi.md spiega sintomo, causa e correzione.
+
+### M11.L4 — Porta sbagliata: il servizio è attivo ma non dove ti aspetti
+
+Obiettivo: Scoprire che il servizio ascolta su una porta diversa da quella documentata e correggere la configurazione del server.
+
+Concetti: porta in ascolto; file di configurazione; riavvio del servizio; sed -i.
+
+Verifica (criterio): Il file di configurazione contiene PORT=8080, il servizio ascolta sulla 8080, il registro mostra un 200 dal client; diagnosi.md cita 9090, 8080, sed o la riga PORT e il riavvio.
+
+### M11.L5 — Errore 500: la causa è su un altro servizio
+
+Obiettivo: Distinguere un errore del server da uno del client, trovare nel registro la dipendenza che manca e ripristinarla.
+
+Concetti: errore 500; dipendenze tra servizi; registro del server.
+
+Verifica (criterio): Il registro API mostra 500 poi 200 su GET /v1/tasks; il database è attivo; hai letto il registro del server; diagnosi.md cita 500, database, journalctl o service.log e systemctl.
+
+### M11.L6 — Verifica finale: integrazione documentata
+
+Obiettivo: Partire da un sistema che non funziona, individuare più cause in sequenza, ripristinarlo e consegnare un rapporto utilizzabile da un altro tecnico.
+
+Concetti: diagnosi con più cause su due nodi; rapporto di diagnosi.
+
+Verifica (criterio): GET /v1/tasks risponde 200 dal client sulla 8080; configurazione, servizio e database sono a posto; rapporto.md elenca le tre cause (servizio fermo, porta, database), le correzioni e un esempio di richiesta.
+

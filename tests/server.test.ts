@@ -40,7 +40,7 @@ describe('Backend applicativo', () => {
     expect(r.json.simulated).toBe(true);
     expect(r.json.course.level).toBe(2);
     expect(r.json.course.next.lesson).toBe('M2.L1');
-    expect(r.json.curriculum.modules.length).toBe(10);
+    expect(r.json.curriculum.modules.length).toBe(11);
   });
   it('flusso completo di una lezione: avvio, comandi, verifica, progressi', async () => {
     await call('POST', '/api/lessons/M2.L1/start', {});

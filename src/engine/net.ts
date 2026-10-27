@@ -1,6 +1,8 @@
 /** Rete simulata: risoluzione dei nomi e porte aperte per gli strumenti di diagnosi (ping, nslookup, dig, nc, ss, Test-NetConnection). */
 import { BASE_URLS } from './api/spec.ts';
 import { EXPIRED_CERT_HOST } from './api/server.ts';
+import { labHostInfo } from './lab.ts';
+import type { WorkspaceState } from './types.ts';
 
 export interface HostInfo {
   name: string;
@@ -17,7 +19,9 @@ const HOSTS: HostInfo[] = [
 
 export const DNS_SERVER = '10.0.0.2';
 
-export function lookupHost(host: string): HostInfo | null {
+export function lookupHost(host: string, state?: WorkspaceState): HostInfo | null {
+  const lab = state ? labHostInfo(state, host) : null;
+  if (lab) return lab;
   const h = host.toLowerCase();
   if (h === '127.0.0.1') return HOSTS[0];
   return HOSTS.find((x) => x.name === h || x.ip === h) ?? null;

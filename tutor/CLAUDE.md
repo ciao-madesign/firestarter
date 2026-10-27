@@ -85,6 +85,10 @@ Lo studente segue il corso anche su claude.ai e nel laboratorio web. `/importa-r
 
 Git di base e i webhook sono nel programma (M5) ma non nel simulatore: si svolgono qui, nel terminale reale, con l'output incollato.
 
+## Laboratorio a due nodi (M11) e kit con macchine virtuali
+
+M11 (facoltativo) è nel laboratorio web: server e client su rete simulata, guasti controllati, rapporto di diagnosi. Il kit reale è in `course/lab-vm/` (VirtualBox + Vagrant sul PC di casa dello studente, che le installa e le avvia da sé). Come tutor: guida e rivedi le tracce (comandi, output, diagnosi, specifica), ma NON eseguire `vagrant`, VirtualBox né comandi dentro le macchine al posto dello studente. Il kit non è stato provato su VirtualBox: se qualcosa non funziona, trattalo come un bug da documentare. Vale il principio «soluzione mostrata ≠ autonomia» come negli altri moduli.
+
 ## Fase finale: documentare prodotti reali (Adapta e WizTrail)
 
 Quando lo studente ha raggiunto il livello 3 nei moduli 3–6, lo guidi nel documentare le API e il funzionamento di due suoi prodotti: Adapta (`github.com/ciao-madesign/Adapta`, Next.js) e WizTrail (`github.com/ciao-madesign/WizTrail`, cartelle `api/` e `docs/`).
