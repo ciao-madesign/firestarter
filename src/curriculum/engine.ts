@@ -111,7 +111,20 @@ export function startLesson(state: WorkspaceState, id: string, forceSetup = fals
     p.startCmdSeq = state.cmdSeq ?? 0;
     p.attempts++;
   }
+  else restoreSetupFiles(state, lesson, dir);
   return lesson;
+}
+
+/**
+ * Lezione già iniziata ma con file di preparazione mancanti (per esempio avviata con una versione precedente del corso, o cancellati):
+ * si ripristinano solo quelli mancanti, senza toccare i file dello studente né i tentativi.
+ */
+function restoreSetupFiles(state: WorkspaceState, lesson: Lesson, dir: string): void {
+  const probe = structuredClone(state);
+  lesson.setup(makeSetupCtx(probe, dir));
+  for (const [path, node] of Object.entries(probe.fs)) {
+    if ((path === dir || path.startsWith(dir + '/')) && !state.fs[path]) state.fs[path] = node;
+  }
 }
 
 export function resetLesson(state: WorkspaceState, id: string): void {

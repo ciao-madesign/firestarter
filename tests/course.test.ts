@@ -183,3 +183,19 @@ describe('Riapertura di una lezione già iniziata', () => {
     expect(s.activeEnv).toBe(envPrima);
   });
 });
+
+describe('Lezione già iniziata con file di preparazione mancanti', () => {
+  it('riaprendola ritrova i file mancanti senza toccare quelli dello studente', () => {
+    const s = createWorkspace('t');
+    startLesson(s, 'M2.L2');
+    const dir = '/home/learner/corso-cli/m2l2';
+    expect(s.fs[`${dir}/dati.txt`]).toBeTruthy();
+    delete s.fs[`${dir}/dati.txt`]; // come una lezione iniziata con la numerazione precedente
+    s.fs[`${dir}/mio.txt`] = { ...s.fs[`${dir}/.`] } as never;
+    const attempts = s.progress['M2.L2'].attempts;
+    startLesson(s, 'M2.L2');
+    expect(s.fs[`${dir}/dati.txt`]).toBeTruthy();
+    expect(s.fs[`${dir}/mio.txt`]).toBeTruthy();
+    expect(s.progress['M2.L2'].attempts).toBe(attempts);
+  });
+});
