@@ -22,6 +22,16 @@ export const ripassi: Lesson[] = [
     },
     guided: [
       {
+        title: 'Il file',
+        cmd: { bash: 'cat ~/corso-cli/m2r/voti.csv', pwsh: 'Get-Content ~/corso-cli/m2r/voti.csv' },
+        what: 'Mostra il file voti.csv: una riga di intestazione (nome,punti) e una riga per persona.',
+        who: 'cat / Get-Content.',
+        parts: ['nome,punti: i nomi delle due colonne', 'ogni riga: un nome e i punti ottenuti, separati da virgola'],
+        expect: 'Intestazione e tre righe: Anna,7 / Bruno,5 / Carla,9.',
+        risk: 'Nessuno: sola lettura.',
+        contains: 'Bruno,5',
+      },
+      {
         title: 'Una colonna',
         cmd: { bash: "awk -F, 'NR>1 {print $1}' ~/corso-cli/m2r/voti.csv", pwsh: 'Import-Csv ~/corso-cli/m2r/voti.csv | ForEach-Object { $_.nome }' },
         what: 'Stampa la prima colonna senza l\'intestazione.',
@@ -54,7 +64,7 @@ export const ripassi: Lesson[] = [
     ],
     predict: [
       {
-        prompt: 'Quanto vale il totale dei punti nel file?',
+        prompt: 'Guarda il file con il primo passo guidato (cat / Get-Content ~/corso-cli/m2r/voti.csv): la colonna «punti» contiene i punti di ciascuno. Quanto vale la loro somma?',
         cmd: { bash: "awk -F, 'NR>1 {s+=$2} END {print s}' ~/corso-cli/m2r/voti.csv", pwsh: '(Import-Csv ~/corso-cli/m2r/voti.csv | Measure-Object punti -Sum).Sum' },
         expect: '21 (7 + 5 + 9).',
         why: 'La somma si accumula riga per riga; END (o il risultato di Measure-Object) arriva dopo l\'ultima.',
