@@ -677,9 +677,10 @@ def('Test-NetConnection', 'ComputerName:0, Port:1, InformationLevel', (c) => {
   }
   return [custom({ ComputerName: host, RemoteAddress: info.ip, RemotePort: port, InterfaceAlias: 'Ethernet', SourceAddress: '10.0.0.15', TcpTestSucceeded: ok })];
 });
-def('Resolve-DnsName', 'Name:0, Type', (c) => {
+def('Resolve-DnsName', 'Name:0, Type, DnsOnly!', (c) => {
   const host = psToString(c.get('Name'));
-  const info = lookupHost(host, c.rt.state);
+  // -DnsOnly interroga solo il DNS e ignora il file hosts
+  const info = lookupHost(host, c.rt.state, !!c.get('DnsOnly'));
   if (!info) {
     fail(c, new PSError(`${host} : DNS name does not exist`, 'ResourceUnavailable', 'DnsNameDoesNotExist,Microsoft.DnsClient.Commands.ResolveDnsName', host, 'Resolve-DnsName'));
     return [];

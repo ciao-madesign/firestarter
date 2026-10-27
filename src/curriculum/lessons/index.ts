@@ -1,4 +1,4 @@
-import type { Lesson, ModuleInfo } from '../types.ts';
+import type { GuidedStep, Lesson, ModuleInfo } from '../types.ts';
 import { lessonIndex } from '../../course/progress.ts';
 import { m1 } from './m1.ts';
 import { m2 } from './m2.ts';
@@ -19,11 +19,13 @@ import { m9b } from './m9b.ts';
 import { m10 } from './m10.ts';
 import { m10b } from './m10b.ts';
 import { m11 } from './m11.ts';
+import { m11b } from './m11b.ts';
 import { scenarios } from './scenarios.ts';
 import { diagnosi } from './diagnosi.ts';
 import { guidedM12 } from './guided-m12.ts';
 import { guidedM34 } from './guided-m34.ts';
 import { guidedM5678 } from './guided-m5678.ts';
+import { guidedExtra } from './guided-extra.ts';
 
 const UNSORTED: ModuleInfo[] = [
   { n: 1, title: 'Fondamenti', summary: 'Terminale e shell, variabili, prompt, percorsi, quoting, opzioni, man, lettura file.' },
@@ -43,9 +45,15 @@ export const MODULES: ModuleInfo[] = [...UNSORTED].sort((a, b) => a.n - b.n);
 
 export const CURRICULUM_VERSION = '0.1.0';
 
-const EXTRA_GUIDED = { ...guidedM12, ...guidedM34, ...guidedM5678 };
+function mergeGuided(...maps: Record<string, GuidedStep[]>[]): Record<string, GuidedStep[]> {
+  const out: Record<string, GuidedStep[]> = {};
+  for (const m of maps) for (const [k, v] of Object.entries(m)) out[k] = [...(out[k] ?? []), ...v];
+  return out;
+}
 
-export const LESSONS: Lesson[] = [...m1, ...m2, ...m2b, ...m3, ...m3b, ...m4, ...m4b, ...m5, ...m5b, ...m6, ...m6b, ...m7, ...m7b, ...m8, ...m9, ...m9b, ...m10, ...m10b, ...m11, ...scenarios, ...diagnosi]
+const EXTRA_GUIDED = mergeGuided(guidedM12, guidedM34, guidedM5678, guidedExtra);
+
+export const LESSONS: Lesson[] = [...m1, ...m2, ...m2b, ...m3, ...m3b, ...m4, ...m4b, ...m5, ...m5b, ...m6, ...m6b, ...m7, ...m7b, ...m8, ...m9, ...m9b, ...m10, ...m10b, ...m11, ...m11b, ...scenarios, ...diagnosi]
   .map((l) => (EXTRA_GUIDED[l.id] ? { ...l, guided: [...l.guided, ...EXTRA_GUIDED[l.id]] } : l)).sort((a, b) => lessonIndex(a.id) - lessonIndex(b.id) || (a.review ? -1 : 1));
 
 export function getLesson(id: string): Lesson | undefined {

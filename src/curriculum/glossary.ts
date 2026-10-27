@@ -88,7 +88,7 @@ const PWSH: Record<string, ToolNote> = {
   '$null': { name: '$null', text: '`$null` è il «niente» di PowerShell: `comando 2>$null` scarta i messaggi di errore, `| Out-Null` scarta il risultato.' },
   'Test-Path': { name: 'Test-Path', text: '`Test-Path file.txt` risponde True se il file o la cartella esiste, False altrimenti. `-not (Test-Path x)` verifica che NON esista.' },
   'Get-Command': { name: 'Get-Command', text: '`Get-Command nome` dice cos\'è un nome (cmdlet, alias, funzione o file) e dove si trova: l\'equivalente di `which` e `type`. Se non lo trova segnala un errore.' },
-  '[Tipo]::': { name: '[Tipo]::Metodo()', text: 'Usa una funzione della libreria .NET: `[uri]::EscapeDataString("R&D")` codifica un testo per l\'URL (spazio → %20, & → %26); `[Convert]::ToBase64String(...)` codifica in base64.' },
+  '[Tipo]::': { name: '[Tipo]:: metodo statico', text: 'Usa una funzione della libreria .NET: `[uri]::EscapeDataString("R&D")` codifica un testo per l\'URL (spazio → %20, & → %26); `[Convert]::ToBase64String(...)` codifica in base64.' },
   '-Command': { name: 'powershell -Command', text: '`powershell -Command "exit 3"` esegue un comando in un processo PowerShell figlio; il suo codice di uscita finisce in `$LASTEXITCODE`. Le virgolette doppie dentro il testo vanno scritte con il backslash (`\\"`).' },
   '-Uri': { name: '-Uri', text: '`Invoke-RestMethod -Uri URL` indica l\'indirizzo da chiamare; è il parametro posizionale 1, quindi si può anche scrivere solo l\'URL.' },
   ssh: { name: 'ssh', text: '`ssh learner@server.lab "comando"` esegue un comando sul server del laboratorio e ne mostra l\'output (in Windows 10 e successivi è l\'ssh.exe di OpenSSH). Il comando va tra apici; il comando eseguito è di Linux (systemctl, ss, journalctl), non PowerShell.' },
@@ -230,10 +230,15 @@ export const LESSON_TOOLS: Record<string, { bash?: string[]; pwsh?: string[] }> 
   'M10.L5': { bash: ['curl', 'curl -s', 'curl -X', 'curl -H', 'curl -d', 'jq', 'curl -c', '$( )', 'openssl', 'awk', 'heredoc'] },
   'M11.L1': { bash: ['ping', 'nc', 'ssh', 'curl', 'curl -s', 'heredoc', 'systemctl', 'ss'], pwsh: ['Test-NetConnection', '-Port', 'Invoke-RestMethod', '$env:', 'here-string', 'Set-Content', '-Value', 'ssh'] },
   'M11.L2': { bash: ['curl', 'curl -s', 'curl -H', 'curl -i', 'ssh', 'heredoc', 'tail'], pwsh: ['Invoke-RestMethod', '-Headers', '@{ }', '$env:', 'here-string', 'Set-Content', '-Value', 'ssh'] },
+  'M11.L3': { bash: ['ssh', '$( )', 'heredoc'], pwsh: ['$( )', 'here-string', 'Set-Content', '-Value'] },
   'M11.L4': { bash: ['curl', 'curl -sS', 'ssh', 'curl -s', 'heredoc', 'systemctl', 'journalctl', 'sudo'], pwsh: ['Invoke-RestMethod', '$env:', 'here-string', 'Set-Content', '-Value', 'ssh'] },
   'M11.L5': { bash: ['curl', 'curl -sS', 'ssh', 'sudo', 'curl -s', 'heredoc', 'systemctl', 'ss', 'sed'], pwsh: ['Invoke-RestMethod', '$env:', 'here-string', 'Set-Content', '-Value', 'ssh'] },
   'M11.L6': { bash: ['curl', 'curl -s', 'curl -i', 'curl -H', 'ssh', 'heredoc', 'systemctl', 'journalctl', 'sudo'], pwsh: ['$env:', 'here-string', 'Set-Content', '-Value', 'ssh'] },
+  'M11.L7': { bash: ['grep -i', 'cut', 'tr', 'tr -d', '$( )', 'ssh', 'printf'], pwsh: ['Select-String', '-Pattern', '-split', '( ).Proprietà', '$env:', 'Set-Content', 'Request-Id', '-Value'] },
+  'M11.L8': { bash: ['curl', 'curl -sS', 'curl --max-time', 'ping', 'nc', 'ssh', 'curl -s', 'heredoc'], pwsh: ['$env:', 'Test-NetConnection', '-Port', 'here-string', 'Set-Content', '-Value'] },
+  'M11.L9': { bash: ['curl', 'curl -sS', 'curl --max-time', 'ping', 'nslookup', 'curl -s', 'sudo', 'heredoc'], pwsh: ['$env:', 'Test-NetConnection', 'Resolve-DnsName', 'here-string', 'Set-Content', '-Value'] },
   'M11.L10': { bash: ['curl', 'curl -sS', 'ssh', 'sudo', 'curl -s', 'curl -H', 'heredoc', 'systemctl', 'journalctl', 'ss', 'sed'], pwsh: ['Invoke-RestMethod', '$env:', 'here-string', 'Set-Content', '-Value', 'ssh'] },
+  'M11.L11': { bash: ['curl', 'curl -sS', 'curl --max-time', 'ping', 'nslookup', 'sudo', 'ssh', 'curl -s', 'curl -H', 'heredoc'], pwsh: ['$env:', 'Test-NetConnection', 'Resolve-DnsName', 'here-string', 'Set-Content', '-Value'] },
 };
 
 export function toolsFor(lessonId: string, shell: ShellId): ToolNote[] {

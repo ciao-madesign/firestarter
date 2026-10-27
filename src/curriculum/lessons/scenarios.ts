@@ -31,6 +31,7 @@ export const scenarios: Lesson[] = [
     title: 'Scenario nuovo: analizzare un log',
     objective: 'Applicare pipe, filtri e redirezione a un problema che non hai visto: riassumere un file di log.',
     explain: [
+      'In PowerShell i confronti si scrivono con operatori testuali: `-eq` (uguale), `-ne` (diverso), `-gt` (maggiore), `-lt` (minore), `-ge` e `-le` (maggiore o minore e uguale): `$conteggio -gt 3`. I simboli `>` e `<` in PowerShell sono redirezioni, non confronti.',
       'Verifica autonoma: non c\'è soluzione completa. Hai tutti gli strumenti di M2 (pipe, grep, sort, uniq, cut, redirezione).',
       'Il file access.log ha una riga per richiesta: data, metodo, percorso, status. Devi ricavarne due fatti e scriverli in due file.',
     ],

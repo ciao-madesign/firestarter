@@ -48,6 +48,15 @@ sudo /opt/lab/scenario.sh stopped     # servizio fermo (M11.L4)
 sudo /opt/lab/scenario.sh wrong_port  # servizio sulla 9090 (M11.L5)
 sudo /opt/lab/scenario.sh db_down     # errore 500 per database fermo (M11.L6)
 sudo /opt/lab/scenario.sh multi       # tutti i guasti insieme (M11.L10)
+sudo /opt/lab/scenario.sh firewall    # porta filtrata dal firewall (M11.L8)
+sudo /opt/lab/scenario.sh multi2      # nome + firewall + database (M11.L11, serve anche il comando sul client)
+```
+
+Sul client, per il guasto del nome (M11.L9 e M11.L11):
+
+```bash
+sudo /opt/lab/client-scenario.sh dns_wrong   # /etc/hosts manda server.lab a un indirizzo sbagliato
+sudo /opt/lab/client-scenario.sh ok          # ripristino
 ```
 
 Per tornare allo stato iniziale delle macchine: `vagrant snapshot save base` dopo il primo `vagrant up`, poi `vagrant snapshot restore base`. Per ricominciare da zero: `vagrant destroy -f && vagrant up`. Per spegnere: `vagrant halt`.
