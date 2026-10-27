@@ -1,6 +1,6 @@
 /** M7 — lezioni aggiunte il 2026-10-27: leggere un file riga per riga e script con argomenti e codici di uscita. */
 import type { Lesson } from '../types.ts';
-import { cmdMatches, pick, setupApi } from './helpers.ts';
+import { ranCmd, pick, setupApi } from './helpers.ts';
 
 const AUTH = '-H "Authorization: Bearer $TASKFLOW_TOKEN"';
 const PS_AUTH = '-H "Authorization: Bearer $env:TASKFLOW_TOKEN"';
@@ -119,7 +119,7 @@ export const m7b: Lesson[] = [
         description: 'Hai usato un ciclo sulle righe del file',
         expected: pick({ shell: 'bash' } as never, 'while read', 'ForEach-Object') as string,
         test: (c) => {
-          const ok = cmdMatches(c, pick(c, /while\s+(IFS=\s*)?read\b/, /ForEach-Object|foreach\s*\(/i), false);
+          const ok = ranCmd(c, pick(c, /while\s+(IFS=\s*)?read\b/, /ForEach-Object|foreach\s*\(/i), false);
           return { pass: ok, actual: ok ? 'ok' : 'nessun ciclo sulle righe' };
         },
         onFail: 'Bash: while IFS= read -r p; do … done < file. PowerShell: Get-Content file | ForEach-Object { … }.',

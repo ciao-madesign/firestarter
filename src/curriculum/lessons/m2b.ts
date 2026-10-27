@@ -1,6 +1,6 @@
 /** M2 — lezioni aggiunte il 2026-10-27: i due canali di uscita, i codici di uscita nelle pipeline, PATH e permessi di esecuzione. */
 import type { Lesson } from '../types.ts';
-import { cmdMatches, pick } from './helpers.ts';
+import { ranCmd, pick } from './helpers.ts';
 
 const DATI = 'ordine 101 consegnato\nordine 102 in corso\nordine 103 annullato\n';
 const LOG_ERR = '2026-03-02T09:00:01Z INFO  avvio\n2026-03-02T09:00:09Z ERROR timeout verso il database\n2026-03-02T09:00:14Z ERROR token scaduto\n2026-03-02T09:00:25Z WARN  risposta lenta\n2026-03-02T09:00:33Z ERROR connessione interrotta\n2026-03-02T09:01:20Z INFO  fine\n';
@@ -120,7 +120,7 @@ export const m2b: Lesson[] = [
         description: 'Hai eseguito il comando scartando gli errori',
         expected: '2>/dev/null (Bash) o 2>$null (PowerShell)',
         test: (c) => {
-          const ok = cmdMatches(c, pick(c, /2>\s*\/dev\/null/, /2>\s*\$null/), false);
+          const ok = ranCmd(c, pick(c, /2>\s*\/dev\/null/, /2>\s*\$null/), false);
           return { pass: ok, actual: ok ? 'ok' : 'nessun comando con errori scartati' };
         },
         onFail: 'Aggiungi `2>/dev/null` (PowerShell `2>$null`) in fondo al comando.',

@@ -41,6 +41,16 @@ export const m4: Lesson[] = [
     },
     checks: [
       {
+        id: 'scaricata',
+        description: 'La specifica è stata scaricata dal servizio (GET /v1/openapi.json)',
+        expected: '200 su /v1/openapi.json',
+        test: (c) => {
+          const ok = apiHit(c, 'GET', /^\/v1\/openapi\.json/, 200);
+          return { pass: ok, actual: ok ? 'ok' : 'nessuna richiesta riuscita a /v1/openapi.json' };
+        },
+        onFail: 'Scarica la specifica con curl (o Invoke-RestMethod) da $TASKFLOW_URL/v1/openapi.json invece di scriverla a mano.',
+      },
+      {
         id: 'spec',
         description: 'openapi.json è una specifica OpenAPI valida',
         expected: 'JSON con campo "openapi"',

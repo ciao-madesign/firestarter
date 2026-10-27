@@ -2,7 +2,7 @@
 import type { Lesson, SetupCtx } from '../types.ts';
 import { demoPassword, makeJwt } from '../../engine/api/server.ts';
 import { parseTables } from '../../docs/lint.ts';
-import { cmdMatches, pick, setupApi } from './helpers.ts';
+import { ranCmd, pick, setupApi } from './helpers.ts';
 
 function setupSession(c: SetupCtx): void {
   setupApi(c, { token: false });
@@ -226,7 +226,7 @@ export const m10b: Lesson[] = [
         description: 'Hai decodificato il payload del token',
         expected: pick({ shell: 'bash' } as never, 'base64 -d', 'FromBase64String') as string,
         test: (c) => {
-          const ok = cmdMatches(c, pick(c, /base64\s+(-d|--decode)/, /FromBase64String/i), false);
+          const ok = ranCmd(c, pick(c, /base64\s+(-d|--decode)/, /FromBase64String/i), false);
           return { pass: ok, actual: ok ? 'ok' : 'nessuna decodifica' };
         },
         onFail: 'Decodifica il secondo campo del token: cut -d. -f2 | tr \'_-\' \'/+\' | base64 -d (PowerShell: [Convert]::FromBase64String).',

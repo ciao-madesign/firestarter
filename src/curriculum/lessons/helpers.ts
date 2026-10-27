@@ -26,6 +26,20 @@ export function cmdMatches(c: CheckCtx, re: RegExp, okOnly = true): boolean {
   return c.cmds.some((x) => (okOnly ? x.exit === 0 : true) && re.test(x.cmd));
 }
 
+/** Il testo di un comando che ESEGUE qualcosa: esclude le righe che scrivono un documento (here-doc, here-string, printf, Set-Content),
+ *  il cui testo può contenere per caso le parole cercate. */
+function commandPart(cmd: string): string {
+  const first = cmd.split('\n')[0];
+  // le redirezioni verso il «cestino» o tra canali non scrivono un documento
+  const bare = first.replace(/\b[12]?>\s*\/dev\/null|\b2>\s*\$null|\b2>&1|\*>&1/g, '');
+  return /<<|@'|@"|^\s*Set-Content\b|\bSet-Content\b[^|]*-Value\b|^\s*printf\b/.test(bare) || /^\s*(cat|echo)\b[^|;&]*>\s*\S+/.test(bare) ? '' : first;
+}
+
+/** Come cmdMatches ma solo sui comandi eseguiti davvero (non sul contenuto dei documenti scritti con here-doc o printf). */
+export function ranCmd(c: CheckCtx, re: RegExp, okOnly = true): boolean {
+  return c.cmds.some((x) => (okOnly ? x.exit === 0 : true) && re.test(commandPart(x.cmd)));
+}
+
 export function apiHit(c: CheckCtx, method: string, path: RegExp, status: number, shellOnly = true): boolean {
   const list = shellOnly ? c.apiShell : c.api;
   return list.some((e) => e.method === method && path.test(e.path) && e.status === status);

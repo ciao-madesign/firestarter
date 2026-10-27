@@ -1,5 +1,5 @@
 import type { Lesson } from '../types.ts';
-import { apiHit, cmdMatches, setupApi } from './helpers.ts';
+import { apiHit, cmdMatches, pick, ranCmd, setupApi } from './helpers.ts';
 
 const TRAFFIC: [string, string, number][] = [
   ...Array.from({ length: 8 }, () => ['GET', '/v1/tasks', 200] as [string, string, number]),
@@ -357,6 +357,16 @@ export const m5: Lesson[] = [
       criterion: 'top-errori.txt contiene il percorso corretto; totale-5xx.txt contiene il numero corretto.',
     },
     checks: [
+      {
+        id: 'analisi',
+        description: 'Hai analizzato traffic.log con gli strumenti della lezione',
+        expected: pick({ shell: 'bash' } as never, 'awk, grep, sort o uniq su traffic.log', 'Select-String, Group-Object o Where-Object su traffic.log') as string,
+        test: (c) => {
+          const ok = ranCmd(c, pick(c, /\b(awk|grep|sort|uniq|cut)\b.*traffic\.log|traffic\.log.*\|/, /(Select-String|Get-Content)\b.*traffic\.log|traffic\.log.*\|/i), false);
+          return { pass: ok, actual: ok ? 'ok' : 'nessuna analisi del log nei comandi' };
+        },
+        onFail: 'I numeri vanno ricavati dal log con filtri e conteggi, non contati a occhio.',
+      },
       {
         id: 'top',
         description: 'top-errori.txt: endpoint con più 5xx',

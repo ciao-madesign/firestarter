@@ -131,3 +131,39 @@ describe('Test intermedio', () => {
     expect(course.tests.M2.items).toHaveLength(4);
   });
 });
+
+describe('test intermedio: le lezioni riproposte ripartono da zero', () => {
+  it('la prima apertura di un esercizio del test ripristina ambiente e cartella; le successive no', async () => {
+    const { createWorkspace, execute } = await import('../src/engine/index.ts');
+    const { startLesson } = await import('../src/curriculum/engine.ts');
+    const s = createWorkspace('test-fresh');
+    startLesson(s, 'M2.L1');
+    execute(s, 'bash', 'echo residuo > ~/corso-cli/m2l1/residuo.txt');
+    expect(s.fs['/home/learner/corso-cli/m2l1/residuo.txt']).toBeDefined();
+    s.moduleTest = { module: 2, startedAt: s.clock, items: [{ lesson: 'M2.L1', reason: 'prova', fails: 0, done: false }] };
+    startLesson(s, 'M2.L1');
+    expect(s.fs['/home/learner/corso-cli/m2l1/residuo.txt']).toBeUndefined();
+    execute(s, 'bash', 'echo nuovo > ~/corso-cli/m2l1/nuovo.txt');
+    startLesson(s, 'M2.L1');
+    expect(s.fs['/home/learner/corso-cli/m2l1/nuovo.txt']).toBeDefined();
+  });
+});
+
+describe('file creato nella cartella sbagliata', () => {
+  it('la verifica lo segnala e registra l\'errore ricorrente «prompt non letto»', async () => {
+    const { createWorkspace, execute } = await import('../src/engine/index.ts');
+    const { startLesson, verifyLesson } = await import('../src/curriculum/engine.ts');
+    const s = createWorkspace('misplaced');
+    const course = seedProgress();
+    startLesson(s, 'M2.L1');
+    // scrive nella home invece che nella cartella della lezione
+    execute(s, 'bash', 'cd ~; grep ERROR corso-cli/m2l1/server.log > errori.txt');
+    const v = verifyLesson(s, 'M2.L1', 'bash', course);
+    expect(v.pass).toBe(false);
+    const c = v.checks.find((x) => x.id === 'errori')!;
+    expect(c.misplaced).toBe(true);
+    expect(c.explanation).toContain('~/errori.txt');
+    expect(c.explanation).toContain('corso-cli/m2l1');
+    expect(course.recurringErrors.some((e) => e.id === 'prompt-non-letto')).toBe(true);
+  });
+});

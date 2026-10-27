@@ -11,7 +11,7 @@ import { addRecurring, lessonIndex, type CourseProgress } from '../course/progre
 import { inTest } from '../course/moduletest.ts';
 import { promoteToLevel4 } from '../course/levels.ts';
 import { LESSONS, MODULES, getLesson } from './lessons/index.ts';
-import { SKILL_LABELS, type CheckCtx, type Lesson, type SetupCtx, type SkillTag } from './types.ts';
+import { SKILL_LABELS, type Check, type CheckCtx, type Lesson, type SetupCtx, type SkillTag } from './types.ts';
 
 export const LAB_ROOT = `${HOME}/corso-cli`;
 
@@ -65,6 +65,17 @@ export function startLesson(state: WorkspaceState, id: string, forceSetup = fals
   if (!lesson) throw new Error(`Lezione sconosciuta: ${id}`);
   const p = ensureProgress(state, id);
   const dir = lessonDir(id);
+  // test intermedio: l'esercizio ripropone una lezione già svolta. La prima volta si riparte da zero (ambiente, dati, cartella),
+  // altrimenti resterebbero le variabili e i file dell'ultima lezione aperta e il risultato dipenderebbe da cosa si è fatto prima.
+  const testItem = state.moduleTest && !state.moduleTest.finished ? state.moduleTest.items.find((i) => i.lesson === id && !i.done) : undefined;
+  if (testItem && !testItem.fresh) {
+    testItem.fresh = true;
+    for (const env of ['development', 'testing', 'staging'] as EnvName[]) resetApiEnv(state, env);
+    p.help = {};
+    p.lastVerify = undefined;
+    p.startClock = undefined;
+    state.predictions = state.predictions.filter((x) => x.lesson !== id);
+  }
   const fresh = p.startClock === undefined;
   state.activeExercise = id;
   if (fresh || forceSetup) {
@@ -162,10 +173,16 @@ function modeFor(prog: ExerciseProgress, shell: ShellId): Completion['mode'] {
 }
 
 /** Valuta i controlli senza registrare nulla (feedback in tempo reale). */
+/** Nomi dei file letti da un controllo (solo quelli scritti per esteso, relativi alla cartella della lezione). */
+function filesRead(test: Check['test']): string[] {
+  return [...test.toString().matchAll(/read\(\s*['"`]([^'"`/~$][^'"`]*)['"`]\s*\)/g)].map((m) => m[1]);
+}
+
 export function evaluateChecks(state: WorkspaceState, id: string, shell: ShellId, useAlt = false): CheckResult[] {
   const lesson = getLesson(id);
   if (!lesson) return [];
   const ctx = buildCheckCtx(state, lesson, shell);
+  const dir = lessonDir(id);
   return (useAlt && lesson.alt ? lesson.alt.checks : lesson.checks).map((c) => {
     let r: { pass: boolean; actual: string };
     try {
@@ -173,7 +190,21 @@ export function evaluateChecks(state: WorkspaceState, id: string, shell: ShellId
     } catch (e) {
       r = { pass: false, actual: `errore nel controllo: ${(e as Error).message}` };
     }
-    return { id: c.id, description: c.description, pass: r.pass, expected: c.expected, actual: r.actual, explanation: r.pass ? undefined : c.onFail };
+    let explanation = r.pass ? undefined : c.onFail;
+    let misplaced = false;
+    if (!r.pass) {
+      // il file c'è, ma in un'altra cartella: tipico di chi non legge il prompt prima di scrivere
+      for (const name of filesRead(c.test)) {
+        if (ctx.vfs.exists(`${dir}/${name}`)) continue;
+        const elsewhere = [state.shells[shell].cwd, HOME].map((d) => `${d}/${name}`).find((p) => state.fs[p]?.type === 'file');
+        if (elsewhere) {
+          misplaced = true;
+          explanation = `${explanation ?? ''} Il file «${name}» esiste in ${elsewhere.replace(HOME, '~')}, ma l'esercizio lo cerca in ${dir.replace(HOME, '~')}: leggi il prompt per sapere dove ti trovi (cd ${dir.replace(HOME, '~')}).`.trim();
+          break;
+        }
+      }
+    }
+    return { id: c.id, description: c.description, pass: r.pass, expected: c.expected, actual: r.actual, explanation, ...(misplaced ? { misplaced } : {}) };
   });
 }
 
@@ -215,6 +246,7 @@ export function verifyLesson(state: WorkspaceState, id: string, shell: ShellId, 
     for (const c of lesson.checks) {
       const r = checks.find((x) => x.id === c.id);
       if (r && !r.pass && c.errorTag) addRecurring(course, c.errorTag, ERROR_TAGS[c.errorTag] ?? c.errorTag, id);
+      if (r && !r.pass && r.misplaced) addRecurring(course, 'prompt-non-letto', ERROR_TAGS['prompt-non-letto'], id);
     }
   }
   return result;

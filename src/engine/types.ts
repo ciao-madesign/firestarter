@@ -155,6 +155,8 @@ export interface CheckResult {
   actual: string;
   /** spiegazione dell'errore, mostrata solo se pass=false */
   explanation?: string;
+  /** il file atteso esiste, ma fuori dalla cartella della lezione (prompt non letto) */
+  misplaced?: boolean;
 }
 
 export interface VerifyResult {
@@ -185,6 +187,8 @@ export interface ModuleTestItem {
   reason: string;
   fails: number;
   done: boolean;
+  /** la lezione è già stata riavviata da zero per questo test (ambiente, dati e cartella di lavoro) */
+  fresh?: boolean;
   outcome?: 'passed' | 'passed_partial' | 'retry' | 'failed';
 }
 

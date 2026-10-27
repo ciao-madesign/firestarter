@@ -2,7 +2,7 @@
 import type { Lesson, SetupCtx } from '../types.ts';
 import { DEMO_HEAD } from '../../engine/git-fixture.ts';
 import { parseYaml, YamlError } from '../../docs/yaml.ts';
-import { cmdMatches, pick } from './helpers.ts';
+import { cmdMatches, pick, ranCmd } from './helpers.ts';
 
 /** Copia di lavoro del progetto d'esempio (e marcatore .git) nella cartella della lezione. */
 function setupProject(c: SetupCtx): void {
@@ -241,6 +241,16 @@ export const m9: Lesson[] = [
     },
     checks: [
       {
+        id: 'lettura',
+        description: 'Hai letto il codice del progetto (cat/grep/Get-Content/Select-String)',
+        expected: 'lettura di un file del progetto',
+        test: (c) => {
+          const ok = ranCmd(c, /\b(cat|grep|head|tail|Get-Content|Select-String)\b.*progetto\//i, false);
+          return { pass: ok, actual: ok ? 'ok' : 'nessuna lettura dei file del progetto' };
+        },
+        onFail: 'Il documento deve nascere dalla lettura del codice: leggi i file del progetto prima di scrivere.',
+      },
+      {
         id: 'auth',
         description: 'Autenticazione descritta',
         expected: 'Authorization: Bearer',
@@ -317,6 +327,16 @@ export const m9: Lesson[] = [
       criterion: 'Almeno 4 delle 5 discrepanze (forma della risposta, limite massimo, status della creazione, autenticazione di health, risposta di DELETE) con il file di evidenza.',
     },
     checks: [
+      {
+        id: 'lettura',
+        description: 'Hai letto il codice del progetto (cat/grep/Get-Content/Select-String)',
+        expected: 'lettura di un file del progetto',
+        test: (c) => {
+          const ok = ranCmd(c, /\b(cat|grep|head|tail|Get-Content|Select-String)\b.*progetto\//i, false);
+          return { pass: ok, actual: ok ? 'ok' : 'nessuna lettura dei file del progetto' };
+        },
+        onFail: 'Il documento deve nascere dalla lettura del codice: leggi i file del progetto prima di scrivere.',
+      },
       {
         id: 'discrepanze',
         description: 'Almeno 4 discrepanze corrette su 5',

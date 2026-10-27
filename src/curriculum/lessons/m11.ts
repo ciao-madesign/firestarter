@@ -6,7 +6,7 @@
 import type { Lesson, SetupCtx, CheckCtx } from '../types.ts';
 import type { ApiLogEntry } from '../../engine/types.ts';
 import { labScenario, type LabScenario } from '../../engine/lab.ts';
-import { cmdMatches, pick, setupApi } from './helpers.ts';
+import { ranCmd, pick, setupApi } from './helpers.ts';
 
 const SERVER_HOSTS = ['server.lab', '192.168.50.10'];
 
@@ -19,7 +19,7 @@ const onServer = (e: ApiLogEntry): boolean => !!e.host && SERVER_HOSTS.includes(
 function hit(c: CheckCtx, method: string, path: RegExp, status: number): boolean {
   return c.apiShell.some((e) => onServer(e) && e.method === method && path.test(e.path) && e.status === status);
 }
-const sshCmd = (c: CheckCtx, re: RegExp, okOnly = true): boolean => cmdMatches(c, new RegExp('\\bssh\\b.*(?:' + re.source + ')', re.flags), okOnly);
+const sshCmd = (c: CheckCtx, re: RegExp, okOnly = true): boolean => ranCmd(c, new RegExp('\\bssh\\b.*(?:' + re.source + ')', re.flags), okOnly);
 const missing = (ok: Record<string, boolean>): { pass: boolean; actual: string } => ({ pass: Object.values(ok).every(Boolean), actual: Object.entries(ok).filter(([, v]) => !v).map(([k]) => 'manca ' + k).join(', ') || 'ok' });
 
 const PW_SSH = "In Windows 10 e successivi PowerShell 5.1 usa l'ssh.exe di OpenSSH: gli stessi comandi ssh della versione Bash.";
@@ -162,8 +162,8 @@ export const m11: Lesson[] = [
         description: 'Hai controllato rete e porta dal client',
         expected: 'ping/Test-NetConnection e nc/Test-NetConnection -Port',
         test: (c) => {
-          const rete = cmdMatches(c, pick(c, /\bping\b.*(server\.lab|192\.168\.50\.10)/, /Test-NetConnection\s+(server\.lab|192\.168\.50\.10)\s*$/i));
-          const porta = cmdMatches(c, pick(c, /\bnc\b.*(server\.lab|192\.168\.50\.10).*8080/, /Test-NetConnection.*-Port\s+8080/i), false);
+          const rete = ranCmd(c, pick(c, /\bping\b.*(server\.lab|192\.168\.50\.10)/, /Test-NetConnection\s+(server\.lab|192\.168\.50\.10)\s*$/i));
+          const porta = ranCmd(c, pick(c, /\bnc\b.*(server\.lab|192\.168\.50\.10).*8080/, /Test-NetConnection.*-Port\s+8080/i), false);
           return missing({ rete, porta });
         },
         onFail: 'Serve un comando per la rete (ping server.lab) e uno per la porta (nc -zv server.lab 8080 / Test-NetConnection server.lab -Port 8080).',

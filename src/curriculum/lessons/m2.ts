@@ -1,5 +1,5 @@
 import type { Lesson } from '../types.ts';
-import { cmdMatches, fileLines, stdoutHas } from './helpers.ts';
+import { cmdMatches, fileLines, pick, ranCmd, stdoutHas } from './helpers.ts';
 import { parseTables } from '../../docs/lint.ts';
 
 const SERVER_LOG = [
@@ -101,6 +101,16 @@ export const m2: Lesson[] = [
     },
     checks: [
       {
+        id: 'strumento',
+        description: 'Hai filtrato il log con un comando (grep; PowerShell: Select-String)',
+        expected: 'grep/Select-String',
+        test: (c) => {
+          const ok = ranCmd(c, pick(c, /\b(grep|awk|sed)\b/, /\b(Select-String|Where-Object)\b/i), false);
+          return { pass: ok, actual: ok ? 'ok' : 'nessun filtro con redirezione nei comandi' };
+        },
+        onFail: 'Il file va prodotto dal comando (grep ERROR server.log > errori.txt), non scritto a mano.',
+      },
+      {
         id: 'errori',
         description: 'errori.txt contiene le 5 righe ERROR (e solo quelle)',
         expected: '5 righe, identiche a quelle del log che contengono ERROR',
@@ -168,6 +178,16 @@ export const m2: Lesson[] = [
       criterion: 'Per ogni status presente nel log c\'è una riga con il codice e il suo conteggio corretto.',
     },
     checks: [
+      {
+        id: 'pipeline',
+        description: 'Hai costruito una pipeline di filtri (sort/uniq/cut oppure Group-Object)',
+        expected: pick({ shell: 'bash' } as never, 'comandi collegati con | tra cui sort, uniq, cut, awk o wc', 'pipeline con Group-Object, Sort-Object o Measure-Object') as string,
+        test: (c) => {
+          const ok = ranCmd(c, pick(c, /\|\s*(sort|uniq|cut|awk|wc)\b/, /\|\s*(Group-Object|Sort-Object|Measure-Object|Select-Object)/i), false);
+          return { pass: ok, actual: ok ? 'ok' : 'nessuna pipeline di filtri' };
+        },
+        onFail: 'Il conteggio va ricavato con i filtri della lezione collegati da | (cut, sort, uniq -c; PowerShell: Group-Object).',
+      },
       {
         id: 'conteggi',
         description: 'conteggio.txt riporta il numero corretto per ogni status',

@@ -2,7 +2,7 @@
 import type { Lesson, SetupCtx } from '../types.ts';
 import { DEMO_HEAD } from '../../engine/git-fixture.ts';
 import { parseTables } from '../../docs/lint.ts';
-import { cmdMatches, pick } from './helpers.ts';
+import { ranCmd, pick } from './helpers.ts';
 
 function setupProject(c: SetupCtx): void {
   for (const [p, content] of Object.entries(DEMO_HEAD)) c.file(`progetto/${p}`, content);
@@ -84,7 +84,7 @@ export const m9b: Lesson[] = [
         description: 'Hai letto il codice dell\'endpoint',
         expected: 'cat/Get-Content/grep su api/webhook-polar.js',
         test: (c) => {
-          const ok = cmdMatches(c, /webhook-polar\.js|\bwebhook\b/, false);
+          const ok = ranCmd(c, /webhook-polar\.js|\bwebhook\b/, false);
           return { pass: ok, actual: ok ? 'ok' : 'nessuna lettura del file' };
         },
         onFail: 'Leggi api/webhook-polar.js prima di scrivere: la documentazione deve nascere dal codice.',

@@ -6,7 +6,7 @@ import type { Lesson, CheckCtx } from '../types.ts';
 import type { ApiLogEntry } from '../../engine/types.ts';
 import { hostsFileLookup, labScenario, type LabScenario } from '../../engine/lab.ts';
 import { parseTables } from '../../docs/lint.ts';
-import { cmdMatches, pick, setupApi } from './helpers.ts';
+import { ranCmd, pick, setupApi } from './helpers.ts';
 import type { SetupCtx } from '../types.ts';
 
 const SERVER_HOSTS = ['server.lab', '192.168.50.10'];
@@ -14,7 +14,7 @@ const onServer = (e: ApiLogEntry): boolean => !!e.host && SERVER_HOSTS.includes(
 const AUTH = '-H "Authorization: Bearer $TASKFLOW_TOKEN"';
 const PS_AUTH = '-H "Authorization: Bearer $env:TASKFLOW_TOKEN"';
 const missing = (ok: Record<string, boolean>): { pass: boolean; actual: string } => ({ pass: Object.values(ok).every(Boolean), actual: Object.entries(ok).filter(([, v]) => !v).map(([k]) => 'manca ' + k).join(', ') || 'ok' });
-const sshCmd = (c: CheckCtx, re: RegExp, okOnly = true): boolean => cmdMatches(c, new RegExp('\\bssh\\b.*(?:' + re.source + ')', re.flags), okOnly);
+const sshCmd = (c: CheckCtx, re: RegExp, okOnly = true): boolean => ranCmd(c, new RegExp('\\bssh\\b.*(?:' + re.source + ')', re.flags), okOnly);
 
 function setupLab(c: SetupCtx, scenario: LabScenario, opts: { token?: boolean } = {}): void {
   setupApi(c, { env: 'testing', token: opts.token === false ? false : 'valid', url: 'http://server.lab:8080' });
@@ -391,7 +391,7 @@ export const m11b: Lesson[] = [
         description: 'Timeout, prova in locale sul server e lettura del firewall',
         expected: 'curl -m / nc -w, ssh … curl localhost, ssh … ufw status',
         test: (c) => {
-          const timeout = cmdMatches(c, /(curl(\.exe)?\b.*\s-\w*m\s+\d|nc\b.*\s-\w*w\s+\d|Test-NetConnection)/, false);
+          const timeout = ranCmd(c, /(curl(\.exe)?\b.*\s-\w*m\s+\d|nc\b.*\s-\w*w\s+\d|Test-NetConnection)/, false);
           const locale = sshCmd(c, /curl\b.*localhost/);
           const ufw = sshCmd(c, /ufw status/);
           return missing({ timeout, locale, ufw });
@@ -483,8 +483,8 @@ export const m11b: Lesson[] = [
         description: 'Hai confrontato DNS e file hosts',
         expected: pick({ shell: 'bash' } as never, 'nslookup e getent hosts', 'Resolve-DnsName con e senza -DnsOnly') as string,
         test: (c) => {
-          const dns = cmdMatches(c, pick(c, /\bnslookup\b|\bdig\b/, /Resolve-DnsName\b.*-DnsOnly/i), false);
-          const hosts = cmdMatches(c, pick(c, /getent\s+hosts|\/etc\/hosts/, /Resolve-DnsName\b(?!.*-DnsOnly)|\/etc\/hosts/i), false);
+          const dns = ranCmd(c, pick(c, /\bnslookup\b|\bdig\b/, /Resolve-DnsName\b.*-DnsOnly/i), false);
+          const hosts = ranCmd(c, pick(c, /getent\s+hosts|\/etc\/hosts/, /Resolve-DnsName\b(?!.*-DnsOnly)|\/etc\/hosts/i), false);
           return { pass: dns && hosts, actual: `DNS:${dns} hosts:${hosts}` };
         },
         onFail: 'Confronta la risposta del solo DNS con quella che usano i programmi (getent hosts / Resolve-DnsName).',
@@ -623,7 +623,7 @@ export const m11b: Lesson[] = [
         description: 'Hai indagato con i comandi di diagnosi',
         expected: 'confronto DNS/hosts, ufw status, registro o stato del database',
         test: (c) => {
-          const nomi = cmdMatches(c, /\bnslookup\b|getent\s+hosts|\/etc\/hosts|Resolve-DnsName/i, false);
+          const nomi = ranCmd(c, /\bnslookup\b|getent\s+hosts|\/etc\/hosts|Resolve-DnsName/i, false);
           const fw = sshCmd(c, /ufw status/);
           const db = sshCmd(c, /journalctl|taskflow-db|service\.log/);
           return missing({ nomi, fw, db });

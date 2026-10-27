@@ -2,7 +2,7 @@
 import type { Lesson } from '../types.ts';
 import type { ApiLogEntry } from '../../engine/types.ts';
 import { parseTables } from '../../docs/lint.ts';
-import { cmdMatches, pick, setupApi } from './helpers.ts';
+import { ranCmd, pick, setupApi } from './helpers.ts';
 
 const AUTH = '-H "Authorization: Bearer $TASKFLOW_TOKEN"';
 const PS_AUTH = '-H "Authorization: Bearer $env:TASKFLOW_TOKEN"';
@@ -100,7 +100,7 @@ export const m5b: Lesson[] = [
         description: 'Hai usato il timeout di curl (-m)',
         expected: 'curl con -m / --max-time',
         test: (c) => {
-          const ok = cmdMatches(c, /curl(\.exe)?\b.*(\s-\w*m\s+\d|--max-time)/, false);
+          const ok = ranCmd(c, /curl(\.exe)?\b.*(\s-\w*m\s+\d|--max-time)/, false);
           return { pass: ok, actual: ok ? 'ok' : 'nessun curl con timeout' };
         },
         onFail: 'Senza -m una porta filtrata ti fa aspettare più di due minuti.',
@@ -111,8 +111,8 @@ export const m5b: Lesson[] = [
         expected: pick({ shell: 'bash' } as never, 'nc -zv su 8081 e 8089', 'Test-NetConnection su 8081 e 8089') as string,
         test: (c) => {
           const re = pick(c, /\bnc\b.*\s%PORT%\b/, /Test-NetConnection.*-Port\s+%PORT%\b/i);
-          const a = cmdMatches(c, new RegExp(re.source.replace('%PORT%', '8081')), false);
-          const b = cmdMatches(c, new RegExp(re.source.replace('%PORT%', '8089')), false);
+          const a = ranCmd(c, new RegExp(re.source.replace('%PORT%', '8081')), false);
+          const b = ranCmd(c, new RegExp(re.source.replace('%PORT%', '8089')), false);
           return { pass: a && b, actual: `8081:${a} 8089:${b}` };
         },
         onFail: 'Controlla entrambe le porte con nc -zv (PowerShell: Test-NetConnection -Port).',
@@ -224,7 +224,7 @@ export const m5b: Lesson[] = [
         description: 'Hai cercato gli identificativi nei log del server',
         expected: 'grep/Select-String sui file in /var/log/taskflow',
         test: (c) => {
-          const ok = cmdMatches(c, pick(c, /grep\b.*\/var\/log\/taskflow/, /Select-String\b.*\/var\/log\/taskflow/i), false);
+          const ok = ranCmd(c, pick(c, /grep\b.*\/var\/log\/taskflow/, /Select-String\b.*\/var\/log\/taskflow/i), false);
           return { pass: ok, actual: ok ? 'ok' : 'nessuna ricerca di un identificativo' };
         },
         onFail: 'Cerca l\'identificativo con grep req_000001 /var/log/taskflow/development/*.log.',
@@ -364,7 +364,7 @@ export const m5b: Lesson[] = [
         description: 'Hai letto il log applicativo e analisi.md riporta la causa',
         expected: 'lettura di app.log e riferimento a upstream/reset',
         test: (c) => {
-          const letto = cmdMatches(c, /app\.log|\/var\/log\/taskflow/, false);
+          const letto = ranCmd(c, /app\.log|\/var\/log\/taskflow/, false);
           const md = c.read('analisi.md') ?? '';
           const ok = /upstream|reset|connessione/i.test(md);
           return { pass: letto && ok, actual: `log letto:${letto} causa nel documento:${ok}` };

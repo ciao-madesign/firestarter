@@ -1,7 +1,7 @@
 /** M6 — lezione aggiunta il 2026-10-27: verificare a mano le affermazioni di una guida (quelle che il controllo automatico non vede). */
 import type { Lesson } from '../types.ts';
 import { parseTables } from '../../docs/lint.ts';
-import { cmdMatches, setupApi } from './helpers.ts';
+import { ranCmd, setupApi } from './helpers.ts';
 
 const BOZZA = `# Guida rapida a TaskFlow (bozza)
 
@@ -143,8 +143,8 @@ export const m6b: Lesson[] = [
         description: 'Hai provato davvero i comportamenti sul servizio',
         expected: 'porta 8000 rifiutata, 401 con X-API-Key, POST 201, 422 sulla priority, DELETE 204',
         test: (c) => {
-          const porta = cmdMatches(c, /:8000\b/, false);
-          const header = cmdMatches(c, /X-API-Key/i, false);
+          const porta = ranCmd(c, /:8000\b/, false);
+          const header = ranCmd(c, /X-API-Key/i, false);
           const created = c.apiShell.some((e) => e.method === 'POST' && e.status === 201);
           const prio = c.apiShell.some((e) => e.method === 'POST' && e.status === 422 && /priority/.test(e.resBody ?? ''));
           const del = c.apiShell.some((e) => e.method === 'DELETE' && e.status === 204);

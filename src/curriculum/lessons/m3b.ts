@@ -1,7 +1,7 @@
 /** M3 — lezioni aggiunte il 2026-10-27: URL e codifica dei parametri, JSON e virgolette tra Bash e PowerShell 5.1. */
 import type { Lesson, SetupCtx } from '../types.ts';
 import type { ApiTask } from '../../engine/types.ts';
-import { cmdMatches, pick, setupApi } from './helpers.ts';
+import { ranCmd, pick, setupApi } from './helpers.ts';
 
 const AUTH = '-H "Authorization: Bearer $TASKFLOW_TOKEN"';
 const PS_AUTH = '-Headers @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }';
@@ -222,7 +222,7 @@ export const m3b: Lesson[] = [
         description: 'Hai inviato il body da un file (-d @file)',
         expected: '-d @nomefile',
         test: (c) => {
-          const ok = cmdMatches(c, /(-d|--data-binary|--data|--json)\s+"?@[\w./-]+/);
+          const ok = ranCmd(c, /(-d|--data-binary|--data|--json)\s+"?@[\w./-]+/);
           return { pass: ok, actual: ok ? 'ok' : 'nessun uso di -d @file' };
         },
         onFail: 'Scrivi il JSON in un file e usa curl -d @body.json (in PowerShell: curl.exe -d "@body.json").',
@@ -232,7 +232,7 @@ export const m3b: Lesson[] = [
         description: 'Hai costruito il JSON con jq --arg / ConvertTo-Json',
         expected: pick({ shell: 'bash' } as never, 'jq -n --arg', 'ConvertTo-Json') as string,
         test: (c) => {
-          const ok = cmdMatches(c, pick(c, /jq\s+(-\w+\s+)*--arg\s/, /ConvertTo-Json/i), false);
+          const ok = ranCmd(c, pick(c, /jq\s+(-\w+\s+)*--arg\s/, /ConvertTo-Json/i), false);
           return { pass: ok, actual: ok ? 'ok' : 'strumento di costruzione non usato' };
         },
         onFail: 'Bash: jq -n --arg t "$TITOLO" \'{title:$t}\'. PowerShell: @{ title = $titolo } | ConvertTo-Json.',

@@ -2,7 +2,7 @@
 import type { Lesson } from '../types.ts';
 import type { ApiLogEntry } from '../../engine/types.ts';
 import { parseTables } from '../../docs/lint.ts';
-import { cmdMatches, pick, setupApi } from './helpers.ts';
+import { ranCmd, pick, setupApi } from './helpers.ts';
 
 const AUTH = '-H "Authorization: Bearer $TASKFLOW_TOKEN"';
 const JSON_H = '-H "Content-Type: application/json"';
@@ -111,8 +111,8 @@ export const m4b: Lesson[] = [
         description: 'Hai usato un filtro (select / Where-Object) e un raggruppamento',
         expected: pick({ shell: 'bash' } as never, 'jq con select e group_by', 'Where-Object e Group-Object') as string,
         test: (c) => {
-          const sel = cmdMatches(c, pick(c, /jq\b.*select\(/, /Where-Object/i), false);
-          const grp = cmdMatches(c, pick(c, /jq\b.*group_by\(/, /Group-Object/i), false);
+          const sel = ranCmd(c, pick(c, /jq\b.*select\(/, /Where-Object/i), false);
+          const grp = ranCmd(c, pick(c, /jq\b.*group_by\(/, /Group-Object/i), false);
           return { pass: sel && grp, actual: `filtro:${sel} raggruppamento:${grp}` };
         },
         onFail: 'Costruisci la pipeline con i filtri visti nella lezione, invece di scrivere i file a mano.',
