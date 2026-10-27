@@ -33,6 +33,21 @@ export function iso(sec: number): string {
 }
 
 /** Token scaduto distribuito negli esercizi di diagnosi. */
+/** Segreto di firma dei JWT dimostrativi (solo il server lo conosce). */
+export function jwtSecret(env: EnvName): string {
+  return `jwt-demo-secret-${ENV_TAG[env]}`;
+}
+
+const b64url = (b: Buffer | string): string => Buffer.from(b).toString('base64').replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+
+/** Costruisce un JWT HS256 (header.payload.firma, base64url) per le lezioni sui token. */
+export function makeJwt(env: EnvName, claims: Record<string, unknown>, secret = jwtSecret(env)): string {
+  const head = b64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const body = b64url(JSON.stringify(claims));
+  const sig = b64url(createHmac('sha256', secret).update(`${head}.${body}`).digest());
+  return `${head}.${body}.${sig}`;
+}
+
 export function expiredToken(env: EnvName): string {
   return `tf_${ENV_TAG[env]}_bob_${CLOCK_START - 3600}`;
 }
@@ -260,6 +275,36 @@ function authenticate(ctx: Ctx, need: 'none' | 'user' | 'admin'): Raw | null {
   if (!m) {
     appLog(ctx, 'WARN ', 'auth: schema di autenticazione non supportato (atteso Bearer)');
     return err(401, 'invalid_authorization_scheme', 'Schema non supportato: usa "Bearer <token>".', {}, bearer);
+  }
+  // token JWT (header.payload.firma): la firma si verifica con il segreto del server, poi si controlla la scadenza
+  const jwt = /^([\w-]+)\.([\w-]+)\.([\w-]+)$/.exec(m[1]);
+  if (jwt) {
+    const fail = (code: string, msg: string, log: string): Raw => {
+      appLog(ctx, 'WARN ', `auth: ${log}`);
+      return err(401, code, msg, {}, bearer);
+    };
+    let head: { alg?: string };
+    let claims: { sub?: string; exp?: number; iss?: string };
+    try {
+      head = JSON.parse(Buffer.from(jwt[1], 'base64').toString('utf8'));
+      claims = JSON.parse(Buffer.from(jwt[2], 'base64').toString('utf8'));
+    } catch {
+      return fail('invalid_token', 'Token non valido: header o payload non leggibili.', 'JWT malformato');
+    }
+    if (head.alg !== 'HS256') return fail('invalid_token', 'Algoritmo non supportato: atteso HS256.', `JWT con alg=${String(head.alg)}`);
+    const expected = b64url(createHmac('sha256', jwtSecret(ctx.env)).update(`${jwt[1]}.${jwt[2]}`).digest());
+    const a = Buffer.from(jwt[3]);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return fail('invalid_signature', 'Firma del token non valida: il contenuto è stato modificato o il segreto non coincide.', 'JWT con firma non valida');
+    if (typeof claims.exp !== 'number' || claims.exp <= ctx.state.clock) return fail('token_expired', `Token scaduto il ${typeof claims.exp === 'number' ? iso(claims.exp) : '(exp assente)'}.`, `JWT scaduto (sub=${String(claims.sub)})`);
+    if (claims.iss !== 'taskflow' || typeof claims.sub !== 'string' || !/^[a-z]+$/.test(claims.sub)) return fail('invalid_token', 'Emittente o soggetto del token non validi.', 'JWT con iss/sub non validi');
+    // il ruolo non si legge dal token: lo decide il server
+    ctx.user = { name: claims.sub, role: claims.sub === 'alice' ? 'admin' : 'member' };
+    if (need === 'admin' && ctx.user.role !== 'admin') {
+      appLog(ctx, 'WARN ', `authz: l'utente ${ctx.user.name} (ruolo member) ha richiesto una risorsa admin`);
+      return err(403, 'forbidden', 'Permessi insufficienti: serve il ruolo admin.', { requiredRole: 'admin', yourRole: ctx.user.role });
+    }
+    return null;
   }
   const t = /^tf_(dev|test|stg)_([a-z]+)_(\d+)$/.exec(m[1]);
   if (!t || t[1] !== ENV_TAG[ctx.env]) {

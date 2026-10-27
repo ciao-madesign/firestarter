@@ -13,6 +13,7 @@ const ALIAS: Record<string, string> = { 'ssh -n': 'ssh', 'ssh -i': 'ssh', 'ssh -
 const DROP = new Set(['then', 'fi', 'else', 'elif', 'Write-Output', 'foreach', 'content-type', '>>', 'abc', 'mostra', 'ls -lat']);
 /** aggiunte manuali per lezione/shell (costrutti richiesti ma non rilevabili automaticamente) */
 const EXTRA: Record<string, Partial<Record<ShellId, string[]>>> = {
+  'M10.L3': { pwsh: ['[Tipo]::', 'function'] },
   'M2.L2': { bash: ['2>', '2>&1', '/dev/null'], pwsh: ['2>', '*>', '$null'] },
   'M2.L5': { bash: ['PIPESTATUS', 'set', '$?'], pwsh: ['-Command', 'Test-Path'] },
   'M2.L6': { bash: ['which', 'type', 'chmod', 'export'], pwsh: ['Get-Command', '$env:'] },

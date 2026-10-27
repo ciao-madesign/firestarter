@@ -1293,7 +1293,7 @@ reg('find', (args, io, rt) => {
 
 // ---------------- testo ----------------
 reg('grep', (args, io, rt) => {
-  const o = getopt(args, { flags: 'ivncrRElFwoqHhsx', values: 'eABCm', alias: {} });
+  const o = getopt(args, { flags: 'ivncrRElFwoqHhsx', values: 'eABCm', alias: {}, longValues: ['include', 'exclude', 'exclude-dir'] });
   if (o.error) return badOpt('grep', io, o.error.replace('opzione non valida', 'invalid option'));
   const rest = [...o.rest];
   const patterns = o.values.e ? [...o.values.e] : rest.length ? [rest.shift()!] : [];
@@ -1339,7 +1339,16 @@ reg('grep', (args, io, rt) => {
         hadError = true;
         continue;
       }
+      const globRe = (g: string): RegExp => new RegExp('^' + g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
+      const inc = (o.values.include ?? []).map(globRe);
+      const exc = (o.values.exclude ?? []).map(globRe);
+      const excDir = (o.values['exclude-dir'] ?? []).map(globRe);
       for (const d of rt.vfs.descendants(abs)) {
+        const rel = d.slice(abs.length + 1).split('/');
+        if (excDir.length && rel.slice(0, -1).some((part) => excDir.some((re) => re.test(part)))) continue;
+        const base = rel[rel.length - 1];
+        if (inc.length && !inc.some((re) => re.test(base))) continue;
+        if (exc.some((re) => re.test(base))) continue;
         if (rt.vfs.isFile(d)) {
           try {
             targets.push({ name: f === '.' ? '.' + d.slice(abs.length) : (f.endsWith('/') ? f : f + '/') + d.slice(abs.length + 1), text: rt.vfs.readFile(d) });

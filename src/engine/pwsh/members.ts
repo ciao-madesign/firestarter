@@ -14,7 +14,8 @@ function notFound(obj: unknown, name: string): PSError {
 
 export function getMember(rt: PsRuntime, obj: unknown, name: string): unknown {
   const l = name.toLowerCase();
-  if (obj === null || obj === undefined) return null;
+  // da PowerShell 3.0 anche $null ha Count e Length (zero): (comando senza risultati).Count vale 0
+  if (obj === null || obj === undefined) return l === 'count' || l === 'length' ? 0 : null;
   if (Array.isArray(obj)) {
     if (l === 'count' || l === 'length') return obj.length;
     const out = obj.map((x) => getMember(rt, x, name)).filter((x) => x !== null);
