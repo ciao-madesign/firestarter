@@ -13,7 +13,7 @@ export const ripassi: Lesson[] = [
     title: 'Ripasso: formattare e sommare colonne (printf, awk)',
     objective: 'Riprendere in 5 minuti la lettura di un CSV, la stampa formattata e il totale di una colonna.',
     explain: [
-      'Un file CSV ha un valore per colonna, separati da virgola. In Bash `awk -F, \'{ ... }\'` legge le righe dividendole alla virgola: `$1` è la prima colonna, `$2` la seconda, `NR` il numero di riga. `printf` stampa con un formato (`%s` testo, `%d` numero, `\\n` a capo). `END { ... }` viene eseguito dopo l\'ultima riga: è il posto per i totali. `>` crea (o sovrascrive) il file, `>>` aggiunge in coda.',
+      'Un file CSV ha un valore per colonna, separati da virgola. In Bash `awk -F, \'{ ... }\'` legge le righe dividendole alla virgola: `$1` è la prima colonna, `$2` la seconda, `NR` il numero di riga. `printf` stampa con un formato (`%s` testo, `%d` numero, `\\n` a capo). `END { ... }` viene eseguito dopo l\'ultima riga: è il posto per i totali. Per CREARE un file con il risultato di un comando: `comando > nome.txt` (se esiste lo sovrascrive); per AGGIUNGERE una riga in fondo: `comando >> nome.txt`. In PowerShell `| Set-Content nome.txt` crea il file e `Add-Content nome.txt \'testo\'` aggiunge una riga.',
       'In PowerShell `Import-Csv` legge il file e dà un oggetto per riga con una proprietà per colonna (`$_.nome`); `Measure-Object punti -Sum` somma una colonna; `Add-Content` aggiunge una riga a un file.',
     ],
     shells: ['bash', 'pwsh'],
@@ -60,6 +60,16 @@ export const ripassi: Lesson[] = [
         expect: 'totale 21',
         risk: 'Nessuno: sola lettura.',
         contains: 'totale 21',
+      },
+      {
+        title: 'Salvare il risultato in un file',
+        cmd: { bash: "cd ~/corso-cli/m2r && awk -F, 'NR>1 {print $1}' voti.csv > nomi.txt && echo Fine >> nomi.txt && cat nomi.txt", pwsh: "cd ~/corso-cli/m2r; Import-Csv voti.csv | ForEach-Object { $_.nome } | Set-Content nomi.txt; Add-Content nomi.txt 'Fine'; Get-Content nomi.txt" },
+        what: 'Crea il file nomi.txt con il risultato del comando, poi ci aggiunge una riga in fondo e lo mostra.',
+        who: 'La shell (`>` e `>>`) in Bash; Set-Content e Add-Content in PowerShell.',
+        parts: ['`> file`: crea il file (se esiste lo SOVRASCRIVE) con l\'output del comando', '`>> file`: aggiunge in fondo senza cancellare', 'PowerShell: `| Set-Content file` crea o sovrascrive, `Add-Content file \'testo\'` aggiunge una riga'],
+        expect: 'Anna, Bruno, Carla e poi Fine, ora salvati in nomi.txt.',
+        risk: 'Il file nomi.txt viene creato (o sovrascritto): nella cartella di prova non è un problema.',
+        contains: 'Fine',
       },
     ],
     predict: [
