@@ -80,7 +80,7 @@ export const m2b: Lesson[] = [
       explain: 'Nessun messaggio, ma il codice di uscita è diverso da 0 (Bash) / $? è False (PowerShell): il comando è fallito in silenzio. Scarta gli errori solo quando sai che sono irrilevanti.',
     },
     task: {
-      text: 'In ~/corso-cli/m2l2 esegui il comando che legge dati.txt e manca.txt (Bash: `cat dati.txt manca.txt`; PowerShell: `Get-Content dati.txt, manca.txt`) quattro volte: (1) solo il risultato in `ok.txt`; (2) solo gli errori in `errori.txt`; (3) tutto insieme in `tutto.txt`; (4) senza errori a schermo. Poi scrivi canali.md: cosa sono stdout e stderr, cosa fanno `2>` e `2>&1`.',
+      text: 'In ~/corso-cli/m2l2 esegui il comando che legge dati.txt e manca.txt (Bash: `cat dati.txt manca.txt`; PowerShell: `Get-Content dati.txt, manca.txt`) quattro volte: (1) solo il risultato in `ok.txt`; (2) solo gli errori in `errori.txt`; (3) tutto insieme in `tutto.txt`; (4) senza errori a schermo. Poi crea dal terminale, nella stessa cartella, il file canali.md (non con l\'editor dei documenti): cosa sono stdout e stderr, cosa fanno `2>` e `2>&1`.',
       criterion: 'ok.txt ha solo le righe dei dati; errori.txt solo il messaggio di errore; tutto.txt entrambi; hai usato 2>/dev/null (PowerShell: 2>$null); canali.md cita stdout, stderr e 2>&1.',
     },
     checks: [

@@ -224,10 +224,11 @@ export function evaluateChecks(state: WorkspaceState, id: string, shell: ShellId
       // il file c'è, ma in un'altra cartella: tipico di chi non legge il prompt prima di scrivere
       for (const name of filesRead(c.test)) {
         if (ctx.vfs.exists(`${dir}/${name}`)) continue;
-        const elsewhere = [state.shells[shell].cwd, HOME].map((d) => `${d}/${name}`).find((p) => state.fs[p]?.type === 'file');
+        const elsewhere = [state.shells[shell].cwd, HOME, `${HOME}/docs`].map((d) => `${d}/${name}`).find((p) => state.fs[p]?.type === 'file');
         if (elsewhere) {
           misplaced = true;
-          explanation = `${explanation ?? ''} Il file «${name}» esiste in ${elsewhere.replace(HOME, '~')}, ma l'esercizio lo cerca in ${dir.replace(HOME, '~')}: leggi il prompt per sapere dove ti trovi (cd ${dir.replace(HOME, '~')}).`.trim();
+          const fromEditor = elsewhere.startsWith(`${HOME}/docs/`);
+          explanation = `${explanation ?? ''} Il file «${name}» esiste in ${elsewhere.replace(HOME, '~')}, ma l'esercizio lo cerca in ${dir.replace(HOME, '~')}. ${fromEditor ? `I file salvati con l'editor dei documenti stanno in ~/docs: qui il file va creato dal terminale, nella cartella della lezione (cd ${dir.replace(HOME, '~')}).` : `Leggi il prompt per sapere dove ti trovi (cd ${dir.replace(HOME, '~')}).`}`.trim();
           break;
         }
       }

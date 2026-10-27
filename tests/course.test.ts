@@ -199,3 +199,16 @@ describe('Lezione già iniziata con file di preparazione mancanti', () => {
     expect(s.progress['M2.L2'].attempts).toBe(attempts);
   });
 });
+
+describe('File creato con l\'editor dei documenti', () => {
+  it('la verifica segnala che sta in ~/docs e come rimediare', () => {
+    const s = createWorkspace('t');
+    startLesson(s, 'M2.L2');
+    s.fs['/home/learner/docs/canali.md'] = { ...(s.fs['/home/learner/corso-cli/m2l2/dati.txt'] as object) } as never;
+    const r = verifyLesson(s, 'M2.L2', 'bash');
+    const c = r.checks.find((x) => x.id === 'documento')!;
+    expect(c.pass).toBe(false);
+    expect(c.explanation).toContain('~/docs');
+    expect(c.explanation).toContain('dal terminale');
+  });
+});
