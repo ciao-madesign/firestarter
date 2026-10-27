@@ -85,27 +85,30 @@ code { background: var(--panel2); padding: 0 .3em; border-radius: 4px; font-size
 .splitter:hover, .splitter:focus-visible { background: var(--accent); }
 
 /* terminale */
-.pane-terminal { background: var(--term-bg); color: var(--term-text); }
-.term-head { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid #1f2933; font-size: .85em; flex-wrap: wrap; }
-.term-head .btn { background: #141b23; color: #d7e0ea; border-color: #2b3644; }
-.term-info { color: #9fb0c2; }
+.pane-terminal { --t-bg: var(--term-bg); --t-input: #0d1218; --t-line: #1f2933; --t-btn: #141b23; --t-btn-line: #2b3644; --t-prompt: #7ee0a0; --t-title: #1f6f43; background: var(--t-bg); color: var(--term-text); }
+/* finestra PowerShell: blu classico, distinta dalla finestra Bash (grigio scuro e prompt verde) */
+.pane-terminal[data-shell='pwsh'] { --t-bg: #012456; --t-input: #011c44; --t-line: #1d4a8f; --t-btn: #0b3578; --t-btn-line: #2f62b3; --t-prompt: #ffffff; --t-title: #1d4a8f; }
+.term-title { display: inline-block; padding: 2px 10px; border-radius: 6px; background: var(--t-title); color: #ffffff; font-weight: 700; letter-spacing: .02em; }
+.term-head { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--t-line); font-size: .85em; flex-wrap: wrap; }
+.term-head .btn { background: var(--t-btn); color: #d7e0ea; border-color: var(--t-btn-line); }
+.term-info { color: #c3d0de; }
 .term-output { flex: 1; min-height: 0; overflow: auto; overflow-wrap: anywhere; padding: 8px 12px; line-height: 1.35; font-size: calc(var(--fs) * .95); }
-.term-welcome, .term-welcome .muted { color: #9fb0c2; }
+.term-welcome, .term-welcome .muted { color: #c3d0de; }
 .block { margin-bottom: 6px; position: relative; }
 .cmdline { display: flex; gap: 0; flex-wrap: wrap; align-items: baseline; }
-.cmdline .prompt { color: #7ee0a0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cmdline .prompt { color: var(--t-prompt); white-space: pre-wrap; overflow-wrap: anywhere; }
 .cmdline .cmd { white-space: pre-wrap; word-break: break-word; }
-.block .copy { position: absolute; right: 0; top: 0; opacity: 0; background: #141b23; color: #d7e0ea; border: 1px solid #2b3644; border-radius: 6px; font-size: .75em; cursor: pointer; padding: 1px 8px; }
+.block .copy { position: absolute; right: 0; top: 0; opacity: 0; background: var(--t-btn); color: #d7e0ea; border: 1px solid var(--t-btn-line); border-radius: 6px; font-size: .75em; cursor: pointer; padding: 1px 8px; }
 .block:hover .copy, .block .copy:focus-visible { opacity: 1; }
 .out { margin: 0; white-space: pre-wrap; word-break: break-word; font: inherit; }
 .out .err { color: #ff9d95; }
 .exit { color: #ffcc66; font-size: .85em; }
-.term-input { display: flex; align-items: flex-start; gap: 0; padding: 6px 12px; border-top: 1px solid #1f2933; background: #0d1218; min-width: 0; }
-.term-input .prompt { color: #7ee0a0; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 55%; flex: none; padding-top: 3px; font-size: calc(var(--fs) * .95); }
+.term-input { display: flex; align-items: flex-start; gap: 0; padding: 6px 12px; border-top: 1px solid var(--t-line); background: var(--t-input); min-width: 0; }
+.term-input .prompt { color: var(--t-prompt); white-space: pre-wrap; overflow-wrap: anywhere; max-width: 55%; flex: none; padding-top: 3px; font-size: calc(var(--fs) * .95); }
 .term-field { flex: 1; min-width: 0; background: transparent; color: var(--term-text); border: 0; resize: none; outline: none; font-size: calc(var(--fs) * .95); min-height: 1.6em; line-height: 1.35; padding: 3px 0; }
 .term-field::placeholder { color: #6f8196; }
 .term-input:focus-within { box-shadow: inset 0 0 0 2px var(--focus); }
-.quickkeys { display: none; gap: 4px; padding: 6px 8px; overflow-x: auto; background: #0d1218; border-top: 1px solid #1f2933; }
+.quickkeys { display: none; gap: 4px; padding: 6px 8px; overflow-x: auto; background: var(--t-input); border-top: 1px solid var(--t-line); }
 .key { background: #1a232d; color: #d7e0ea; border: 1px solid #2f3b4a; border-radius: 6px; min-width: 38px; min-height: 36px; font: inherit; cursor: pointer; }
 
 /* guida */

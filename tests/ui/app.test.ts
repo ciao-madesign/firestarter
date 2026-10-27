@@ -69,6 +69,26 @@ describe('interfaccia', () => {
     expect(errors).toEqual([]);
   });
 
+  it('lezione M2.L1 in PowerShell: la sezione strumenti spiega $_.Line', async () => {
+    const { page, errors } = await open();
+    await page.locator('.seg-btn').nth(1).click();
+    await page.waitForTimeout(500);
+    const back = page.getByRole('button', { name: '← Percorso' });
+    if (await back.isVisible()) await back.click();
+    await page.waitForSelector('details.module');
+    const btn = page.getByRole('button', { name: /M2\.L1/ });
+    if (!(await btn.isVisible())) await page.locator('details.module', { hasText: 'M2 —' }).locator('summary').first().click();
+    await btn.click();
+    await page.waitForSelector('.lesson-head');
+    const tools = page.locator('#sec-tools');
+    await tools.waitFor();
+    const text = await tools.innerText();
+    expect(text).toContain('Strumenti per questo esercizio (PowerShell 5.1)');
+    expect(text).toContain('$_.Line');
+    expect(text).toContain('ForEach-Object');
+    expect(errors).toEqual([]);
+  });
+
   it('documentazione: la scheda si apre senza errori', async () => {
     const { page, errors } = await open();
     await page.getByRole('tab', { name: 'Documentazione' }).click();

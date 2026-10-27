@@ -28,6 +28,8 @@ const DIFF_ROWS: [string, string, string][] = [
 export class Terminal {
   root: HTMLElement;
   private out!: HTMLElement;
+  private pane!: HTMLElement;
+  private titleEl!: HTMLElement;
   private input!: HTMLTextAreaElement;
   private promptEl!: HTMLElement;
   private headInfo!: HTMLElement;
@@ -61,11 +63,12 @@ export class Terminal {
     this.input.addEventListener('keydown', (e) => this.onKey(e));
     this.input.addEventListener('input', () => this.autosize());
     this.headInfo = h('span', { class: 'term-info' });
+    this.titleEl = h('span', { class: 'term-title' });
 
     const clearBtn = h('button', { type: 'button', class: 'btn small', title: 'Pulisce lo schermo (la cronologia resta)', on: { click: () => this.clearScreen() } }, 'Cancella schermo');
     const copyBtn = h('button', { type: 'button', class: 'btn small', title: "Copia l'ultimo comando con il suo output", on: { click: () => this.copyLast() } }, 'Copia ultimo');
     const diffBtn = h('button', { type: 'button', class: 'btn small', 'aria-haspopup': 'dialog', on: { click: () => this.showDiff() } }, 'Differenze Bash/PowerShell');
-    const head = h('div', { class: 'term-head' }, this.headInfo, h('span', { class: 'spacer' }), diffBtn, copyBtn, clearBtn);
+    const head = h('div', { class: 'term-head' }, this.titleEl, this.headInfo, h('span', { class: 'spacer' }), diffBtn, copyBtn, clearBtn);
 
     const form = h('form', { class: 'term-input', on: { submit: (e) => { e.preventDefault(); void this.submit(); } } }, this.promptEl, this.input);
     const keys = h('div', { class: 'quickkeys', role: 'toolbar', 'aria-label': 'Tasti rapidi' });
@@ -77,7 +80,9 @@ export class Terminal {
     addKey('↓', () => this.histMove(1), 'Comando successivo');
     for (const k of ['|', '>', '$', '~', '/', '-', '"', "'", ';', '&']) addKey(k, () => this.insert(k));
     addKey('Ctrl+C', () => this.cancelInput(), 'Annulla la riga');
-    return h('section', { class: 'pane pane-terminal', 'aria-label': 'Terminale' }, head, this.out, form, keys);
+    this.pane = h('section', { class: 'pane pane-terminal', 'aria-label': 'Terminale' }, head, this.out, form, keys);
+    this.pane.dataset.shell = app.shell;
+    return this.pane;
   }
 
   focus(): void {
@@ -119,7 +124,10 @@ export class Terminal {
     }
     for (const b of blocks) this.out.append(this.renderBlock(b));
     this.promptEl.textContent = this.currentPrompt();
-    this.headInfo.textContent = `${shellName(app.shell)} · ${app.session?.activeEnv ?? 'development'} (simulato)`;
+    this.pane.dataset.shell = app.shell;
+    this.pane.setAttribute('aria-label', `Terminale ${shellName(app.shell)}`);
+    this.titleEl.textContent = app.shell === 'bash' ? 'Bash' : 'Windows PowerShell 5.1';
+    this.headInfo.textContent = `${app.session?.activeEnv ?? 'development'} (simulato)`;
     this.scroll();
   }
 

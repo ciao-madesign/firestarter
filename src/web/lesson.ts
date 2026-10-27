@@ -234,6 +234,13 @@ export function renderLesson(root: HTMLElement): void {
   root.append(h('p', { class: 'muted' }, `Cartella di lavoro: ${l.dir.replace('/home/learner', '~')} · cerca nel prompt dove ti trovi prima di ogni comando.`));
 
   root.append(section('Spiegazione', [renderMarkdown(l.explain.join('\n\n'))], true));
+  const tools = ((l.tools ?? {})[app.shell] ?? []) as { name: string; text: string }[];
+  if (tools.length) {
+    root.append(section(`Strumenti per questo esercizio (${shellName(app.shell)})`, [
+      h('p', { class: 'muted' }, 'Tutto ciò che serve per risolvere l\'esercizio è spiegato qui o nella spiegazione sopra.'),
+      h('dl', { class: 'facts tools' }, ...tools.flatMap((t) => [h('dt', null, h('code', null, t.name)), h('dd', null, ...inlineMd(t.text))])),
+    ], true, 'sec-tools'));
+  }
   if (l.guided.length) root.append(section('Esempio guidato (un comando alla volta)', l.guided.map(guidedCard)));
   const preds = l.predictions as any[];
   if (l.predict.length) {

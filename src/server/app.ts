@@ -20,6 +20,7 @@ import { CURRICULUM_VERSION, MODULES } from '../curriculum/lessons/index.ts';
 import { applyRegistro, buildRegistro, parseRegistro, RegistroError, renderProgressMd, type CourseProgress, addRecurring } from '../course/progress.ts';
 import { generateTest, inTest, recordTestProgress } from '../course/moduletest.ts';
 import { describeLevel, reviewDue } from '../course/levels.ts';
+import { toolsFor } from '../curriculum/glossary.ts';
 import { lintDocument } from '../docs/lint.ts';
 import { tutorRespond, type TutorMode } from '../tutor/tutor.ts';
 import { buildBrief } from '../tutor/brief.ts';
@@ -163,6 +164,7 @@ export function createApp(cfg: AppConfig): Server {
       title: l.title,
       objective: l.objective,
       explain: l.explain,
+      tools: { bash: toolsFor(l.id, 'bash'), pwsh: toolsFor(l.id, 'pwsh') },
       shells: l.shells,
       guided: l.guided,
       predict: l.predict,
