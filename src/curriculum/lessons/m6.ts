@@ -545,7 +545,7 @@ export const m6: Lesson[] = [
     concepts: ['documentazione di un endpoint', 'esempi verificabili', 'coerenza tra documentazione e comportamento'],
   },
   {
-    id: 'M6.L4',
+    id: 'M6.L5',
     artifacts: ['~/docs/troubleshooting.md'],
     module: 6,
     n: 4,
@@ -578,7 +578,7 @@ export const m6: Lesson[] = [
       explain: "Nell'ambiente pulito il file manca e lo script fallisce: la procedura non era ripetibile.",
     },
     task: {
-      text: `1) Scrivi ${DOCS}/troubleshooting.md con almeno 3 problemi (401 token scaduto, 422 validazione, 429 rate limit), ognuno con Sintomo, Causa e Soluzione. 2) In ~/corso-cli/m6l4 crea verifica.sh (Bash) o verifica.ps1 (PowerShell): carica la configurazione da ~/projects/taskflow/.env.development, ottiene un token, crea un task, lo elimina (204) e stampa VERIFICA OK. Deve funzionare da un ambiente pulito.`,
+      text: `1) Scrivi ${DOCS}/troubleshooting.md con almeno 3 problemi (401 token scaduto, 422 validazione, 429 rate limit), ognuno con Sintomo, Causa e Soluzione. 2) In ~/corso-cli/m6l5 crea verifica.sh (Bash) o verifica.ps1 (PowerShell): carica la configurazione da ~/projects/taskflow/.env.development, ottiene un token, crea un task, lo elimina (204) e stampa VERIFICA OK. Deve funzionare da un ambiente pulito.`,
       criterion: 'La guida ha 3 sezioni con Sintomo/Causa/Soluzione e cita i codici 401, 422, 429; la verifica da ambiente pulito termina con 0 e stampa VERIFICA OK; nessun segreto nello script.',
     },
     checks: [
@@ -625,15 +625,15 @@ export const m6: Lesson[] = [
     example: { text: 'Esempio analogo di caricamento di una configurazione.', cmd: { bash: 'source ~/projects/taskflow/.env.development && echo "URL=$TASKFLOW_URL"', pwsh: 'Get-Content ~/projects/taskflow/.env.development | Where-Object { $_ -match "^[A-Z_]+=" } | ForEach-Object { $p = $_ -split "=", 2; [Environment]::SetEnvironmentVariable($p[0], $p[1]) }' } },
     hints: ['Bash: la riga source "$HOME/projects/taskflow/.env.development" all\'inizio dello script. PowerShell: leggi il file e imposta le variabili d\'ambiente.', 'Lo script deve fallire (exit 1) se il DELETE non risponde 204.'],
     solutions: {
-      bash: [`cat > ~/docs/troubleshooting.md <<'EOF'\n${TROUBLESHOOTING}EOF`, 'cd ~/corso-cli/m6l4', `cat > verifica.sh <<'EOF'\n${VERIFICA_SH}EOF`, 'chmod +x verifica.sh', './verifica.sh'],
-      pwsh: [`Set-Content ~/docs/troubleshooting.md -Value @'\n${TROUBLESHOOTING}'@`, 'cd ~/corso-cli/m6l4', `Set-Content verifica.ps1 -Value @'\n${VERIFICA_PS1}'@`, './verifica.ps1'],
+      bash: [`cat > ~/docs/troubleshooting.md <<'EOF'\n${TROUBLESHOOTING}EOF`, 'cd ~/corso-cli/m6l5', `cat > verifica.sh <<'EOF'\n${VERIFICA_SH}EOF`, 'chmod +x verifica.sh', './verifica.sh'],
+      pwsh: [`Set-Content ~/docs/troubleshooting.md -Value @'\n${TROUBLESHOOTING}'@`, 'cd ~/corso-cli/m6l5', `Set-Content verifica.ps1 -Value @'\n${VERIFICA_PS1}'@`, './verifica.ps1'],
     },
     summary: ['troubleshooting: sintomo, causa, soluzione', 'procedura ripetibile = funziona da ambiente pulito', 'configurazione in file, non nella testa'],
     skills: ['docs', 'testing', 'diagnosi'],
     concepts: ['troubleshooting guide', 'verifica da ambiente pulito', 'configurazione e segreti'],
   },
   {
-    id: 'M6.L5',
+    id: 'M6.L6',
     artifacts: ['~/docs/final'],
     module: 6,
     n: 5,
@@ -652,7 +652,7 @@ export const m6: Lesson[] = [
       c.vfs.mkdir('/home/learner/docs/final', true);
     },
     guided: [
-      { title: 'Cominciare', cmd: { bash: 'cat ~/corso-cli/m6l5/final-README.md', pwsh: 'cat ~/corso-cli/m6l5/final-README.md' }, what: 'Legge la consegna.', who: 'cat.', parts: [], expect: 'Elenco dei 4 file da consegnare.', risk: 'Staging simulato.' },
+      { title: 'Cominciare', cmd: { bash: 'cat ~/corso-cli/m6l6/final-README.md', pwsh: 'cat ~/corso-cli/m6l6/final-README.md' }, what: 'Legge la consegna.', who: 'cat.', parts: [], expect: 'Elenco dei 4 file da consegnare.', risk: 'Staging simulato.' },
     ],
     predict: [
       {

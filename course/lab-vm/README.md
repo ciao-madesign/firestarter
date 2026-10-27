@@ -44,10 +44,10 @@ Ogni esercizio parte da uno stato noto. Sul server:
 
 ```bash
 sudo /opt/lab/scenario.sh ok          # sistema funzionante (ripristino completo)
-sudo /opt/lab/scenario.sh stopped     # servizio fermo (M11.L3)
-sudo /opt/lab/scenario.sh wrong_port  # servizio sulla 9090 (M11.L4)
-sudo /opt/lab/scenario.sh db_down     # errore 500 per database fermo (M11.L5)
-sudo /opt/lab/scenario.sh multi       # tutti i guasti insieme (M11.L6)
+sudo /opt/lab/scenario.sh stopped     # servizio fermo (M11.L4)
+sudo /opt/lab/scenario.sh wrong_port  # servizio sulla 9090 (M11.L5)
+sudo /opt/lab/scenario.sh db_down     # errore 500 per database fermo (M11.L6)
+sudo /opt/lab/scenario.sh multi       # tutti i guasti insieme (M11.L10)
 ```
 
 Per tornare allo stato iniziale delle macchine: `vagrant snapshot save base` dopo il primo `vagrant up`, poi `vagrant snapshot restore base`. Per ricominciare da zero: `vagrant destroy -f && vagrant up`. Per spegnere: `vagrant halt`.

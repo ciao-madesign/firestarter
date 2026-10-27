@@ -73,9 +73,9 @@ export const m4: Lesson[] = [
     concepts: ['struttura di una specifica OpenAPI', 'jq di base', 'ConvertFrom-Json'],
   },
   {
-    id: 'M4.L2',
+    id: 'M4.L3',
     module: 4,
-    n: 2,
+    n: 3,
     title: 'Autenticazione Bearer e segreti',
     objective: 'Ottenere un access token senza scrivere i segreti nei comandi e usarlo in una richiesta autenticata.',
     explain: [
@@ -135,9 +135,9 @@ export const m4: Lesson[] = [
     concepts: ['autenticazione Bearer', 'segreti in variabili d\'ambiente', 'ottenere un token', 'jq -r'],
   },
   {
-    id: 'M4.L3',
+    id: 'M4.L4',
     module: 4,
-    n: 3,
+    n: 4,
     title: 'CRUD con JSON, Content-Type e Accept',
     objective: 'Creare, leggere e aggiornare una risorsa con richieste HTTP, verificando lo stato dopo ogni passaggio.',
     explain: [
@@ -203,9 +203,9 @@ export const m4: Lesson[] = [
     concepts: ['CRUD con HTTP', 'Content-Type e Accept', 'PATCH vs PUT', '409 conflitto', 'Location header'],
   },
   {
-    id: 'M4.L4',
+    id: 'M4.L5',
     module: 4,
-    n: 4,
+    n: 5,
     title: 'Validazione, paginazione e idempotenza',
     objective: 'Leggere pagine di risultati, riconoscere gli errori di validazione e verificare l\'idempotenza di DELETE.',
     explain: [
@@ -232,7 +232,7 @@ export const m4: Lesson[] = [
       explain: '400 invalid_json: il body non è JSON (errore di formato), diverso dal 422 (JSON valido ma dati non validi).',
     },
     task: {
-      text: 'In ~/corso-cli/m4l4: (1) salva in `pagina2.json` la SECONDA pagina di task con 2 elementi per pagina; (2) elimina il task 5 due volte e annota in `idempotenza.txt` i due status ricevuti (nell\'ordine, separati da uno spazio).',
+      text: 'In ~/corso-cli/m4l5: (1) salva in `pagina2.json` la SECONDA pagina di task con 2 elementi per pagina; (2) elimina il task 5 due volte e annota in `idempotenza.txt` i due status ricevuti (nell\'ordine, separati da uno spazio).',
       criterion: 'pagina2.json contiene i task con id 3 e 4; idempotenza.txt contiene "204 404"; il server ha registrato DELETE 204 e poi DELETE 404.',
     },
     checks: [
@@ -271,17 +271,17 @@ export const m4: Lesson[] = [
     example: { text: 'Esempio analogo: terza pagina con 1 elemento per pagina.', cmd: { bash: `curl -s ${AUTH_H} "$TASKFLOW_URL/v1/tasks?limit=1&offset=2"`, pwsh: 'irm "$env:TASKFLOW_URL/v1/tasks?limit=1&offset=2" -Headers $h' } },
     hints: ['offset = limit × (numero pagina − 1): per la pagina 2 con 2 elementi, offset=2.', 'Con curl: -o /dev/null -w "%{http_code} " per stampare solo lo status; aggiungi in append con >> per il secondo.'],
     solutions: {
-      bash: ['cd ~/corso-cli/m4l4', `curl -s ${AUTH_H} "$TASKFLOW_URL/v1/tasks?limit=2&offset=2" -o pagina2.json`, `curl -s -o /dev/null -w "%{http_code} " -X DELETE ${AUTH_H} $TASKFLOW_URL/v1/tasks/5 > idempotenza.txt`, `curl -s -o /dev/null -w "%{http_code}\\n" -X DELETE ${AUTH_H} $TASKFLOW_URL/v1/tasks/5 >> idempotenza.txt`],
-      pwsh: ['cd ~/corso-cli/m4l4', '$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks?limit=2&offset=2" -Headers $h | ConvertTo-Json -Depth 5 > pagina2.json', '$a = (Invoke-WebRequest "$env:TASKFLOW_URL/v1/tasks/5" -Method Delete -Headers $h -UseBasicParsing).StatusCode', 'try { Invoke-WebRequest "$env:TASKFLOW_URL/v1/tasks/5" -Method Delete -Headers $h -UseBasicParsing } catch { $b = $_.Exception.Response.StatusCode.value__ }', '"$a $b" > idempotenza.txt'],
+      bash: ['cd ~/corso-cli/m4l5', `curl -s ${AUTH_H} "$TASKFLOW_URL/v1/tasks?limit=2&offset=2" -o pagina2.json`, `curl -s -o /dev/null -w "%{http_code} " -X DELETE ${AUTH_H} $TASKFLOW_URL/v1/tasks/5 > idempotenza.txt`, `curl -s -o /dev/null -w "%{http_code}\\n" -X DELETE ${AUTH_H} $TASKFLOW_URL/v1/tasks/5 >> idempotenza.txt`],
+      pwsh: ['cd ~/corso-cli/m4l5', '$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks?limit=2&offset=2" -Headers $h | ConvertTo-Json -Depth 5 > pagina2.json', '$a = (Invoke-WebRequest "$env:TASKFLOW_URL/v1/tasks/5" -Method Delete -Headers $h -UseBasicParsing).StatusCode', 'try { Invoke-WebRequest "$env:TASKFLOW_URL/v1/tasks/5" -Method Delete -Headers $h -UseBasicParsing } catch { $b = $_.Exception.Response.StatusCode.value__ }', '"$a $b" > idempotenza.txt'],
     },
     summary: ['limit/offset/total', '422 validazione vs 400 JSON non valido', 'DELETE idempotente nello stato, non nella risposta'],
     skills: ['http', 'testing', 'output'],
     concepts: ['paginazione', 'validazione 422', '400 vs 422', 'idempotenza'],
   },
   {
-    id: 'M4.L5',
+    id: 'M4.L7',
     module: 4,
-    n: 5,
+    n: 7,
     title: 'Timeout e rate limit',
     objective: 'Riconoscere e documentare un rate limit (429, Retry-After) e un timeout del client.',
     explain: [
@@ -308,7 +308,7 @@ export const m4: Lesson[] = [
       explain: 'Retry-After: i secondi da attendere. Il client dovrebbe aspettare quel tempo (con un limite massimo di tentativi).',
     },
     task: {
-      text: 'In ~/corso-cli/m4l5: (1) superare il rate limit di /v1/search fino a ottenere 429; (2) salva in `attesa.txt` il valore (solo il numero) dell\'header Retry-After di una risposta 429; (3) fai scattare un timeout su /v1/slow e salva in `timeout.txt` il suo esito (Bash: il codice di uscita; PowerShell: il messaggio dell\'eccezione).',
+      text: 'In ~/corso-cli/m4l7: (1) superare il rate limit di /v1/search fino a ottenere 429; (2) salva in `attesa.txt` il valore (solo il numero) dell\'header Retry-After di una risposta 429; (3) fai scattare un timeout su /v1/slow e salva in `timeout.txt` il suo esito (Bash: il codice di uscita; PowerShell: il messaggio dell\'eccezione).',
       criterion: 'Il server registra un 429 su /v1/search; attesa.txt coincide con il Retry-After di un 429 reale; timeout.txt contiene 28 (Bash) o un messaggio con "timed out" (PowerShell).',
     },
     checks: [
@@ -346,17 +346,17 @@ export const m4: Lesson[] = [
     example: { text: 'Esempio analogo: salvare il valore di un altro header.', cmd: { bash: "curl -sI $TASKFLOW_URL/v1/health | grep -i x-api-version | cut -d' ' -f2 | tr -d '\\r' > versione.txt", pwsh: '(iwr "$env:TASKFLOW_URL/v1/health" -UseBasicParsing).Headers["X-API-Version"] > versione.txt' } },
     hints: ['La sesta richiesta riceve già il 429 (ne sono ammesse 5): leggi gli header di una risposta 429 (anche una settima) e salva il valore con grep/cut/tr (Bash) o dal catch (PowerShell).', 'Per il timeout: curl --max-time 3 e poi echo $? > timeout.txt; in PowerShell $_.Exception.Message nel catch.'],
     solutions: {
-      bash: ['cd ~/corso-cli/m4l5', `for i in 1 2 3 4 5 6; do curl -s -o /dev/null -w "%{http_code} " ${AUTH_H} "$TASKFLOW_URL/v1/search?q=api"; done`, `curl -si ${AUTH_H} "$TASKFLOW_URL/v1/search?q=api" | grep -i retry-after | cut -d" " -f2 | tr -d "\\r" > attesa.txt`, 'curl -s --max-time 3 $TASKFLOW_URL/v1/slow; echo $? > timeout.txt'],
-      pwsh: ['cd ~/corso-cli/m4l5', '$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', '1..5 | ForEach-Object { Invoke-RestMethod "$env:TASKFLOW_URL/v1/search?q=api" -Headers $h | Out-Null }', 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/search?q=api" -Headers $h } catch { $_.Exception.Response.Headers["Retry-After"] > attesa.txt }', 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/slow" -TimeoutSec 3 } catch { $_.Exception.Message > timeout.txt }'],
+      bash: ['cd ~/corso-cli/m4l7', `for i in 1 2 3 4 5 6; do curl -s -o /dev/null -w "%{http_code} " ${AUTH_H} "$TASKFLOW_URL/v1/search?q=api"; done`, `curl -si ${AUTH_H} "$TASKFLOW_URL/v1/search?q=api" | grep -i retry-after | cut -d" " -f2 | tr -d "\\r" > attesa.txt`, 'curl -s --max-time 3 $TASKFLOW_URL/v1/slow; echo $? > timeout.txt'],
+      pwsh: ['cd ~/corso-cli/m4l7', '$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', '1..5 | ForEach-Object { Invoke-RestMethod "$env:TASKFLOW_URL/v1/search?q=api" -Headers $h | Out-Null }', 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/search?q=api" -Headers $h } catch { $_.Exception.Response.Headers["Retry-After"] > attesa.txt }', 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/slow" -TimeoutSec 3 } catch { $_.Exception.Message > timeout.txt }'],
     },
     summary: ['429 + Retry-After', 'timeout ≠ errore HTTP', 'aspetta e riprova con un massimo di tentativi'],
     skills: ['http', 'testing', 'diagnosi'],
     concepts: ['rate limit 429', 'header Retry-After', 'timeout del client (curl 28)'],
   },
   {
-    id: 'M4.L6',
+    id: 'M4.L8',
     module: 4,
-    n: 6,
+    n: 8,
     title: 'Dallo stesso test a PowerShell',
     objective: 'Trasferire una procedura di test da Bash a PowerShell 5.1: oggetti al posto del testo, errori HTTP come eccezioni, e la trappola dell\'alias curl.',
     explain: [
@@ -396,7 +396,7 @@ curl -s -H "Authorization: Bearer $TOKEN" "$TASKFLOW_URL/v1/me" | jq -r .name
       explain: 'Il body viene inviato come form (non JSON): il server non trova i campi e risponde 422 (campi obbligatori mancanti) invece di leggere il JSON.',
     },
     task: {
-      text: 'Nella cartella ~/corso-cli/m4l6 trovi `procedura.sh` (Bash). Traducila in `procedura.ps1`: deve ottenere il token dalle variabili d\'ambiente (senza segreti scritti), chiamare GET /v1/me e stampare solo il nome (`bob`). Poi eseguila con ./procedura.ps1.',
+      text: 'Nella cartella ~/corso-cli/m4l8 trovi `procedura.sh` (Bash). Traducila in `procedura.ps1`: deve ottenere il token dalle variabili d\'ambiente (senza segreti scritti), chiamare GET /v1/me e stampare solo il nome (`bob`). Poi eseguila con ./procedura.ps1.',
       criterion: 'procedura.ps1 stampa bob, usa Invoke-RestMethod o curl.exe (non l\'alias curl) e non contiene segreti.',
     },
     checks: [
@@ -441,7 +441,7 @@ curl -s -H "Authorization: Bearer $TOKEN" "$TASKFLOW_URL/v1/me" | jq -r .name
     hints: ['Parti da procedura.sh: due richieste (token, poi /me). Ogni riga ha un equivalente: jq .campo diventa .campo sull\'oggetto.', 'Per scrivere il file usa un here-string: Set-Content procedura.ps1 -Value @\'... \'@ (oppure l\'editor della scheda File).'],
     solutions: {
       pwsh: [
-        'cd ~/corso-cli/m4l6',
+        'cd ~/corso-cli/m4l8',
         'Set-Content procedura.ps1 -Value @\'\n$body = @{ client_id = $env:TASKFLOW_CLIENT_ID; client_secret = $env:TASKFLOW_CLIENT_SECRET } | ConvertTo-Json\n$r = Invoke-RestMethod "$env:TASKFLOW_URL/v1/auth/token" -Method Post -ContentType "application/json" -Body $body\n(Invoke-RestMethod "$env:TASKFLOW_URL/v1/me" -Headers @{ Authorization = "Bearer $($r.access_token)" }).name\n\'@',
         './procedura.ps1',
       ],

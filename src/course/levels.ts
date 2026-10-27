@@ -9,7 +9,7 @@ import { lessonIndex, type CourseProgress, type ModuleTest } from './progress.ts
 
 export const CORE_MODULES = [1, 2, 3, 4, 5, 6];
 /** scenari nuovi (M2–M5) e progetto finale: senza soluzione, contesto diverso dalle lezioni */
-export const TRANSFER_LESSONS = ['M2.L5', 'M3.L5', 'M4.L7', 'M5.L6', 'M6.L5'];
+export const TRANSFER_LESSONS = ['M2.L8', 'M3.L7', 'M4.L9', 'M5.L10', 'M6.L6'];
 export const REVIEW_AFTER_DAYS = 14;
 
 export function moduleLevel(t: ModuleTest): 1 | 2 | 3 {

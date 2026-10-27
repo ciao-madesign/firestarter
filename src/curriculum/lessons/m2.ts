@@ -135,9 +135,9 @@ export const m2: Lesson[] = [
     concepts: ['pipe |', 'redirezione > e >>', 'rischio di sovrascrittura con >', 'grep come filtro'],
   },
   {
-    id: 'M2.L2',
+    id: 'M2.L3',
     module: 2,
-    n: 2,
+    n: 3,
     title: 'Filtri: grep, sort, uniq, cut, wc',
     objective: 'Comporre filtri in pipeline per estrarre, ordinare e contare dati da un log.',
     explain: [
@@ -147,24 +147,24 @@ export const m2: Lesson[] = [
     shells: ['bash', 'pwsh'],
     setup: (c) => c.file('accessi.log', ACCESS),
     guided: [
-      { title: 'Contare le righe', cmd: { bash: 'wc -l ~/corso-cli/m2l2/accessi.log', pwsh: 'Get-Content ~/corso-cli/m2l2/accessi.log | Measure-Object -Line' }, what: 'Conta le righe.', who: 'wc / Measure-Object.', parts: ['-l: righe'], expect: '14', risk: 'Nessuno.' },
-      { title: 'Estrarre una colonna', cmd: { bash: "cut -d' ' -f9 ~/corso-cli/m2l2/accessi.log | head -3", pwsh: "Get-Content ~/corso-cli/m2l2/accessi.log | ForEach-Object { ($_ -split ' ')[8] } | Select-Object -First 3" }, what: 'Mostra lo status HTTP (9ª colonna) delle prime righe.', who: 'cut divide la riga nel carattere indicato.', parts: ["-d' ': separatore spazio", '-f9: nono campo'], expect: '200 200 201', risk: 'Nessuno.' },
+      { title: 'Contare le righe', cmd: { bash: 'wc -l ~/corso-cli/m2l3/accessi.log', pwsh: 'Get-Content ~/corso-cli/m2l3/accessi.log | Measure-Object -Line' }, what: 'Conta le righe.', who: 'wc / Measure-Object.', parts: ['-l: righe'], expect: '14', risk: 'Nessuno.' },
+      { title: 'Estrarre una colonna', cmd: { bash: "cut -d' ' -f9 ~/corso-cli/m2l3/accessi.log | head -3", pwsh: "Get-Content ~/corso-cli/m2l3/accessi.log | ForEach-Object { ($_ -split ' ')[8] } | Select-Object -First 3" }, what: 'Mostra lo status HTTP (9ª colonna) delle prime righe.', who: 'cut divide la riga nel carattere indicato.', parts: ["-d' ': separatore spazio", '-f9: nono campo'], expect: '200 200 201', risk: 'Nessuno.' },
     ],
     predict: [
       {
         prompt: 'Cosa stampa `... | sort | uniq -c` su una colonna con valori ripetuti: perché serve sort prima di uniq?',
-        cmd: { bash: "cut -d' ' -f9 ~/corso-cli/m2l2/accessi.log | sort | uniq -c", pwsh: "Get-Content ~/corso-cli/m2l2/accessi.log | ForEach-Object { ($_ -split ' ')[8] } | Group-Object | ForEach-Object { \"$($_.Count) $($_.Name)\" }" },
+        cmd: { bash: "cut -d' ' -f9 ~/corso-cli/m2l3/accessi.log | sort | uniq -c", pwsh: "Get-Content ~/corso-cli/m2l3/accessi.log | ForEach-Object { ($_ -split ' ')[8] } | Group-Object | ForEach-Object { \"$($_.Count) $($_.Name)\" }" },
         expect: 'Una riga per status con il conteggio davanti: 7 200, 1 201, 1 401, 3 404, 2 500.',
         why: 'uniq conta solo righe ADIACENTI uguali: sort le raggruppa prima.',
       },
     ],
     negative: {
       prompt: 'Cosa succede se dimentichi sort prima di uniq -c?',
-      cmd: { bash: "cut -d' ' -f9 ~/corso-cli/m2l2/accessi.log | uniq -c", pwsh: "Get-Content ~/corso-cli/m2l2/accessi.log | ForEach-Object { ($_ -split ' ')[8] } | Group-Object | Select-Object -First 2" },
+      cmd: { bash: "cut -d' ' -f9 ~/corso-cli/m2l3/accessi.log | uniq -c", pwsh: "Get-Content ~/corso-cli/m2l3/accessi.log | ForEach-Object { ($_ -split ' ')[8] } | Group-Object | Select-Object -First 2" },
       explain: 'Bash: i valori uguali non adiacenti vengono contati più volte separatamente (200 compare in più righe). PowerShell: Group-Object raggruppa da solo.',
     },
     task: {
-      text: 'In ~/corso-cli/m2l2 crea `conteggio.txt` con il numero di richieste per ciascuno status HTTP (una riga per status, con conteggio e codice).',
+      text: 'In ~/corso-cli/m2l3 crea `conteggio.txt` con il numero di richieste per ciascuno status HTTP (una riga per status, con conteggio e codice).',
       criterion: 'Per ogni status presente nel log c\'è una riga con il codice e il suo conteggio corretto.',
     },
     checks: [
@@ -190,17 +190,17 @@ export const m2: Lesson[] = [
     example: { text: 'Esempio analogo: contare quante richieste ha fatto ogni indirizzo IP.', cmd: { bash: "cut -d' ' -f1 accessi.log | sort | uniq -c", pwsh: "Get-Content accessi.log | ForEach-Object { ($_ -split ' ')[0] } | Group-Object | ForEach-Object { \"$($_.Count) $($_.Name)\" }" } },
     hints: ['La colonna dello status è la nona, separata da spazi.', 'Pipeline: estrai → ordina → conta → salva con >.'],
     solutions: {
-      bash: ['cd ~/corso-cli/m2l2', "cut -d' ' -f9 accessi.log | sort | uniq -c > conteggio.txt"],
-      pwsh: ['cd ~/corso-cli/m2l2', "Get-Content accessi.log | ForEach-Object { ($_ -split ' ')[8] } | Group-Object | ForEach-Object { \"$($_.Count) $($_.Name)\" } > conteggio.txt"],
+      bash: ['cd ~/corso-cli/m2l3', "cut -d' ' -f9 accessi.log | sort | uniq -c > conteggio.txt"],
+      pwsh: ['cd ~/corso-cli/m2l3', "Get-Content accessi.log | ForEach-Object { ($_ -split ' ')[8] } | Group-Object | ForEach-Object { \"$($_.Count) $($_.Name)\" } > conteggio.txt"],
     },
     summary: ['grep filtra, cut estrae, sort ordina, uniq -c conta', 'uniq vuole input ordinato', 'PowerShell passa oggetti'],
     skills: ['comandi', 'output', 'autonomia'],
     concepts: ['filtri in pipeline', 'cut, sort, uniq -c, wc', 'Group-Object e Measure-Object in PowerShell'],
   },
   {
-    id: 'M2.L3',
+    id: 'M2.L4',
     module: 2,
-    n: 3,
+    n: 4,
     title: 'Variabili d\'ambiente e codici di uscita',
     objective: 'Impostare una variabile d\'ambiente e leggere l\'esito dell\'ultimo comando ($? in Bash; $? e $LASTEXITCODE in PowerShell).',
     explain: [
@@ -212,7 +212,7 @@ export const m2: Lesson[] = [
     setup: (c) => c.file('check.txt', 'ok\n'),
     guided: [
       { title: 'Impostare una variabile d\'ambiente', cmd: { bash: 'export DEMO=ciao; echo $DEMO', pwsh: '$env:DEMO = "ciao"; echo $env:DEMO' }, what: 'Crea e legge una variabile.', who: 'La shell.', parts: ['export: la rende visibile ai comandi lanciati'], expect: 'ciao', risk: 'Nessuno.' },
-      { title: 'Il codice di uscita', cmd: { bash: 'grep zzz ~/corso-cli/m2l3/check.txt; echo $?', pwsh: 'Select-String zzz ~/corso-cli/m2l3/check.txt; $?' }, what: 'Cerca un testo assente e legge l\'esito.', who: 'La shell salva l\'esito dell\'ultimo comando.', parts: ['$?: esito dell\'ultimo comando'], expect: 'Bash: 1 (nessuna corrispondenza). PowerShell: True (nessun errore).', risk: 'Nessuno.' },
+      { title: 'Il codice di uscita', cmd: { bash: 'grep zzz ~/corso-cli/m2l4/check.txt; echo $?', pwsh: 'Select-String zzz ~/corso-cli/m2l4/check.txt; $?' }, what: 'Cerca un testo assente e legge l\'esito.', who: 'La shell salva l\'esito dell\'ultimo comando.', parts: ['$?: esito dell\'ultimo comando'], expect: 'Bash: 1 (nessuna corrispondenza). PowerShell: True (nessun errore).', risk: 'Nessuno.' },
     ],
     predict: [
       {
@@ -228,7 +228,7 @@ export const m2: Lesson[] = [
       explain: '0 in Bash (successo), True in PowerShell.',
     },
     task: {
-      text: 'In questa shell: (1) imposta la variabile d\'ambiente STAGE al valore `testing`; (2) in ~/corso-cli/m2l3 esegui un comando su un percorso inesistente e salva in `esito.txt` l\'esito riportato dalla shell per quel comando.',
+      text: 'In questa shell: (1) imposta la variabile d\'ambiente STAGE al valore `testing`; (2) in ~/corso-cli/m2l4 esegui un comando su un percorso inesistente e salva in `esito.txt` l\'esito riportato dalla shell per quel comando.',
       criterion: 'STAGE vale testing; esito.txt contiene il numero 2 (Bash; anche con una breve etichetta) oppure False (PowerShell).',
     },
     checks: [
@@ -254,17 +254,17 @@ export const m2: Lesson[] = [
     example: { text: 'Esempio analogo: salvare il codice di uscita di grep su un testo assente.', cmd: { bash: 'grep zzz check.txt; echo $? > cod.txt', pwsh: 'Select-String zzz check.txt; $? > cod.txt' } },
     hints: ['Il comando che fallisce e la lettura dell\'esito devono stare sulla stessa riga (separati da ;), altrimenti $? riflette un altro comando.', 'Il percorso inesistente può essere /nonexistent.'],
     solutions: {
-      bash: ['export STAGE=testing', 'cd ~/corso-cli/m2l3', 'ls /nonexistent; echo $? > esito.txt'],
-      pwsh: ['$env:STAGE = "testing"', 'cd ~/corso-cli/m2l3', 'Get-ChildItem /nonexistent; $? > esito.txt'],
+      bash: ['export STAGE=testing', 'cd ~/corso-cli/m2l4', 'ls /nonexistent; echo $? > esito.txt'],
+      pwsh: ['$env:STAGE = "testing"', 'cd ~/corso-cli/m2l4', 'Get-ChildItem /nonexistent; $? > esito.txt'],
     },
     summary: ['export / $env:', '$? = esito dell\'ultimo comando', '0 = successo in Bash', 'PowerShell: True/False e $LASTEXITCODE'],
     skills: ['comandi', 'output', 'testing'],
     concepts: ['variabili d\'ambiente', 'codici di uscita ($?)', 'differenza Bash/PowerShell sugli esiti'],
   },
   {
-    id: 'M2.L4',
+    id: 'M2.L7',
     module: 2,
-    n: 4,
+    n: 7,
     title: 'Test positivi e negativi: atteso ed effettivo',
     objective: 'Provare un programma con input validi e non validi e documentare risultato atteso ed effettivo in una tabella.',
     explain: [
@@ -278,20 +278,20 @@ export const m2: Lesson[] = [
       c.file('dividi.ps1', DIVIDI_PS1, 0o644);
     },
     guided: [
-      { title: 'Leggere cosa fa lo script', cmd: { bash: 'cat ~/corso-cli/m2l4/dividi.sh', pwsh: 'cat ~/corso-cli/m2l4/dividi.ps1' }, what: 'Mostra il codice.', who: 'cat.', parts: ['leggi i controlli: argomenti, numero, zero'], expect: 'Il sorgente dello script.', risk: 'Nessuno.' },
-      { title: 'Prima esecuzione', cmd: { bash: 'cd ~/corso-cli/m2l4 && bash dividi.sh 5', pwsh: 'cd ~/corso-cli/m2l4; ./dividi.ps1 5' }, what: 'Esegue lo script con un input valido.', who: 'bash esegue il file; in PowerShell lo script si lancia con ./', parts: ['5: argomento'], expect: '20', risk: 'Nessuno.' },
+      { title: 'Leggere cosa fa lo script', cmd: { bash: 'cat ~/corso-cli/m2l7/dividi.sh', pwsh: 'cat ~/corso-cli/m2l7/dividi.ps1' }, what: 'Mostra il codice.', who: 'cat.', parts: ['leggi i controlli: argomenti, numero, zero'], expect: 'Il sorgente dello script.', risk: 'Nessuno.' },
+      { title: 'Prima esecuzione', cmd: { bash: 'cd ~/corso-cli/m2l7 && bash dividi.sh 5', pwsh: 'cd ~/corso-cli/m2l7; ./dividi.ps1 5' }, what: 'Esegue lo script con un input valido.', who: 'bash esegue il file; in PowerShell lo script si lancia con ./', parts: ['5: argomento'], expect: '20', risk: 'Nessuno.' },
     ],
     predict: [
       {
         prompt: 'Cosa stampa e con che codice esce lo script con input `abc`?',
-        cmd: { bash: 'cd ~/corso-cli/m2l4; bash dividi.sh abc; echo $?', pwsh: 'cd ~/corso-cli/m2l4; ./dividi.ps1 abc; $LASTEXITCODE' },
+        cmd: { bash: 'cd ~/corso-cli/m2l7; bash dividi.sh abc; echo $?', pwsh: 'cd ~/corso-cli/m2l7; ./dividi.ps1 abc; $LASTEXITCODE' },
         expect: "Messaggio \"errore: 'abc' non e' un numero intero positivo\" e codice 1.",
         why: 'Il programma valida l\'input e segnala l\'errore con un codice ≠ 0.',
       },
     ],
     negative: {
       prompt: 'Lancia lo script in Bash senza permesso di esecuzione: ./dividi.sh 5',
-      cmd: { bash: 'cd ~/corso-cli/m2l4; ./dividi.sh 5', pwsh: 'cd ~/corso-cli/m2l4; dividi.ps1 5' },
+      cmd: { bash: 'cd ~/corso-cli/m2l7; ./dividi.sh 5', pwsh: 'cd ~/corso-cli/m2l7; dividi.ps1 5' },
       explain: 'Bash: "Permission denied" (codice 126): il file non ha il bit x; si risolve con chmod +x oppure con bash dividi.sh. PowerShell: scrivendo solo il nome non carica script dalla cartella corrente: serve ./',
     },
     task: {
@@ -336,8 +336,8 @@ export const m2: Lesson[] = [
     example: { text: 'Esempio analogo di tabella test per un\'altra funzione (somma).', cmd: { bash: "printf '| Input | Atteso | Effettivo |\\n|---|---|---|\\n| 2+2 | 4 | 4 |\\n' > piano-test.md" } },
     hints: ['Un test negativo atteso: codice ≠ 0 e un messaggio comprensibile. Prova abc, 0, -5, e nessun argomento.', 'Scrivi la tabella a mano con echo/printf o con un editor (scheda Documenti e file del laboratorio).'],
     solutions: {
-      bash: ['cd ~/corso-cli/m2l4', 'bash dividi.sh 4', 'bash dividi.sh 10', 'bash dividi.sh abc', 'bash dividi.sh 0', "printf '| Input | Atteso | Effettivo |\\n|---|---|---|\\n| 4 | 25 | 25 |\\n| 10 | 10 | 10 |\\n| abc | errore, codice 1 | errore, codice 1 |\\n| 0 | errore, codice 2 | errore, codice 2 |\\n' > piano-test.md"],
-      pwsh: ['cd ~/corso-cli/m2l4', './dividi.ps1 4', './dividi.ps1 10', './dividi.ps1 abc', './dividi.ps1 0', "Set-Content piano-test.md -Value '| Input | Atteso | Effettivo |','|---|---|---|','| 4 | 25 | 25 |','| 10 | 10 | 10 |','| abc | errore, codice 1 | errore, codice 1 |','| 0 | errore, codice 2 | errore, codice 2 |'"],
+      bash: ['cd ~/corso-cli/m2l7', 'bash dividi.sh 4', 'bash dividi.sh 10', 'bash dividi.sh abc', 'bash dividi.sh 0', "printf '| Input | Atteso | Effettivo |\\n|---|---|---|\\n| 4 | 25 | 25 |\\n| 10 | 10 | 10 |\\n| abc | errore, codice 1 | errore, codice 1 |\\n| 0 | errore, codice 2 | errore, codice 2 |\\n' > piano-test.md"],
+      pwsh: ['cd ~/corso-cli/m2l7', './dividi.ps1 4', './dividi.ps1 10', './dividi.ps1 abc', './dividi.ps1 0', "Set-Content piano-test.md -Value '| Input | Atteso | Effettivo |','|---|---|---|','| 4 | 25 | 25 |','| 10 | 10 | 10 |','| abc | errore, codice 1 | errore, codice 1 |','| 0 | errore, codice 2 | errore, codice 2 |'"],
     },
     summary: ['test positivi e negativi', 'atteso scritto prima, effettivo dopo', 'codice di uscita ≠ 0 = errore', 'permesso di esecuzione (Bash)'],
     skills: ['testing', 'output', 'autonomia'],

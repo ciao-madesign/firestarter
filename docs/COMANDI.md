@@ -731,7 +731,7 @@ Sintassi: `ping [-c n] host`
 Esempio: `ping -c 2 localhost`
 
 Differenze rispetto al comando reale:
-- Gli host noti sono quelli del laboratorio (localhost e gli ambienti TaskFlow); gli altri danno "Name or service not known". I tempi sono deterministici. Su macOS il messaggio di errore è diverso ("cannot resolve").
+- Gli host noti sono quelli del laboratorio (localhost, gli ambienti TaskFlow e, nelle lezioni M11, server.lab e client.lab); gli altri danno "Name or service not known". I tempi sono deterministici. Su macOS il messaggio di errore è diverso ("cannot resolve").
 
 ### `nslookup`
 
@@ -785,7 +785,7 @@ Sintassi: `ss -tlnp`
 Esempio: `ss -tlnp`
 
 Differenze rispetto al comando reale:
-- Elenco fisso: sshd (22) e taskflow (8080). Su macOS non esiste `ss`: si usa `netstat -an` o `lsof -i`.
+- Elenco fisso: sshd (22) e taskflow (8080); eseguito sul server (via ssh, lezioni M11) mostra i servizi del server. Su macOS non esiste `ss`: si usa `netstat -an` o `lsof -i`.
 
 ### `ssh`
 

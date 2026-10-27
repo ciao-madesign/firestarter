@@ -318,9 +318,9 @@ export const m11: Lesson[] = [
     concepts: ['client e server nelle integrazioni', 'registro del server', 'esempio di documentazione API'],
   },
   {
-    id: 'M11.L3',
+    id: 'M11.L4',
     module: 11,
-    n: 3,
+    n: 4,
     title: 'Servizio fermo: dal sintomo alla correzione',
     objective: 'Riconoscere una connessione rifiutata, trovare sul server il servizio fermo, riavviarlo e verificarlo.',
     explain: [
@@ -352,7 +352,7 @@ export const m11: Lesson[] = [
       explain: 'start su un servizio già attivo non cambia nulla; is-active risponde "active". Per forzare un riavvio si usa restart.',
     },
     task: {
-      text: 'In ~/corso-cli/m11l3: riproduci il sintomo dal client (richiesta a /v1/health senza risposta), cerca la causa sul server con systemctl status e journalctl, avvia il servizio con sudo systemctl start taskflow, verifica con GET /v1/health (200). Scrivi diagnosi.md: sintomo, livello del problema (rete, porta, servizio o applicazione), come l\'hai verificato, correzione e prova finale.',
+      text: 'In ~/corso-cli/m11l4: riproduci il sintomo dal client (richiesta a /v1/health senza risposta), cerca la causa sul server con systemctl status e journalctl, avvia il servizio con sudo systemctl start taskflow, verifica con GET /v1/health (200). Scrivi diagnosi.md: sintomo, livello del problema (rete, porta, servizio o applicazione), come l\'hai verificato, correzione e prova finale.',
       criterion: 'Il registro mostra una richiesta fallita prima della correzione, systemctl status e journalctl sul server, l\'avvio con sudo e un 200 finale; il servizio è attivo; diagnosi.md spiega sintomo, causa e correzione.',
     },
     checks: [
@@ -392,7 +392,7 @@ export const m11: Lesson[] = [
     hints: ['Un rifiuto di connessione con nome risolto = la porta non ascolta.', 'systemctl status e journalctl non richiedono sudo; start sì.'],
     solutions: {
       bash: [
-        'cd ~/corso-cli/m11l3',
+        'cd ~/corso-cli/m11l4',
         'curl -sS $TASKFLOW_URL/v1/health',
         'ssh learner@server.lab "systemctl status taskflow"',
         'ssh learner@server.lab "journalctl -u taskflow -n 5"',
@@ -401,7 +401,7 @@ export const m11: Lesson[] = [
         `cat > diagnosi.md <<'EOF'\n${SERVIZIO_FERMO_MD}EOF`,
       ],
       pwsh: [
-        'cd ~/corso-cli/m11l3',
+        'cd ~/corso-cli/m11l4',
         'Invoke-RestMethod "$env:TASKFLOW_URL/v1/health"',
         'ssh learner@server.lab "systemctl status taskflow"',
         'ssh learner@server.lab "journalctl -u taskflow -n 5"',
@@ -415,9 +415,9 @@ export const m11: Lesson[] = [
     concepts: ['connessione rifiutata', 'systemctl', 'journalctl', 'sudo'],
   },
   {
-    id: 'M11.L4',
+    id: 'M11.L5',
     module: 11,
-    n: 4,
+    n: 5,
     title: 'Porta sbagliata: il servizio è attivo ma non dove ti aspetti',
     objective: 'Scoprire che il servizio ascolta su una porta diversa da quella documentata e correggere la configurazione del server.',
     explain: [
@@ -448,7 +448,7 @@ export const m11: Lesson[] = [
       explain: 'Funziona (200): il servizio è sano. Ma ora il client usa una porta diversa da quella documentata: è una scelta da dichiarare, perché gli altri client continuano a puntare alla 8080.',
     },
     task: {
-      text: 'In ~/corso-cli/m11l4: riproduci il sintomo, trova sul server la porta reale (ss) e la configurazione, correggi PORT=8080 con sed, riavvia il servizio e verifica dal client con GET /v1/health sulla porta documentata. Scrivi diagnosi.md: sintomo, evidenze (porta in ascolto e riga PORT), causa, correzione e prova finale.',
+      text: 'In ~/corso-cli/m11l5: riproduci il sintomo, trova sul server la porta reale (ss) e la configurazione, correggi PORT=8080 con sed, riavvia il servizio e verifica dal client con GET /v1/health sulla porta documentata. Scrivi diagnosi.md: sintomo, evidenze (porta in ascolto e riga PORT), causa, correzione e prova finale.',
       criterion: 'Il file di configurazione contiene PORT=8080, il servizio ascolta sulla 8080, il registro mostra un 200 dal client; diagnosi.md cita 9090, 8080, sed o la riga PORT e il riavvio.',
     },
     checks: [
@@ -491,7 +491,7 @@ export const m11: Lesson[] = [
     hints: ['ss -tlnp dice dove ascolta davvero; il file .env dice dove DOVREBBE ascoltare.', 'sed -i "s/9090/8080/" modifica il file; poi serve il riavvio.', 'Tutto in un comando: sudo sed -i ... && sudo systemctl restart taskflow.'],
     solutions: {
       bash: [
-        'cd ~/corso-cli/m11l4',
+        'cd ~/corso-cli/m11l5',
         'curl -sS $TASKFLOW_URL/v1/health',
         'ssh learner@server.lab "ss -tlnp"',
         'ssh learner@server.lab "cat /etc/taskflow/taskflow.env"',
@@ -500,7 +500,7 @@ export const m11: Lesson[] = [
         `cat > diagnosi.md <<'EOF'\n${PORTA_MD}EOF`,
       ],
       pwsh: [
-        'cd ~/corso-cli/m11l4',
+        'cd ~/corso-cli/m11l5',
         'Invoke-RestMethod "$env:TASKFLOW_URL/v1/health"',
         'ssh learner@server.lab "ss -tlnp"',
         'ssh learner@server.lab "cat /etc/taskflow/taskflow.env"',
@@ -514,9 +514,9 @@ export const m11: Lesson[] = [
     concepts: ['porta in ascolto', 'file di configurazione', 'riavvio del servizio', 'sed -i'],
   },
   {
-    id: 'M11.L5',
+    id: 'M11.L6',
     module: 11,
-    n: 5,
+    n: 6,
     title: 'Errore 500: la causa è su un altro servizio',
     objective: 'Distinguere un errore del server da uno del client, trovare nel registro la dipendenza che manca e ripristinarla.',
     explain: [
@@ -547,7 +547,7 @@ export const m11: Lesson[] = [
       explain: 'Risponde 401 e non 500: l\'autenticazione viene controllata prima di toccare il database. Uno status 4xx indica un problema della richiesta, 5xx del server.',
     },
     task: {
-      text: 'In ~/corso-cli/m11l5: dal client ottieni il 500 su GET /v1/tasks (con token), dal server trova la causa nel registro e nello stato dei servizi, avvia il servizio mancante con sudo systemctl start taskflow-db e verifica che GET /v1/tasks risponda 200. Scrivi diagnosi.md: sintomo, perché non è un errore del client, evidenza nel registro, correzione e prova.',
+      text: 'In ~/corso-cli/m11l6: dal client ottieni il 500 su GET /v1/tasks (con token), dal server trova la causa nel registro e nello stato dei servizi, avvia il servizio mancante con sudo systemctl start taskflow-db e verifica che GET /v1/tasks risponda 200. Scrivi diagnosi.md: sintomo, perché non è un errore del client, evidenza nel registro, correzione e prova.',
       criterion: 'Il registro API mostra 500 poi 200 su GET /v1/tasks; il database è attivo; hai letto il registro del server; diagnosi.md cita 500, database, journalctl o service.log e systemctl.',
     },
     checks: [
@@ -591,7 +591,7 @@ export const m11: Lesson[] = [
     hints: ['5xx = problema del server; il client ha fatto una richiesta valida.', 'Nel registro cerca ERROR: indica quale dipendenza manca.', 'Non serve riavviare taskflow: riavvia ciò che manca.'],
     solutions: {
       bash: [
-        'cd ~/corso-cli/m11l5',
+        'cd ~/corso-cli/m11l6',
         'curl -s -i -H "Authorization: Bearer $TASKFLOW_TOKEN" $TASKFLOW_URL/v1/tasks',
         'ssh learner@server.lab "journalctl -u taskflow -n 10"',
         'ssh learner@server.lab "systemctl status taskflow-db"',
@@ -600,7 +600,7 @@ export const m11: Lesson[] = [
         `cat > diagnosi.md <<'EOF'\n${DATABASE_MD}EOF`,
       ],
       pwsh: [
-        'cd ~/corso-cli/m11l5',
+        'cd ~/corso-cli/m11l6',
         'curl.exe -s -i -H "Authorization: Bearer $env:TASKFLOW_TOKEN" "$env:TASKFLOW_URL/v1/tasks"',
         'ssh learner@server.lab "journalctl -u taskflow -n 10"',
         'ssh learner@server.lab "systemctl status taskflow-db"',
@@ -614,9 +614,9 @@ export const m11: Lesson[] = [
     concepts: ['errore 500', 'dipendenze tra servizi', 'registro del server'],
   },
   {
-    id: 'M11.L6',
+    id: 'M11.L10',
     module: 11,
-    n: 6,
+    n: 10,
     title: 'Verifica finale: integrazione documentata',
     objective: 'Partire da un sistema che non funziona, individuare più cause in sequenza, ripristinarlo e consegnare un rapporto utilizzabile da un altro tecnico.',
     explain: [
@@ -640,7 +640,7 @@ export const m11: Lesson[] = [
       explain: 'Stampa 000 (curl): nessuna risposta HTTP. Lo status esiste solo se qualcuno ascolta.',
     },
     task: {
-      text: 'Il client in ~/corso-cli/m11l6 deve ottenere 200 da GET /v1/tasks (con token) sulla porta DOCUMENTATA 8080 di server.lab. Diagnostica e ripristina il sistema senza spegnere nulla di ciò che funziona; poi scrivi rapporto.md con: sintomi, cause nell\'ordine in cui sono emerse, correzioni, verifica finale ed esempio di richiesta (senza token in chiaro).',
+      text: 'Il client in ~/corso-cli/m11l10 deve ottenere 200 da GET /v1/tasks (con token) sulla porta DOCUMENTATA 8080 di server.lab. Diagnostica e ripristina il sistema senza spegnere nulla di ciò che funziona; poi scrivi rapporto.md con: sintomi, cause nell\'ordine in cui sono emerse, correzioni, verifica finale ed esempio di richiesta (senza token in chiaro).',
       criterion: 'GET /v1/tasks risponde 200 dal client sulla 8080; configurazione, servizio e database sono a posto; rapporto.md elenca le tre cause (servizio fermo, porta, database), le correzioni e un esempio di richiesta.',
     },
     checks: [
@@ -699,7 +699,7 @@ export const m11: Lesson[] = [
     hints: ['Prova dal basso: rete → porta → servizio → applicazione.', 'Dopo ogni correzione ripeti la richiesta del client: può emergere un altro problema.', 'La porta documentata è 8080: non adattare il client alla configurazione sbagliata.'],
     reference: {
       bash: [
-        'cd ~/corso-cli/m11l6',
+        'cd ~/corso-cli/m11l10',
         'curl -sS $TASKFLOW_URL/v1/health',
         'ssh learner@server.lab "systemctl status taskflow"',
         'ssh learner@server.lab "cat /etc/taskflow/taskflow.env"',
@@ -712,7 +712,7 @@ export const m11: Lesson[] = [
         `cat > rapporto.md <<'EOF'\n${RAPPORTO_MD}EOF`,
       ],
       pwsh: [
-        'cd ~/corso-cli/m11l6',
+        'cd ~/corso-cli/m11l10',
         'Invoke-RestMethod "$env:TASKFLOW_URL/v1/health"',
         'ssh learner@server.lab "systemctl status taskflow"',
         'ssh learner@server.lab "cat /etc/taskflow/taskflow.env"',

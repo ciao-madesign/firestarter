@@ -16,14 +16,14 @@ const EXTRA: Record<string, Partial<Record<ShellId, string[]>>> = {
   // ssh in PowerShell è un'applicazione esterna: l'analisi automatica non la vede
   'M11.L1': { bash: ['systemctl', 'ss'], pwsh: ['ssh', 'Test-NetConnection', '-Port'] },
   'M11.L2': { bash: ['tail'], pwsh: ['ssh'] },
-  'M11.L3': { bash: ['systemctl', 'journalctl', 'sudo'], pwsh: ['ssh'] },
-  'M11.L4': { bash: ['systemctl', 'ss', 'sudo', 'sed'], pwsh: ['ssh'] },
-  'M11.L5': { bash: ['systemctl', 'journalctl', 'sudo'], pwsh: ['ssh'] },
-  'M11.L6': { bash: ['systemctl', 'journalctl', 'ss', 'sudo', 'sed'], pwsh: ['ssh'] },
-  'M2.L3': { pwsh: ['$?'] },
-  'M2.L4': { pwsh: ['./script.ps1'] },
+  'M11.L4': { bash: ['systemctl', 'journalctl', 'sudo'], pwsh: ['ssh'] },
+  'M11.L5': { bash: ['systemctl', 'ss', 'sudo', 'sed'], pwsh: ['ssh'] },
+  'M11.L6': { bash: ['systemctl', 'journalctl', 'sudo'], pwsh: ['ssh'] },
+  'M11.L10': { bash: ['systemctl', 'journalctl', 'ss', 'sudo', 'sed'], pwsh: ['ssh'] },
+  'M2.L4': { pwsh: ['$?'] },
+  'M2.L7': { pwsh: ['./script.ps1'] },
   // il contenuto della here-string è codice PowerShell: gli strumenti che usa vanno spiegati
-  'M4.L6': { pwsh: ['Invoke-RestMethod', '@{ }', 'ConvertTo-Json', '-Method', '-ContentType', '-Body', '-Headers', '$( )', '( ).Proprietà'] },
+  'M4.L8': { pwsh: ['Invoke-RestMethod', '@{ }', 'ConvertTo-Json', '-Method', '-ContentType', '-Body', '-Headers', '$( )', '( ).Proprietà'] },
 };
 /** lezioni in cui la scoperta dello strumento è l'esercizio stesso: nessun elenco per quella shell */
 const DISCOVERY: Record<string, ShellId[]> = { 'M1.L4': ['bash'] };

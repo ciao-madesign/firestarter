@@ -160,9 +160,9 @@ export const m7: Lesson[] = [
     concepts: ['cicli', 'funzioni', 'chiamate API da script'],
   },
   {
-    id: 'M7.L2',
+    id: 'M7.L4',
     module: 7,
-    n: 2,
+    n: 4,
     title: 'Una suite di test ripetibile con report',
     objective: 'Raccogliere i controlli in uno script che stampa PASS/FAIL, un riepilogo e restituisce un codice di uscita.',
     explain: [
@@ -183,7 +183,7 @@ export const m7: Lesson[] = [
       explain: 'Chi lo chiama (una pipeline) vede "successo": i test falliti passano inosservati. Il codice di uscita deve riflettere l\'esito.',
     },
     task: {
-      text: 'In ~/corso-cli/m7l2 crea `suite.sh` (Bash) o `suite.ps1` (PowerShell) con almeno 4 controlli (health 200; elenco con token 200; elenco senza token 401; task 9999 → 404). Deve stampare `PASS: n FAIL: m` e uscire con 1 se m > 0. Eseguila.',
+      text: 'In ~/corso-cli/m7l4 crea `suite.sh` (Bash) o `suite.ps1` (PowerShell) con almeno 4 controlli (health 200; elenco con token 200; elenco senza token 401; task 9999 → 404). Deve stampare `PASS: n FAIL: m` e uscire con 1 se m > 0. Eseguila.',
       criterion: 'L\'esecuzione stampa PASS: 4 (o più) FAIL: 0 ed esce con 0.',
     },
     checks: [
@@ -214,17 +214,17 @@ export const m7: Lesson[] = [
     example: { text: 'Esempio analogo: riepilogo con contatori.', cmd: { bash: 'PASS=2; FAIL=0; echo "PASS: $PASS FAIL: $FAIL"' } },
     hints: ['Parti dalla funzione check dell\'esempio guidato e dalla funzione status (curl -s -o /dev/null -w "%{http_code}").', 'Alla fine: echo "PASS: $PASS FAIL: $FAIL" e [ "$FAIL" -eq 0 ] || exit 1.'],
     solutions: {
-      bash: ['cd ~/corso-cli/m7l2', `cat > suite.sh <<'EOF'\n${SUITE_SH}EOF`, 'bash suite.sh'],
-      pwsh: ['cd ~/corso-cli/m7l2', `Set-Content suite.ps1 -Value @'\n${SUITE_PS1}'@`, './suite.ps1'],
+      bash: ['cd ~/corso-cli/m7l4', `cat > suite.sh <<'EOF'\n${SUITE_SH}EOF`, 'bash suite.sh'],
+      pwsh: ['cd ~/corso-cli/m7l4', `Set-Content suite.ps1 -Value @'\n${SUITE_PS1}'@`, './suite.ps1'],
     },
     summary: ['contatori PASS/FAIL', 'riepilogo leggibile', 'exit code come risultato per le pipeline'],
     skills: ['testing', 'autonomia', 'comandi'],
     concepts: ['automazione di verifiche', 'suite di test in uno script', 'exit code'],
   },
   {
-    id: 'M7.L3',
+    id: 'M7.L5',
     module: 7,
-    n: 3,
+    n: 5,
     title: 'Retry con Retry-After: gestire il rate limit',
     objective: 'Scrivere un client che rispetta il rate limit: su 429 attende il tempo indicato e riprova, con un massimo di tentativi.',
     explain: [
@@ -245,7 +245,7 @@ export const m7: Lesson[] = [
       explain: 'Ancora 429: insistere non aiuta e può peggiorare la situazione.',
     },
     task: {
-      text: 'In ~/corso-cli/m7l3 crea `ricerche.sh` (Bash) o `ricerche.ps1` (PowerShell): esegue 8 ricerche su /v1/search; su 429 attende il valore di Retry-After e riprova (massimo 3 tentativi per ricerca). Alla fine stampa `completate 8 ricerche, 429 gestiti: N` ed esce con 0 solo se tutte le ricerche sono riuscite.',
+      text: 'In ~/corso-cli/m7l5 crea `ricerche.sh` (Bash) o `ricerche.ps1` (PowerShell): esegue 8 ricerche su /v1/search; su 429 attende il valore di Retry-After e riprova (massimo 3 tentativi per ricerca). Alla fine stampa `completate 8 ricerche, 429 gestiti: N` ed esce con 0 solo se tutte le ricerche sono riuscite.',
       criterion: 'L\'esecuzione stampa "completate 8 ricerche" con almeno un 429 gestito ed esce con 0.',
     },
     checks: [
@@ -276,8 +276,8 @@ export const m7: Lesson[] = [
     example: { text: 'Esempio analogo: estrarre il codice di stato dalla prima riga di una risposta completa.', cmd: { bash: 'RESP=$(curl -si $TASKFLOW_URL/v1/health); echo "$RESP" | head -1 | cut -d" " -f2', pwsh: '(Invoke-WebRequest "$env:TASKFLOW_URL/v1/health" -UseBasicParsing).StatusCode' } },
     hints: ['Bash: RESP=$(curl -si ...), CODE dalla prima riga, Retry-After con grep/cut/tr -d "\\r".', 'PowerShell: nel catch, [int]$_.Exception.Response.Headers["Retry-After"] e Start-Sleep -Seconds.'],
     solutions: {
-      bash: ['cd ~/corso-cli/m7l3', `cat > ricerche.sh <<'EOF'\n${RICERCHE_SH}EOF`, 'bash ricerche.sh'],
-      pwsh: ['cd ~/corso-cli/m7l3', `Set-Content ricerche.ps1 -Value @'\n${RICERCHE_PS1}'@`, './ricerche.ps1'],
+      bash: ['cd ~/corso-cli/m7l5', `cat > ricerche.sh <<'EOF'\n${RICERCHE_SH}EOF`, 'bash ricerche.sh'],
+      pwsh: ['cd ~/corso-cli/m7l5', `Set-Content ricerche.ps1 -Value @'\n${RICERCHE_PS1}'@`, './ricerche.ps1'],
     },
     summary: ['429 → attendi Retry-After → riprova', 'numero massimo di tentativi', 'conta gli eventi gestiti'],
     skills: ['http', 'autonomia', 'testing'],

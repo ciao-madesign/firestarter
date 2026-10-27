@@ -37,7 +37,7 @@ const DIAGNOSI_PS = DIAGNOSI;
 
 export const diagnosi: Lesson[] = [
   {
-    id: 'M5.L7',
+    id: 'M5.L8',
     artifacts: [],
     module: 5,
     n: 7,
@@ -55,7 +55,7 @@ export const diagnosi: Lesson[] = [
       c.file('crea-task.ps1', CREA_PS1, 0o755);
     },
     guided: [
-      { title: 'Il sintomo', cmd: { bash: 'cd ~/corso-cli/m5l7 && ./crea-task.sh', pwsh: 'cd ~/corso-cli/m5l7; ./crea-task.ps1' }, what: 'Esegue lo script che non funziona.', who: 'Lo script chiama POST /v1/tasks.', parts: ['TASKFLOW_URL e TASKFLOW_TOKEN vengono dalle variabili'], expect: 'Errore di risoluzione del nome (nessuna risposta HTTP). In PowerShell lo script lo cattura e stampa "Errore: ..." con codice 0.', risk: 'Nessuno.', fails: { bash: true, pwsh: false } },
+      { title: 'Il sintomo', cmd: { bash: 'cd ~/corso-cli/m5l8 && ./crea-task.sh', pwsh: 'cd ~/corso-cli/m5l8; ./crea-task.ps1' }, what: 'Esegue lo script che non funziona.', who: 'Lo script chiama POST /v1/tasks.', parts: ['TASKFLOW_URL e TASKFLOW_TOKEN vengono dalle variabili'], expect: 'Errore di risoluzione del nome (nessuna risposta HTTP). In PowerShell lo script lo cattura e stampa "Errore: ..." con codice 0.', risk: 'Nessuno.', fails: { bash: true, pwsh: false } },
       { title: "Che host stiamo usando?", cmd: { bash: 'echo $TASKFLOW_URL', pwsh: 'echo $env:TASKFLOW_URL' }, what: 'Mostra l\'URL configurato.', who: 'echo.', parts: [], expect: 'http://tests.api.taskflow.test', risk: 'Nessuno.', contains: 'tests.api' },
       { title: 'Il DNS conferma?', cmd: { bash: 'nslookup tests.api.taskflow.test', pwsh: 'Resolve-DnsName tests.api.taskflow.test' }, what: 'Chiede al DNS il nome sbagliato.', who: 'nslookup / Resolve-DnsName.', parts: [], expect: 'NXDOMAIN / DNS name does not exist: il nome non esiste.', risk: 'Nessuno.', fails: true },
     ],
@@ -73,7 +73,7 @@ export const diagnosi: Lesson[] = [
       explain: 'Risponde 200: dopo un 301 il client ha ripetuto la richiesta come GET e il POST originale non è mai arrivato. Per questo è meglio correggere l\'URL (https) che affidarsi al redirect.',
     },
     task: {
-      text: 'Fai funzionare ~/corso-cli/m5l7/crea-task.sh (o .ps1): il task deve essere creato (201). Poi scrivi diagnosi.md con le cause nell\'ordine in cui le hai incontrate, ciascuna con l\'evidenza.',
+      text: 'Fai funzionare ~/corso-cli/m5l8/crea-task.sh (o .ps1): il task deve essere creato (201). Poi scrivi diagnosi.md con le cause nell\'ordine in cui le hai incontrate, ciascuna con l\'evidenza.',
       criterion: 'Il registro mostra POST /v1/tasks con 401, poi 415, poi 201; lo script contiene il Content-Type; diagnosi.md nomina le quattro cause.',
     },
     checks: [
@@ -129,10 +129,10 @@ export const diagnosi: Lesson[] = [
       },
     ],
     example: { text: 'Esempio analogo: verificare un host prima di usarlo.', cmd: { bash: 'nslookup staging.api.taskflow.test', pwsh: 'Resolve-DnsName staging.api.taskflow.test' } },
-    hints: ['Ripeti lo script dopo OGNI correzione: la causa successiva compare solo allora.', 'Ordine tipico: nome host (DNS) → redirect http→https → token scaduto (rinnovalo come in M4.L2) → Content-Type.'],
+    hints: ['Ripeti lo script dopo OGNI correzione: la causa successiva compare solo allora.', 'Ordine tipico: nome host (DNS) → redirect http→https → token scaduto (rinnovalo come in M4.L3) → Content-Type.'],
     solutions: {
       bash: [
-        'cd ~/corso-cli/m5l7',
+        'cd ~/corso-cli/m5l8',
         './crea-task.sh',
         'nslookup tests.api.taskflow.test',
         'export TASKFLOW_URL=http://test.api.taskflow.test',
@@ -147,7 +147,7 @@ export const diagnosi: Lesson[] = [
         `cat > diagnosi.md <<'EOF'\n${DIAGNOSI}EOF`,
       ],
       pwsh: [
-        'cd ~/corso-cli/m5l7',
+        'cd ~/corso-cli/m5l8',
         './crea-task.ps1',
         'Resolve-DnsName tests.api.taskflow.test',
         '$env:TASKFLOW_URL = "http://test.api.taskflow.test"',
@@ -169,9 +169,9 @@ export const diagnosi: Lesson[] = [
     concepts: ['diagnosi con più cause', 'redirect 301 e Location', 'ordine delle correzioni'],
   },
   {
-    id: 'M5.L8',
+    id: 'M5.L9',
     module: 5,
-    n: 8,
+    n: 9,
     title: 'Strumenti di rete: DNS, porte, certificati e CORS',
     objective: 'Usare gli strumenti di rete per distinguere DNS, porta chiusa e certificato, e leggere gli header CORS.',
     explain: [
@@ -204,7 +204,7 @@ export const diagnosi: Lesson[] = [
       explain: '403 cors_origin_not_allowed: il preflight fallisce e il browser non invia nemmeno la richiesta vera.',
     },
     task: {
-      text: 'In ~/corso-cli/m5l8/rete.md annota: l\'indirizzo IP dello staging (ricavato con gli strumenti), se la porta 443 è aperta, se la porta 8443 è chiusa, e quale origine consentita hai verificato per CORS.',
+      text: 'In ~/corso-cli/m5l9/rete.md annota: l\'indirizzo IP dello staging (ricavato con gli strumenti), se la porta 443 è aperta, se la porta 8443 è chiusa, e quale origine consentita hai verificato per CORS.',
       criterion: 'Hai usato uno strumento DNS e uno di porta; rete.md contiene IP, 443 aperta, 8443 chiusa e un\'origine.',
     },
     checks: [
@@ -242,7 +242,7 @@ export const diagnosi: Lesson[] = [
     hints: ['Il nome → nslookup/Resolve-DnsName; la porta → nc -zv / Test-NetConnection.', 'Per CORS invia una richiesta con -H "Origin: https://docs.taskflow.test" e cerca Access-Control-Allow-Origin.'],
     solutions: {
       bash: [
-        'cd ~/corso-cli/m5l8',
+        'cd ~/corso-cli/m5l9',
         'nslookup staging.api.taskflow.test',
         'nc -zv staging.api.taskflow.test 443',
         'nc -zv staging.api.taskflow.test 8443',
@@ -250,7 +250,7 @@ export const diagnosi: Lesson[] = [
         'printf "IP staging: 203.0.113.30\\nPorta 443: aperta\\nPorta 8443: chiusa (connection refused)\\nOrigine CORS consentita: https://docs.taskflow.test\\n" > rete.md',
       ],
       pwsh: [
-        'cd ~/corso-cli/m5l8',
+        'cd ~/corso-cli/m5l9',
         'Resolve-DnsName staging.api.taskflow.test',
         'Test-NetConnection staging.api.taskflow.test -Port 443',
         'Test-NetConnection staging.api.taskflow.test -Port 8443',

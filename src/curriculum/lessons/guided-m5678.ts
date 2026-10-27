@@ -69,7 +69,7 @@ export const guidedM5678: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M5.L3': [
+  'M5.L4': [
     {
       title: 'Il codice applicativo spiega il 401',
       cmd: { bash: `curl -s ${AUTH_SH} $TASKFLOW_URL/v1/tasks | jq -r '.error'`, pwsh: `try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Headers ${AUTH_PS} } catch { ($_.ErrorDetails.Message | ConvertFrom-Json).error }` },
@@ -101,7 +101,7 @@ export const guidedM5678: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M5.L4': [
+  'M5.L5': [
     {
       title: 'Un ciclo con condizione',
       cmd: { bash: 'i=0; while [ $i -lt 2 ]; do i=$((i+1)); echo "giro $i"; done', pwsh: '$i = 0; while ($i -lt 2) { $i++; echo "giro $i" }' },
@@ -133,10 +133,10 @@ export const guidedM5678: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M5.L5': [
+  'M5.L6': [
     {
       title: 'Guardare il formato del log',
-      cmd: { bash: 'head -n 3 ~/corso-cli/m5l5/traffic.log', pwsh: 'Get-Content ~/corso-cli/m5l5/traffic.log -TotalCount 3' },
+      cmd: { bash: 'head -n 3 ~/corso-cli/m5l6/traffic.log', pwsh: 'Get-Content ~/corso-cli/m5l6/traffic.log -TotalCount 3' },
       what: 'Prima di filtrare capisci la struttura: data, livello, metodo, percorso, status, durata, utente.',
       who: 'head.',
       parts: ['`-> 200`: lo status segue la freccia'],
@@ -146,7 +146,7 @@ export const guidedM5678: Record<string, GuidedStep[]> = {
     },
     {
       title: 'Contare una categoria diversa',
-      cmd: { bash: "grep -c -- '-> 429' ~/corso-cli/m5l5/traffic.log", pwsh: "(Select-String -Pattern '-> 429' -Path ~/corso-cli/m5l5/traffic.log).Count" },
+      cmd: { bash: "grep -c -- '-> 429' ~/corso-cli/m5l6/traffic.log", pwsh: "(Select-String -Pattern '-> 429' -Path ~/corso-cli/m5l6/traffic.log).Count" },
       what: 'Stesso metodo del conteggio degli errori, applicato ai 429 (rate limit).',
       who: 'grep -c.',
       parts: ['`--` evita che `->` sia letto come opzione'],
@@ -156,7 +156,7 @@ export const guidedM5678: Record<string, GuidedStep[]> = {
     },
     {
       title: 'Raggruppare per percorso',
-      cmd: { bash: "grep -- '-> 4' ~/corso-cli/m5l5/traffic.log | tr -s ' ' | cut -d' ' -f5 | sort | uniq -c | sort -rn", pwsh: "Select-String -Pattern '-> 4' -Path ~/corso-cli/m5l5/traffic.log | ForEach-Object { ($_.Line -split ' +')[4] } | Group-Object | Sort-Object Count -Descending | Select-Object Count, Name" },
+      cmd: { bash: "grep -- '-> 4' ~/corso-cli/m5l6/traffic.log | tr -s ' ' | cut -d' ' -f5 | sort | uniq -c | sort -rn", pwsh: "Select-String -Pattern '-> 4' -Path ~/corso-cli/m5l6/traffic.log | ForEach-Object { ($_.Line -split ' +')[4] } | Group-Object | Sort-Object Count -Descending | Select-Object Count, Name" },
       what: 'Estrae il percorso, ordina e conta quante volte compare: la tecnica per trovare chi genera più errori. Qui applicata agli errori 4xx.',
       who: 'grep, cut, sort, uniq.',
       parts: ['`uniq -c`: conta i doppioni adiacenti', '`sort -rn`: ordina per numero, dal più grande'],
@@ -241,7 +241,7 @@ export const guidedM5678: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M6.L4': [
+  'M6.L5': [
     {
       title: 'I nomi delle variabili, senza i valori',
       cmd: { bash: 'grep -v "^#" ~/projects/taskflow/.env.development | cut -d= -f1', pwsh: 'Get-Content ~/projects/taskflow/.env.development | Where-Object { $_ -notmatch "^#" } | ForEach-Object { ($_ -split "=")[0] }' },
@@ -273,7 +273,7 @@ export const guidedM5678: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M6.L5': [
+  'M6.L6': [
     {
       title: 'In quale ambiente stai lavorando',
       cmd: { bash: 'echo $TASKFLOW_URL', pwsh: 'echo $env:TASKFLOW_URL' },
@@ -327,7 +327,7 @@ export const guidedM5678: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M7.L2': [
+  'M7.L4': [
     {
       title: 'Confrontare due valori',
       cmd: { bash: '[ 200 = 200 ] && echo PASS || echo FAIL', pwsh: 'if (200 -eq 200) { "PASS" } else { "FAIL" }' },
@@ -359,7 +359,7 @@ export const guidedM5678: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M7.L3': [
+  'M7.L5': [
     {
       title: 'Prendere un solo campo da una riga di header',
       cmd: { bash: "echo 'Retry-After: 30' | cut -d' ' -f2", pwsh: "('Retry-After: 30' -split ' ')[1]" },

@@ -173,9 +173,9 @@ export const m5: Lesson[] = [
     concepts: ['connessione rifiutata (curl 7)', 'ps e processi', 'configurazione del servizio', 'permessi sui processi'],
   },
   {
-    id: 'M5.L3',
+    id: 'M5.L4',
     module: 5,
-    n: 3,
+    n: 4,
     title: 'Un 401 inatteso: leggere risposta e log',
     objective: 'Diagnosticare un 401 usando il corpo della risposta e il log applicativo, e ripristinare il funzionamento.',
     explain: [
@@ -203,7 +203,7 @@ export const m5: Lesson[] = [
       explain: '401 invalid_token: "emesso per un altro ambiente". Stesso status, causa applicativa diversa: ecco perché leggi il corpo.',
     },
     task: {
-      text: "Il token nella shell non funziona. Trova la causa con gli strumenti (risposta e log), ottieni un nuovo token, aggiorna TASKFLOW_TOKEN, fai riuscire GET /v1/tasks e scrivi in `~/corso-cli/m5l3/diagnosi.txt` la causa del 401.",
+      text: "Il token nella shell non funziona. Trova la causa con gli strumenti (risposta e log), ottieni un nuovo token, aggiorna TASKFLOW_TOKEN, fai riuscire GET /v1/tasks e scrivi in `~/corso-cli/m5l4/diagnosi.txt` la causa del 401.",
       criterion: 'Il server ha registrato prima un 401 e poi un 200 su /v1/tasks; hai consultato app.log; diagnosi.txt dice che il token era scaduto.',
     },
     checks: [
@@ -233,19 +233,19 @@ export const m5: Lesson[] = [
       },
     ],
     example: { text: 'Esempio analogo: ricavare un token da una risposta e salvarlo.', cmd: { bash: `export TASKFLOW_TOKEN=$(curl -s -X POST $TASKFLOW_URL/v1/auth/token -H "Content-Type: application/json" -d "{\\"client_id\\":\\"$TASKFLOW_CLIENT_ID\\",\\"client_secret\\":\\"$TASKFLOW_CLIENT_SECRET\\"}" | jq -r .access_token)`, pwsh: '$env:TASKFLOW_TOKEN = $r.access_token' } },
-    hints: ['Il corpo del 401 contiene "error": leggilo; il log conferma con la data di scadenza.', 'Per rinnovare il token riusa la procedura di M4.L2; poi aggiorna la variabile che usi nelle richieste.'],
+    hints: ['Il corpo del 401 contiene "error": leggilo; il log conferma con la data di scadenza.', 'Per rinnovare il token riusa la procedura di M4.L3; poi aggiorna la variabile che usi nelle richieste.'],
     solutions: {
-      bash: ['curl -s -H "Authorization: Bearer $TASKFLOW_TOKEN" $TASKFLOW_URL/v1/tasks', 'grep -i token /var/log/taskflow/development/app.log', 'export TASKFLOW_TOKEN=$(curl -s -X POST $TASKFLOW_URL/v1/auth/token -H "Content-Type: application/json" -d "{\\"client_id\\":\\"$TASKFLOW_CLIENT_ID\\",\\"client_secret\\":\\"$TASKFLOW_CLIENT_SECRET\\"}" | jq -r .access_token)', 'curl -s -H "Authorization: Bearer $TASKFLOW_TOKEN" $TASKFLOW_URL/v1/tasks | jq .total', 'cd ~/corso-cli/m5l3', 'echo "token scaduto (token_expired): rinnovato con POST /v1/auth/token" > diagnosi.txt'],
-      pwsh: ['try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Headers @{Authorization="Bearer $env:TASKFLOW_TOKEN"} } catch { $_.ErrorDetails.Message }', 'Select-String -Pattern token -Path /var/log/taskflow/development/app.log', '$body = @{ client_id = $env:TASKFLOW_CLIENT_ID; client_secret = $env:TASKFLOW_CLIENT_SECRET } | ConvertTo-Json', '$r = Invoke-RestMethod "$env:TASKFLOW_URL/v1/auth/token" -Method Post -ContentType "application/json" -Body $body', '$env:TASKFLOW_TOKEN = $r.access_token', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Headers @{Authorization="Bearer $env:TASKFLOW_TOKEN"} | Out-Null', 'cd ~/corso-cli/m5l3', 'Set-Content diagnosi.txt "token scaduto (token_expired): rinnovato con POST /v1/auth/token"'],
+      bash: ['curl -s -H "Authorization: Bearer $TASKFLOW_TOKEN" $TASKFLOW_URL/v1/tasks', 'grep -i token /var/log/taskflow/development/app.log', 'export TASKFLOW_TOKEN=$(curl -s -X POST $TASKFLOW_URL/v1/auth/token -H "Content-Type: application/json" -d "{\\"client_id\\":\\"$TASKFLOW_CLIENT_ID\\",\\"client_secret\\":\\"$TASKFLOW_CLIENT_SECRET\\"}" | jq -r .access_token)', 'curl -s -H "Authorization: Bearer $TASKFLOW_TOKEN" $TASKFLOW_URL/v1/tasks | jq .total', 'cd ~/corso-cli/m5l4', 'echo "token scaduto (token_expired): rinnovato con POST /v1/auth/token" > diagnosi.txt'],
+      pwsh: ['try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Headers @{Authorization="Bearer $env:TASKFLOW_TOKEN"} } catch { $_.ErrorDetails.Message }', 'Select-String -Pattern token -Path /var/log/taskflow/development/app.log', '$body = @{ client_id = $env:TASKFLOW_CLIENT_ID; client_secret = $env:TASKFLOW_CLIENT_SECRET } | ConvertTo-Json', '$r = Invoke-RestMethod "$env:TASKFLOW_URL/v1/auth/token" -Method Post -ContentType "application/json" -Body $body', '$env:TASKFLOW_TOKEN = $r.access_token', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Headers @{Authorization="Bearer $env:TASKFLOW_TOKEN"} | Out-Null', 'cd ~/corso-cli/m5l4', 'Set-Content diagnosi.txt "token scaduto (token_expired): rinnovato con POST /v1/auth/token"'],
     },
     summary: ['401: header, schema, token non valido, token scaduto', 'corpo + log = evidenze', 'fatto, documentato, ipotesi'],
     skills: ['diagnosi', 'http', 'output'],
     concepts: ['4xx: autenticazione', 'log applicativi', 'token scaduto', 'fatto osservato vs ipotesi'],
   },
   {
-    id: 'M5.L4',
+    id: 'M5.L5',
     module: 5,
-    n: 4,
+    n: 5,
     title: 'Errori 5xx e retry: uno script elementare',
     objective: 'Scrivere ed eseguire uno script che riprova un\'operazione instabile con un numero massimo di tentativi.',
     explain: [
@@ -271,11 +271,11 @@ export const m5: Lesson[] = [
     ],
     negative: {
       prompt: 'Lanciare uno script senza il permesso di esecuzione (Bash).',
-      cmd: { bash: 'cd ~/corso-cli/m5l4; echo \'echo ciao\' > prova.sh; ./prova.sh', pwsh: 'cd ~/corso-cli/m5l4; Set-Content prova.ps1 "echo ciao"; prova.ps1' },
+      cmd: { bash: 'cd ~/corso-cli/m5l5; echo \'echo ciao\' > prova.sh; ./prova.sh', pwsh: 'cd ~/corso-cli/m5l5; Set-Content prova.ps1 "echo ciao"; prova.ps1' },
       explain: 'Bash: Permission denied (chmod +x). PowerShell: il nome da solo non carica script dalla cartella corrente: serve ./prova.ps1',
     },
     task: {
-      text: 'In ~/corso-cli/m5l4 crea uno script `retry.sh` (Bash) o `retry.ps1` (PowerShell) che chiama GET /v1/flaky fino a 5 volte, con 1 secondo di pausa tra i tentativi, e appena ottiene 200 stampa `OK dopo N tentativi` ed esce con 0 (altrimenti `FALLITO dopo 5 tentativi` ed esce con 1). Eseguilo.',
+      text: 'In ~/corso-cli/m5l5 crea uno script `retry.sh` (Bash) o `retry.ps1` (PowerShell) che chiama GET /v1/flaky fino a 5 volte, con 1 secondo di pausa tra i tentativi, e appena ottiene 200 stampa `OK dopo N tentativi` ed esce con 0 (altrimenti `FALLITO dopo 5 tentativi` ed esce con 1). Eseguilo.',
       criterion: 'Lo script esiste, è stato eseguito con codice 0 stampando "OK dopo 2 tentativi" e il server ha registrato 500 e poi 200 su /v1/flaky.',
     },
     checks: [
@@ -316,17 +316,17 @@ export const m5: Lesson[] = [
     example: { text: 'Esempio analogo di ciclo con condizione di uscita.', cmd: { bash: 'for i in 1 2 3; do if [ $i -eq 2 ]; then echo trovato; break; fi; done', pwsh: 'for ($i = 1; $i -le 3; $i++) { if ($i -eq 2) { echo trovato; break } }' } },
     hints: ['Scheletro: ciclo da 1 a 5; ad ogni giro chiama l\'endpoint e controlla lo status; se 200 stampa e esci con exit 0; altrimenti sleep 1.', 'Bash: code=$(curl -s -o /dev/null -w "%{http_code}" URL). PowerShell: try { Invoke-RestMethod ... } catch { ... }.'],
     solutions: {
-      bash: ['cd ~/corso-cli/m5l4', `cat > retry.sh <<'EOF'\n${RETRY_SH}EOF`, 'chmod +x retry.sh', './retry.sh'],
-      pwsh: ['cd ~/corso-cli/m5l4', `Set-Content retry.ps1 -Value @'\n${RETRY_PS1}'@`, './retry.ps1'],
+      bash: ['cd ~/corso-cli/m5l5', `cat > retry.sh <<'EOF'\n${RETRY_SH}EOF`, 'chmod +x retry.sh', './retry.sh'],
+      pwsh: ['cd ~/corso-cli/m5l5', `Set-Content retry.ps1 -Value @'\n${RETRY_PS1}'@`, './retry.ps1'],
     },
     summary: ['5xx spesso transitori: retry limitato con pausa', 'script = file di comandi', 'exit code per segnalare l\'esito'],
     skills: ['diagnosi', 'comandi', 'testing', 'autonomia'],
     concepts: ['errori 5xx', 'retry con numero massimo di tentativi', 'script elementari', 'exit code di uno script'],
   },
   {
-    id: 'M5.L5',
+    id: 'M5.L6',
     module: 5,
-    n: 5,
+    n: 6,
     title: 'Trovare il punto di rottura nei log',
     objective: 'Analizzare un log di accessi con filtri e conteggi per individuare l\'endpoint con più errori 5xx.',
     explain: [
@@ -337,23 +337,23 @@ export const m5: Lesson[] = [
     shells: ['bash', 'pwsh'],
     setup: (c) => c.file('traffic.log', TRAFFIC_LOG),
     guided: [
-      { title: 'Righe con errore 5xx', cmd: { bash: "grep -- '-> 5' ~/corso-cli/m5l5/traffic.log | head -3", pwsh: "Select-String -Pattern '-> 5' -Path ~/corso-cli/m5l5/traffic.log | Select-Object -First 3" }, what: 'Mostra le prime righe con status 5xx.', who: 'grep / Select-String.', parts: ["'-> 5': il testo che precede lo status", '--: finisce le opzioni (il pattern inizia con -)'], expect: 'Righe con -> 500.', risk: 'Nessuno.' },
+      { title: 'Righe con errore 5xx', cmd: { bash: "grep -- '-> 5' ~/corso-cli/m5l6/traffic.log | head -3", pwsh: "Select-String -Pattern '-> 5' -Path ~/corso-cli/m5l6/traffic.log | Select-Object -First 3" }, what: 'Mostra le prime righe con status 5xx.', who: 'grep / Select-String.', parts: ["'-> 5': il testo che precede lo status", '--: finisce le opzioni (il pattern inizia con -)'], expect: 'Righe con -> 500.', risk: 'Nessuno.' },
     ],
     predict: [
       {
         prompt: 'Cosa ti aspetti da `grep -c -- \'-> 5\' traffic.log` (quante righe con errore 5xx)?',
-        cmd: { bash: "grep -c -- '-> 5' ~/corso-cli/m5l5/traffic.log", pwsh: "(Select-String -Pattern '-> 5' -Path ~/corso-cli/m5l5/traffic.log).Count" },
+        cmd: { bash: "grep -c -- '-> 5' ~/corso-cli/m5l6/traffic.log", pwsh: "(Select-String -Pattern '-> 5' -Path ~/corso-cli/m5l6/traffic.log).Count" },
         expect: `${TOTAL_5XX}`,
         why: 'Conta le righe che corrispondono, non le occorrenze del carattere.',
       },
     ],
     negative: {
       prompt: 'Cosa succede con grep senza -- su un pattern che inizia con "-"?',
-      cmd: { bash: "grep '-> 5' ~/corso-cli/m5l5/traffic.log", pwsh: "Select-String '-> 5' ~/corso-cli/m5l5/traffic.log" },
+      cmd: { bash: "grep '-> 5' ~/corso-cli/m5l6/traffic.log", pwsh: "Select-String '-> 5' ~/corso-cli/m5l6/traffic.log" },
       explain: 'Bash: grep prova a leggere "-> 5" come opzioni e dà errore. Il separatore -- (o -e) risolve. In PowerShell il pattern posizionale funziona.',
     },
     task: {
-      text: 'In ~/corso-cli/m5l5 analizza `traffic.log`: scrivi in `top-errori.txt` il percorso (solo quello, es. /v1/xyz) con più errori 5xx, e in `totale-5xx.txt` il numero totale di righe con errore 5xx.',
+      text: 'In ~/corso-cli/m5l6 analizza `traffic.log`: scrivi in `top-errori.txt` il percorso (solo quello, es. /v1/xyz) con più errori 5xx, e in `totale-5xx.txt` il numero totale di righe con errore 5xx.',
       criterion: 'top-errori.txt contiene il percorso corretto; totale-5xx.txt contiene il numero corretto.',
     },
     checks: [
@@ -375,8 +375,8 @@ export const m5: Lesson[] = [
     example: { text: 'Esempio analogo: l\'utente con più richieste.', cmd: { bash: "awk '{print $(NF-1)}' traffic.log | sort | uniq -c | sort -rn | head -1", pwsh: 'Get-Content traffic.log | Group-Object { ($_ -split " ")[8] } | Sort-Object Count -Descending | Select-Object -First 1' } },
     hints: ["Il campo del percorso è il 5° quando dividi per spazi: `2026... INFO http: GET /v1/flaky`.", 'grep -- \'-> 5\' | awk \'{print $5}\' | sort | uniq -c | sort -rn | head -1 | awk \'{print $2}\''],
     solutions: {
-      bash: ['cd ~/corso-cli/m5l5', "grep -- '-> 5' traffic.log | awk '{print $5}' | sort | uniq -c | sort -rn | head -1 | awk '{print $2}' > top-errori.txt", "grep -c -- '-> 5' traffic.log > totale-5xx.txt"],
-      pwsh: ['cd ~/corso-cli/m5l5', "Select-String -Pattern '-> 5' -Path traffic.log | ForEach-Object { ($_.Line -split '\\s+')[4] } | Group-Object | Sort-Object Count -Descending | Select-Object -First 1 -ExpandProperty Name > top-errori.txt", "(Select-String -Pattern '-> 5' -Path traffic.log).Count > totale-5xx.txt"],
+      bash: ['cd ~/corso-cli/m5l6', "grep -- '-> 5' traffic.log | awk '{print $5}' | sort | uniq -c | sort -rn | head -1 | awk '{print $2}' > top-errori.txt", "grep -c -- '-> 5' traffic.log > totale-5xx.txt"],
+      pwsh: ['cd ~/corso-cli/m5l6', "Select-String -Pattern '-> 5' -Path traffic.log | ForEach-Object { ($_.Line -split '\\s+')[4] } | Group-Object | Sort-Object Count -Descending | Select-Object -First 1 -ExpandProperty Name > top-errori.txt", "(Select-String -Pattern '-> 5' -Path traffic.log).Count > totale-5xx.txt"],
     },
     summary: ['filtra → estrai → conta → ordina', 'grep -- per pattern che iniziano con -', 'cita sempre il comando che produce una cifra'],
     skills: ['diagnosi', 'comandi', 'output', 'autonomia'],

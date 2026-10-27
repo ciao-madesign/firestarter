@@ -89,7 +89,7 @@ export const guidedM34: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M3.L3': [
+  'M3.L4': [
     {
       title: 'Filtrare per stato',
       cmd: { bash: `curl -s ${AUTH_SH} "$TASKFLOW_URL/v1/tasks?status=done" | jq '.total'`, pwsh: `(Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks?status=done" -Headers ${AUTH_PS}).total` },
@@ -131,7 +131,7 @@ export const guidedM34: Record<string, GuidedStep[]> = {
       risk: 'Nessuno: la richiesta viene rifiutata.',
     },
   ],
-  'M3.L4': [
+  'M3.L6': [
     {
       title: 'Metodo non consentito',
       cmd: { bash: 'curl -s -i -X DELETE $TASKFLOW_URL/v1/health | grep -E "^HTTP|Allow|method"', pwsh: 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/health" -Method Delete } catch { $_.ErrorDetails.Message }' },
@@ -215,7 +215,7 @@ export const guidedM34: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M4.L2': [
+  'M4.L3': [
     {
       title: 'Quanto è lungo il segreto (senza mostrarlo)',
       cmd: { bash: 'echo ${#TASKFLOW_CLIENT_SECRET}', pwsh: '$env:TASKFLOW_CLIENT_SECRET.Length' },
@@ -257,7 +257,7 @@ export const guidedM34: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M4.L3': [
+  'M4.L4': [
     {
       title: 'Leggere una risorsa esistente',
       cmd: { bash: `curl -s ${AUTH_SH} $TASKFLOW_URL/v1/tasks/1 | jq '{id,title,status}'`, pwsh: `Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks/1" -Headers ${AUTH_PS} | Select-Object id,title,status` },
@@ -289,7 +289,7 @@ export const guidedM34: Record<string, GuidedStep[]> = {
       risk: 'Nessuno: il task resta com\'è.',
     },
   ],
-  'M4.L4': [
+  'M4.L5': [
     {
       title: 'Capire quanti risultati ci sono',
       cmd: { bash: `curl -s ${AUTH_SH} "$TASKFLOW_URL/v1/tasks?limit=1" | jq '{total,limit,offset}'`, pwsh: `$r = Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks?limit=1" -Headers ${AUTH_PS}; "$($r.total) totali, limit $($r.limit), offset $($r.offset)"` },
@@ -330,7 +330,7 @@ export const guidedM34: Record<string, GuidedStep[]> = {
       risk: 'Nessuno: non esiste nulla da cancellare.',
     },
   ],
-  'M4.L5': [
+  'M4.L7': [
     {
       title: 'Quante richieste restano',
       cmd: { bash: `curl -s -I ${AUTH_SH} "$TASKFLOW_URL/v1/search?q=api" | grep -i ratelimit`, pwsh: `(Invoke-WebRequest "$env:TASKFLOW_URL/v1/search?q=api" -Headers ${AUTH_PS} -UseBasicParsing).Headers["X-RateLimit-Remaining"]` },
@@ -352,7 +352,7 @@ export const guidedM34: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M4.L6': [
+  'M4.L8': [
     {
       title: 'Le proprietà al posto del testo',
       cmd: { pwsh: '$r = Invoke-RestMethod "$env:TASKFLOW_URL/v1/health"; $r.status; $r.version' },

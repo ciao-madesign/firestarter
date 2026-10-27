@@ -108,10 +108,10 @@ describe('laboratorio a due nodi', () => {
 
   it('"Ripristina" riporta il laboratorio allo stato iniziale e uscendo dal modulo lo stato si azzera', () => {
     const s = createWorkspace('lab-reset');
-    startLesson(s, 'M11.L3');
+    startLesson(s, 'M11.L4');
     execute(s, 'bash', 'ssh server.lab "sudo systemctl start taskflow"');
     expect(s.lab!.running).toBe(true);
-    resetLesson(s, 'M11.L3');
+    resetLesson(s, 'M11.L4');
     expect(s.lab!.running).toBe(false);
     startLesson(s, 'M1.L1');
     expect(s.lab).toBeUndefined();

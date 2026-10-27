@@ -143,9 +143,9 @@ export const m10: Lesson[] = [
     concepts: ['cookie di sessione', 'curl -c e -b', 'attributi dei cookie'],
   },
   {
-    id: 'M10.L2',
+    id: 'M10.L4',
     module: 10,
-    n: 2,
+    n: 4,
     title: 'Webhook firmati: la callback di un servizio esterno',
     objective: 'Inviare una notifica a un endpoint che richiede una firma HMAC, capire perché viene rifiutata e documentare la procedura di verifica.',
     explain: [
@@ -175,7 +175,7 @@ export const m10: Lesson[] = [
       explain: '401 stale_timestamp: oltre la tolleranza (300 s) la notifica è sospetta, anche se la firma fosse giusta.',
     },
     task: {
-      text: 'In ~/corso-cli/m10l2 invia tre notifiche a POST /v1/webhooks/receive con body {"type":"nota.creata","id":42}: (1) senza firma → 401; (2) con firma sbagliata → 401; (3) con la firma corretta (HMAC-SHA256 di "<timestamp>.<body>" con il segreto della variabile) → 200. Poi scrivi webhook.md: come si verifica un webhook (header, cosa si firma, algoritmo, tolleranza, dove sta il segreto).',
+      text: 'In ~/corso-cli/m10l4 invia tre notifiche a POST /v1/webhooks/receive con body {"type":"nota.creata","id":42}: (1) senza firma → 401; (2) con firma sbagliata → 401; (3) con la firma corretta (HMAC-SHA256 di "<timestamp>.<body>" con il segreto della variabile) → 200. Poi scrivi webhook.md: come si verifica un webhook (header, cosa si firma, algoritmo, tolleranza, dove sta il segreto).',
       criterion: 'Il registro mostra due 401 diversi (missing_signature e invalid_signature) e un 200; webhook.md descrive la procedura senza rivelare il segreto; il segreto non è nei comandi.',
     },
     checks: [
@@ -228,7 +228,7 @@ export const m10: Lesson[] = [
     hints: ['Calcola la firma su "$TS.$BODY": timestamp, punto, body. Poi invia con -H "X-Webhook-Timestamp: $TS" -H "X-Signature: sha256=$SIG".', 'printf \'%s\' evita l\'a capo finale, che altererebbe la firma.'],
     solutions: {
       bash: [
-        'cd ~/corso-cli/m10l2',
+        'cd ~/corso-cli/m10l4',
         "BODY='{\"type\":\"nota.creata\",\"id\":42}'",
         'TS=$(date +%s)',
         'curl -s -X POST $TASKFLOW_URL/v1/webhooks/receive -d "$BODY"',
@@ -243,9 +243,9 @@ export const m10: Lesson[] = [
     concepts: ['webhook', 'firma HMAC SHA-256', 'replay e tolleranza', 'gestione dei segreti'],
   },
   {
-    id: 'M10.L3',
+    id: 'M10.L5',
     module: 10,
-    n: 3,
+    n: 5,
     title: 'Mappa dei flussi di autenticazione',
     objective: 'Confrontare in un documento i meccanismi di autenticazione provati nel corso (token Bearer, cookie di sessione, firma dei webhook, token personale) dopo averli usati.',
     explain: [
@@ -277,7 +277,7 @@ export const m10: Lesson[] = [
       explain: '401: /v1/me si aspetta Authorization: Bearer. Due meccanismi diversi per aree diverse: la documentazione deve dire quale vale dove.',
     },
     task: {
-      text: 'In ~/corso-cli/m10l3: esegui una richiesta riuscita per ciascun meccanismo (token Bearer → 200 su /v1/auth/token; login con cookie → 200; webhook firmato → 200). Poi scrivi autenticazione.md con una tabella (Meccanismo, Chi lo usa, Dove viaggia, Scadenza, Rischio principale) con almeno quattro righe: Bearer, cookie di sessione, firma del webhook, token personale.',
+      text: 'In ~/corso-cli/m10l5: esegui una richiesta riuscita per ciascun meccanismo (token Bearer → 200 su /v1/auth/token; login con cookie → 200; webhook firmato → 200). Poi scrivi autenticazione.md con una tabella (Meccanismo, Chi lo usa, Dove viaggia, Scadenza, Rischio principale) con almeno quattro righe: Bearer, cookie di sessione, firma del webhook, token personale.',
       criterion: 'Il registro mostra i tre 200; la tabella ha le colonne richieste e le quattro righe; nessun segreto nei comandi o nel documento.',
     },
     checks: [
@@ -293,7 +293,7 @@ export const m10: Lesson[] = [
           };
           return { pass: Object.values(ok).every(Boolean), actual: Object.entries(ok).filter(([, v]) => !v).map(([k]) => 'manca ' + k).join(', ') || 'ok' };
         },
-        onFail: 'Ottieni un token, fai il login con cookie e invia un webhook con firma valida (vedi M4.L2, M10.L1, M10.L2).',
+        onFail: 'Ottieni un token, fai il login con cookie e invia un webhook con firma valida (vedi M4.L3, M10.L1, M10.L4).',
       },
       {
         id: 'tabella',
@@ -321,10 +321,10 @@ export const m10: Lesson[] = [
       },
     ],
     example: { text: 'Esempio analogo: una riga di tabella.', cmd: { bash: 'echo "| Bearer | script | header Authorization | 1 ora | token nei log |"' } },
-    hints: ['Per ogni meccanismo rispondi a quattro domande: chi lo usa, dove viaggia, quanto dura, cosa può andare storto.', 'Le durate le trovi nelle risposte (expires_in, Max-Age) e nelle lezioni M4.L2, M10.L1, M10.L2.'],
+    hints: ['Per ogni meccanismo rispondi a quattro domande: chi lo usa, dove viaggia, quanto dura, cosa può andare storto.', 'Le durate le trovi nelle risposte (expires_in, Max-Age) e nelle lezioni M4.L3, M10.L1, M10.L4.'],
     reference: {
       bash: [
-        'cd ~/corso-cli/m10l3',
+        'cd ~/corso-cli/m10l5',
         'curl -s -X POST $TASKFLOW_URL/v1/auth/token -H "Content-Type: application/json" -d "{\\"client_id\\":\\"$TASKFLOW_CLIENT_ID\\",\\"client_secret\\":\\"$TASKFLOW_CLIENT_SECRET\\"}" | jq .expires_in',
         'curl -s -c jar.txt -X POST $TASKFLOW_URL/v1/login -H "Content-Type: application/json" -d "{\\"username\\":\\"$TASKFLOW_LOGIN_USER\\",\\"password\\":\\"$TASKFLOW_LOGIN_PASSWORD\\"}"',
         "BODY='{\"type\":\"prova\"}'",

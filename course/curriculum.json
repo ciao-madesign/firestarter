@@ -142,7 +142,7 @@
           ]
         },
         {
-          "id": "M2.L2",
+          "id": "M2.L3",
           "title": "Filtri: grep, sort, uniq, cut, wc",
           "objective": "Comporre filtri in pipeline per estrarre, ordinare e contare dati da un log.",
           "concepts": [
@@ -162,7 +162,7 @@
           ]
         },
         {
-          "id": "M2.L3",
+          "id": "M2.L4",
           "title": "Variabili d'ambiente e codici di uscita",
           "objective": "Impostare una variabile d'ambiente e leggere l'esito dell'ultimo comando ($? in Bash; $? e $LASTEXITCODE in PowerShell).",
           "concepts": [
@@ -182,7 +182,7 @@
           ]
         },
         {
-          "id": "M2.L4",
+          "id": "M2.L7",
           "title": "Test positivi e negativi: atteso ed effettivo",
           "objective": "Provare un programma con input validi e non validi e documentare risultato atteso ed effettivo in una tabella.",
           "concepts": [
@@ -203,7 +203,7 @@
           ]
         },
         {
-          "id": "M2.L5",
+          "id": "M2.L8",
           "title": "Scenario nuovo: analizzare un log",
           "objective": "Applicare pipe, filtri e redirezione a un problema che non hai visto: riassumere un file di log.",
           "concepts": [
@@ -274,7 +274,7 @@
           ]
         },
         {
-          "id": "M3.L3",
+          "id": "M3.L4",
           "title": "Body JSON, parametri e Content-Type",
           "objective": "Usare query parameter e inviare un body JSON dichiarando il Content-Type, con l'URL correttamente quotato.",
           "concepts": [
@@ -296,7 +296,7 @@
           ]
         },
         {
-          "id": "M3.L4",
+          "id": "M3.L6",
           "title": "Errore HTTP ed errore applicativo a confronto",
           "objective": "Distinguere lo status HTTP dal codice di errore del corpo (applicativo) e usarli entrambi per descrivere un problema.",
           "concepts": [
@@ -317,7 +317,7 @@
           ]
         },
         {
-          "id": "M3.L5",
+          "id": "M3.L7",
           "title": "Scenario nuovo: leggere due risposte sconosciute",
           "objective": "Confrontare una risposta di successo e una di errore di un endpoint mai usato e documentarne gli elementi essenziali con evidenze reali.",
           "concepts": [
@@ -364,7 +364,7 @@
           ]
         },
         {
-          "id": "M4.L2",
+          "id": "M4.L3",
           "title": "Autenticazione Bearer e segreti",
           "objective": "Ottenere un access token senza scrivere i segreti nei comandi e usarlo in una richiesta autenticata.",
           "concepts": [
@@ -385,7 +385,7 @@
           ]
         },
         {
-          "id": "M4.L3",
+          "id": "M4.L4",
           "title": "CRUD con JSON, Content-Type e Accept",
           "objective": "Creare, leggere e aggiornare una risorsa con richieste HTTP, verificando lo stato dopo ogni passaggio.",
           "concepts": [
@@ -407,7 +407,7 @@
           ]
         },
         {
-          "id": "M4.L4",
+          "id": "M4.L5",
           "title": "Validazione, paginazione e idempotenza",
           "objective": "Leggere pagine di risultati, riconoscere gli errori di validazione e verificare l'idempotenza di DELETE.",
           "concepts": [
@@ -428,7 +428,7 @@
           ]
         },
         {
-          "id": "M4.L5",
+          "id": "M4.L7",
           "title": "Timeout e rate limit",
           "objective": "Riconoscere e documentare un rate limit (429, Retry-After) e un timeout del client.",
           "concepts": [
@@ -448,7 +448,7 @@
           ]
         },
         {
-          "id": "M4.L6",
+          "id": "M4.L8",
           "title": "Dallo stesso test a PowerShell",
           "objective": "Trasferire una procedura di test da Bash a PowerShell 5.1: oggetti al posto del testo, errori HTTP come eccezioni, e la trappola dell'alias curl.",
           "concepts": [
@@ -468,7 +468,7 @@
           ]
         },
         {
-          "id": "M4.L7",
+          "id": "M4.L9",
           "title": "Scenario nuovo: documentare la creazione di un task",
           "objective": "Partendo dalla sola specifica OpenAPI, ricavare le regole di un endpoint e provarle con una richiesta riuscita e una non valida.",
           "concepts": [
@@ -537,7 +537,7 @@
           ]
         },
         {
-          "id": "M5.L3",
+          "id": "M5.L4",
           "title": "Un 401 inatteso: leggere risposta e log",
           "objective": "Diagnosticare un 401 usando il corpo della risposta e il log applicativo, e ripristinare il funzionamento.",
           "concepts": [
@@ -558,7 +558,7 @@
           ]
         },
         {
-          "id": "M5.L4",
+          "id": "M5.L5",
           "title": "Errori 5xx e retry: uno script elementare",
           "objective": "Scrivere ed eseguire uno script che riprova un'operazione instabile con un numero massimo di tentativi.",
           "concepts": [
@@ -580,7 +580,7 @@
           ]
         },
         {
-          "id": "M5.L5",
+          "id": "M5.L6",
           "title": "Trovare il punto di rottura nei log",
           "objective": "Analizzare un log di accessi con filtri e conteggi per individuare l'endpoint con più errori 5xx.",
           "concepts": [
@@ -601,27 +601,7 @@
           ]
         },
         {
-          "id": "M5.L6",
-          "title": "Scenario nuovo: il 401 su staging",
-          "objective": "Diagnosticare da soli un 401 in un ambiente diverso da quello usato finora e documentare causa e correzione.",
-          "concepts": [
-            "401 invalid_token",
-            "ambienti diversi",
-            "trasferimento"
-          ],
-          "skills": [
-            "diagnosi",
-            "http",
-            "autonomia"
-          ],
-          "review": false,
-          "shells": [
-            "bash",
-            "pwsh"
-          ]
-        },
-        {
-          "id": "M5.L7",
+          "id": "M5.L8",
           "title": "Più cause insieme: correggerne una ne rivela un'altra",
           "objective": "Diagnosticare uno script che fallisce per quattro cause successive (nome host, redirect, token scaduto, Content-Type) e documentarle nell'ordine in cui emergono.",
           "concepts": [
@@ -641,7 +621,7 @@
           ]
         },
         {
-          "id": "M5.L8",
+          "id": "M5.L9",
           "title": "Strumenti di rete: DNS, porte, certificati e CORS",
           "objective": "Usare gli strumenti di rete per distinguere DNS, porta chiusa e certificato, e leggere gli header CORS.",
           "concepts": [
@@ -654,6 +634,26 @@
             "diagnosi",
             "http",
             "comandi"
+          ],
+          "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M5.L10",
+          "title": "Scenario nuovo: il 401 su staging",
+          "objective": "Diagnosticare da soli un 401 in un ambiente diverso da quello usato finora e documentare causa e correzione.",
+          "concepts": [
+            "401 invalid_token",
+            "ambienti diversi",
+            "trasferimento"
+          ],
+          "skills": [
+            "diagnosi",
+            "http",
+            "autonomia"
           ],
           "review": false,
           "shells": [
@@ -729,7 +729,7 @@
           ]
         },
         {
-          "id": "M6.L4",
+          "id": "M6.L5",
           "title": "Troubleshooting e verifica da un ambiente pulito",
           "objective": "Scrivere una guida di troubleshooting e una procedura ripetibile che funziona da un ambiente pulito.",
           "concepts": [
@@ -749,7 +749,7 @@
           ]
         },
         {
-          "id": "M6.L5",
+          "id": "M6.L6",
           "title": "Progetto finale: testare e documentare staging",
           "objective": "Testare un'API, individuare un'anomalia rispetto alla documentazione e consegnare piano di test, bug report, guida corretta e procedura ripetibile.",
           "concepts": [
@@ -797,7 +797,7 @@
           ]
         },
         {
-          "id": "M7.L2",
+          "id": "M7.L4",
           "title": "Una suite di test ripetibile con report",
           "objective": "Raccogliere i controlli in uno script che stampa PASS/FAIL, un riepilogo e restituisce un codice di uscita.",
           "concepts": [
@@ -817,7 +817,7 @@
           ]
         },
         {
-          "id": "M7.L3",
+          "id": "M7.L5",
           "title": "Retry con Retry-After: gestire il rate limit",
           "objective": "Scrivere un client che rispetta il rate limit: su 429 attende il tempo indicato e riprova, con un massimo di tentativi.",
           "concepts": [
@@ -1060,7 +1060,7 @@
           ]
         },
         {
-          "id": "M10.L2",
+          "id": "M10.L4",
           "title": "Webhook firmati: la callback di un servizio esterno",
           "objective": "Inviare una notifica a un endpoint che richiede una firma HMAC, capire perché viene rifiutata e documentare la procedura di verifica.",
           "concepts": [
@@ -1080,7 +1080,7 @@
           ]
         },
         {
-          "id": "M10.L3",
+          "id": "M10.L5",
           "title": "Mappa dei flussi di autenticazione",
           "objective": "Confrontare in un documento i meccanismi di autenticazione provati nel corso (token Bearer, cookie di sessione, firma dei webhook, token personale) dopo averli usati.",
           "concepts": [
@@ -1148,7 +1148,7 @@
           ]
         },
         {
-          "id": "M11.L3",
+          "id": "M11.L4",
           "title": "Servizio fermo: dal sintomo alla correzione",
           "objective": "Riconoscere una connessione rifiutata, trovare sul server il servizio fermo, riavviarlo e verificarlo.",
           "concepts": [
@@ -1169,7 +1169,7 @@
           ]
         },
         {
-          "id": "M11.L4",
+          "id": "M11.L5",
           "title": "Porta sbagliata: il servizio è attivo ma non dove ti aspetti",
           "objective": "Scoprire che il servizio ascolta su una porta diversa da quella documentata e correggere la configurazione del server.",
           "concepts": [
@@ -1190,7 +1190,7 @@
           ]
         },
         {
-          "id": "M11.L5",
+          "id": "M11.L6",
           "title": "Errore 500: la causa è su un altro servizio",
           "objective": "Distinguere un errore del server da uno del client, trovare nel registro la dipendenza che manca e ripristinarla.",
           "concepts": [
@@ -1210,7 +1210,7 @@
           ]
         },
         {
-          "id": "M11.L6",
+          "id": "M11.L10",
           "title": "Verifica finale: integrazione documentata",
           "objective": "Partire da un sistema che non funziona, individuare più cause in sequenza, ripristinarlo e consegnare un rapporto utilizzabile da un altro tecnico.",
           "concepts": [

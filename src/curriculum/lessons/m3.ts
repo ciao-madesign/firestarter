@@ -133,9 +133,9 @@ export const m3: Lesson[] = [
     concepts: ['status code', 'header', 'curl -i, -I, -w', 'X-Request-Id', 'differenza 404/405'],
   },
   {
-    id: 'M3.L3',
+    id: 'M3.L4',
     module: 3,
-    n: 3,
+    n: 4,
     title: 'Body JSON, parametri e Content-Type',
     objective: 'Usare query parameter e inviare un body JSON dichiarando il Content-Type, con l\'URL correttamente quotato.',
     explain: [
@@ -162,7 +162,7 @@ export const m3: Lesson[] = [
       explain: 'La shell interpreta la & (in Bash manderebbe il comando in background e perderesti il secondo parametro; PowerShell la rifiuta). Metti sempre l\'URL tra virgolette.',
     },
     task: {
-      text: 'In ~/corso-cli/m3l3: (1) salva in `aperti.json` la lista dei task con status `open`, al massimo 2; (2) crea un nuovo task con titolo `Imparare curl` inviando un body JSON.',
+      text: 'In ~/corso-cli/m3l4: (1) salva in `aperti.json` la lista dei task con status `open`, al massimo 2; (2) crea un nuovo task con titolo `Imparare curl` inviando un body JSON.',
       criterion: 'aperti.json ha 2 task, tutti open; il server ha ricevuto un POST /v1/tasks con titolo "Imparare curl" e ha risposto 201.',
     },
     checks: [
@@ -189,17 +189,17 @@ export const m3: Lesson[] = [
     example: { text: 'Esempio analogo: creare un progetto.', cmd: { bash: `curl -s -X POST ${AUTH_H} -H "Content-Type: application/json" -d '{"name":"Demo"}' $TASKFLOW_URL/v1/projects`, pwsh: 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/projects" -Method Post -Headers @{Authorization="Bearer $env:TASKFLOW_TOKEN"} -ContentType "application/json" -Body \'{"name":"Demo"}\'' } },
     hints: ['Per la lista: URL tra virgolette con ?status=open&limit=2 e l\'header Authorization. Salva con -o (Bash) o | ConvertTo-Json -Depth 5 > file (PowerShell).', 'Per il POST: -X POST, -H "Content-Type: application/json" e -d con il JSON tra apici singoli (PowerShell: -Method Post -ContentType ... -Body).'],
     solutions: {
-      bash: ['cd ~/corso-cli/m3l3', `curl -s ${AUTH_H} "$TASKFLOW_URL/v1/tasks?status=open&limit=2" -o aperti.json`, `curl -s -X POST ${AUTH_H} -H "Content-Type: application/json" -d '{"title":"Imparare curl"}' $TASKFLOW_URL/v1/tasks`],
-      pwsh: ['cd ~/corso-cli/m3l3', '$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks?status=open&limit=2" -Headers $h | ConvertTo-Json -Depth 5 > aperti.json', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Method Post -Headers $h -ContentType \'application/json\' -Body \'{"title":"Imparare curl"}\''],
+      bash: ['cd ~/corso-cli/m3l4', `curl -s ${AUTH_H} "$TASKFLOW_URL/v1/tasks?status=open&limit=2" -o aperti.json`, `curl -s -X POST ${AUTH_H} -H "Content-Type: application/json" -d '{"title":"Imparare curl"}' $TASKFLOW_URL/v1/tasks`],
+      pwsh: ['cd ~/corso-cli/m3l4', '$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks?status=open&limit=2" -Headers $h | ConvertTo-Json -Depth 5 > aperti.json', 'Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Method Post -Headers $h -ContentType \'application/json\' -Body \'{"title":"Imparare curl"}\''],
     },
     summary: ['?chiave=valore&altra=valore', 'quoting dell\'URL', 'Content-Type: application/json', '415 = formato del body non accettato'],
     skills: ['http', 'comandi', 'testing'],
     concepts: ['query parameter', 'body JSON', 'Content-Type', 'quoting degli URL', 'header Authorization'],
   },
   {
-    id: 'M3.L4',
+    id: 'M3.L6',
     module: 3,
-    n: 4,
+    n: 6,
     title: 'Errore HTTP ed errore applicativo a confronto',
     objective: 'Distinguere lo status HTTP dal codice di errore del corpo (applicativo) e usarli entrambi per descrivere un problema.',
     explain: [
@@ -226,7 +226,7 @@ export const m3: Lesson[] = [
       explain: '422 validation_failed con l\'elenco errors: field "title", message "lunghezza minima 3 caratteri". La richiesta è sintatticamente valida ma i dati no.',
     },
     task: {
-      text: 'In ~/corso-cli/m3l4 provoca questi tre errori e poi scrivi in `errori.md` una riga per ciascuno con status e codice applicativo: (a) task inesistente (id 9999) con token valido; (b) POST /v1/tasks con titolo "x"; (c) GET /v1/tasks SENZA token.',
+      text: 'In ~/corso-cli/m3l6 provoca questi tre errori e poi scrivi in `errori.md` una riga per ciascuno con status e codice applicativo: (a) task inesistente (id 9999) con token valido; (b) POST /v1/tasks con titolo "x"; (c) GET /v1/tasks SENZA token.',
       criterion: 'Il server ha registrato 404, 422 e 401; errori.md contiene i tre codici applicativi (not_found, validation_failed, unauthorized).',
     },
     checks: [
@@ -258,8 +258,8 @@ export const m3: Lesson[] = [
     example: { text: 'Esempio analogo di riga: 405 method_not_allowed — POST su /v1/health.', cmd: { bash: 'echo "405 method_not_allowed - POST su /v1/health" >> note.md', pwsh: 'Add-Content note.md "405 method_not_allowed - POST su /v1/health"' } },
     hints: ['Esegui le tre richieste e leggi "error" nel corpo di ciascuna. PowerShell: nel catch usa $_.ErrorDetails.Message.', 'Una riga per errore: status, codice, causa. Puoi usare echo con >> per aggiungere righe.'],
     solutions: {
-      bash: ['cd ~/corso-cli/m3l4', `curl -s ${AUTH_H} $TASKFLOW_URL/v1/tasks/9999`, `curl -s -X POST ${AUTH_H} -H "Content-Type: application/json" -d '{"title":"x"}' $TASKFLOW_URL/v1/tasks`, 'curl -s $TASKFLOW_URL/v1/tasks', 'echo "404 not_found - task inesistente" > errori.md', 'echo "422 validation_failed - titolo troppo corto" >> errori.md', 'echo "401 unauthorized - manca il token" >> errori.md'],
-      pwsh: ['cd ~/corso-cli/m3l4', '$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks/9999" -Headers $h } catch { $_.ErrorDetails.Message }', 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Method Post -Headers $h -ContentType \'application/json\' -Body \'{"title":"x"}\' } catch { $_.ErrorDetails.Message }', 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" } catch { $_.ErrorDetails.Message }', 'Set-Content errori.md -Value "404 not_found - task inesistente","422 validation_failed - titolo troppo corto","401 unauthorized - manca il token"'],
+      bash: ['cd ~/corso-cli/m3l6', `curl -s ${AUTH_H} $TASKFLOW_URL/v1/tasks/9999`, `curl -s -X POST ${AUTH_H} -H "Content-Type: application/json" -d '{"title":"x"}' $TASKFLOW_URL/v1/tasks`, 'curl -s $TASKFLOW_URL/v1/tasks', 'echo "404 not_found - task inesistente" > errori.md', 'echo "422 validation_failed - titolo troppo corto" >> errori.md', 'echo "401 unauthorized - manca il token" >> errori.md'],
+      pwsh: ['cd ~/corso-cli/m3l6', '$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }', 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks/9999" -Headers $h } catch { $_.ErrorDetails.Message }', 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Method Post -Headers $h -ContentType \'application/json\' -Body \'{"title":"x"}\' } catch { $_.ErrorDetails.Message }', 'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" } catch { $_.ErrorDetails.Message }', 'Set-Content errori.md -Value "404 not_found - task inesistente","422 validation_failed - titolo troppo corto","401 unauthorized - manca il token"'],
     },
     summary: ['status HTTP = categoria', 'campo error = causa applicativa', 'stesso status, cause diverse', 'report: status + codice + messaggio + requestId'],
     skills: ['http', 'diagnosi', 'output'],

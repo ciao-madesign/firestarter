@@ -263,10 +263,10 @@ export const guidedM12: Record<string, GuidedStep[]> = {
       risk: 'Se il file fosse importante, il contenuto sarebbe perso: controlla sempre il nome dopo `>`.',
     },
   ],
-  'M2.L2': [
+  'M2.L3': [
     {
       title: 'Guardare il formato prima di filtrare',
-      cmd: { bash: 'head -n 3 ~/corso-cli/m2l2/accessi.log', pwsh: 'Get-Content ~/corso-cli/m2l2/accessi.log -TotalCount 3' },
+      cmd: { bash: 'head -n 3 ~/corso-cli/m2l3/accessi.log', pwsh: 'Get-Content ~/corso-cli/m2l3/accessi.log -TotalCount 3' },
       what: 'Prima di scrivere un filtro, guarda come sono fatte le righe: quale colonna è lo status?',
       who: 'head.',
       parts: [],
@@ -276,7 +276,7 @@ export const guidedM12: Record<string, GuidedStep[]> = {
     },
     {
       title: 'Ordinare',
-      cmd: { bash: 'cut -d" " -f9 ~/corso-cli/m2l2/accessi.log | sort | head -5', pwsh: 'Get-Content ~/corso-cli/m2l2/accessi.log | ForEach-Object { ($_ -split " ")[8] } | Sort-Object | Select-Object -First 5' },
+      cmd: { bash: 'cut -d" " -f9 ~/corso-cli/m2l3/accessi.log | sort | head -5', pwsh: 'Get-Content ~/corso-cli/m2l3/accessi.log | ForEach-Object { ($_ -split " ")[8] } | Sort-Object | Select-Object -First 5' },
       what: 'Estrae la colonna e la mette in ordine.',
       who: 'cut + sort.',
       parts: ['`|` passa l\'output di un comando al successivo'],
@@ -285,7 +285,7 @@ export const guidedM12: Record<string, GuidedStep[]> = {
     },
     {
       title: 'Valori distinti con uniq',
-      cmd: { bash: 'cut -d" " -f9 ~/corso-cli/m2l2/accessi.log | sort | uniq', pwsh: 'Get-Content ~/corso-cli/m2l2/accessi.log | ForEach-Object { ($_ -split " ")[8] } | Sort-Object -Unique' },
+      cmd: { bash: 'cut -d" " -f9 ~/corso-cli/m2l3/accessi.log | sort | uniq', pwsh: 'Get-Content ~/corso-cli/m2l3/accessi.log | ForEach-Object { ($_ -split " ")[8] } | Sort-Object -Unique' },
       what: '`uniq` elimina i duplicati ADIACENTI: per questo si ordina prima.',
       who: 'uniq / Sort-Object -Unique.',
       parts: ['senza `sort` prima, `uniq` non vede i doppioni sparsi'],
@@ -293,7 +293,7 @@ export const guidedM12: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M2.L3': [
+  'M2.L4': [
     {
       title: 'Una variabile non esportata resta locale',
       cmd: { bash: 'LOCALE=ciao; bash -c \'echo "figlio: [$LOCALE]"\'', pwsh: '$LOCALE = "ciao"; powershell -Command \'echo "figlio: [$env:LOCALE]"\'' },
@@ -316,7 +316,7 @@ export const guidedM12: Record<string, GuidedStep[]> = {
     },
     {
       title: 'Un comando riuscito',
-      cmd: { bash: 'ls ~/corso-cli/m2l3 > /dev/null; echo "esito=$?"', pwsh: 'ls ~/corso-cli/m2l3 | Out-Null; echo "esito=$?"' },
+      cmd: { bash: 'ls ~/corso-cli/m2l4 > /dev/null; echo "esito=$?"', pwsh: 'ls ~/corso-cli/m2l4 | Out-Null; echo "esito=$?"' },
       what: 'Subito dopo il comando, `$?` contiene l\'esito: 0 significa riuscito.',
       who: 'La shell.',
       parts: ['`$?` vale solo fino al comando successivo'],
@@ -333,10 +333,10 @@ export const guidedM12: Record<string, GuidedStep[]> = {
       risk: 'Nessuno.',
     },
   ],
-  'M2.L4': [
+  'M2.L7': [
     {
       title: 'Un input valido',
-      cmd: { bash: 'cd ~/corso-cli/m2l4 && bash dividi.sh 4', pwsh: 'cd ~/corso-cli/m2l4; ./dividi.ps1 4' },
+      cmd: { bash: 'cd ~/corso-cli/m2l7 && bash dividi.sh 4', pwsh: 'cd ~/corso-cli/m2l7; ./dividi.ps1 4' },
       what: 'Un test positivo: input corretto, risultato prevedibile (100 diviso 4).',
       who: 'Lo script.',
       parts: ['un solo argomento numerico'],
@@ -346,7 +346,7 @@ export const guidedM12: Record<string, GuidedStep[]> = {
     },
     {
       title: 'Un input non valido',
-      cmd: { bash: 'cd ~/corso-cli/m2l4 && bash dividi.sh ciao', pwsh: 'cd ~/corso-cli/m2l4; ./dividi.ps1 ciao' },
+      cmd: { bash: 'cd ~/corso-cli/m2l7 && bash dividi.sh ciao', pwsh: 'cd ~/corso-cli/m2l7; ./dividi.ps1 ciao' },
       what: 'Un test negativo: l\'argomento non è un numero. Il comportamento corretto è un messaggio chiaro, non un blocco o un risultato strano.',
       who: 'Lo script.',
       parts: ['argomento non numerico'],
@@ -356,7 +356,7 @@ export const guidedM12: Record<string, GuidedStep[]> = {
     },
     {
       title: 'Un caso limite: zero',
-      cmd: { bash: 'cd ~/corso-cli/m2l4 && bash dividi.sh 0', pwsh: 'cd ~/corso-cli/m2l4; ./dividi.ps1 0' },
+      cmd: { bash: 'cd ~/corso-cli/m2l7 && bash dividi.sh 0', pwsh: 'cd ~/corso-cli/m2l7; ./dividi.ps1 0' },
       what: 'Un valore al confine tra valido e non valido. I casi limite sono quelli che più spesso rivelano difetti.',
       who: 'Lo script.',
       parts: ['0 è un numero intero, ma la divisione non è definita'],

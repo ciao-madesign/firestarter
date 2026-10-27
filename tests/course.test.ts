@@ -11,7 +11,7 @@ Lezione completata: M2.L1 — Pipe e redirezione dell'output
 Livello attuale: 2
 Acquisito: pipe |; redirezione > e >>; rischio di sovrascrittura
 Da consolidare: maiuscole nei percorsi; previsioni coerenti
-Prossima lezione: M2.L2 — Filtri: grep, sort, uniq`;
+Prossima lezione: M2.L3 — Filtri: grep, sort, uniq`;
 
 describe('REGISTRO', () => {
   it('analizza il formato del brief', () => {
@@ -20,18 +20,18 @@ describe('REGISTRO', () => {
     expect(r.completed?.id).toBe('M2.L1');
     expect(r.level).toBe(2);
     expect(r.acquired).toHaveLength(3);
-    expect(r.next?.id).toBe('M2.L2');
+    expect(r.next?.id).toBe('M2.L3');
   });
   it('lo applica allo stato senza abbassare livello o avanzamento', () => {
     const p = seedProgress();
     const { progress, changes } = applyRegistro(p, parseRegistro(REG));
     expect(progress.lessons['M2.L1'].status).toBe('completed');
-    expect(progress.next.lesson).toBe('M2.L2');
+    expect(progress.next.lesson).toBe('M2.L3');
     expect(changes.join(' ')).toContain('M2.L1');
     // un REGISTRO più vecchio non fa tornare indietro
-    const old = parseRegistro(REG.replace('M2.L1', 'M1.L4').replace('M2.L2', 'M2.L1').replace('Livello attuale: 2', 'Livello attuale: 1'));
+    const old = parseRegistro(REG.replace('M2.L1', 'M1.L4').replace('M2.L3', 'M2.L1').replace('Livello attuale: 2', 'Livello attuale: 1'));
     const again = applyRegistro(progress, old).progress;
-    expect(again.next.lesson).toBe('M2.L2');
+    expect(again.next.lesson).toBe('M2.L3');
     expect(again.level).toBe(2);
   });
   it('rifiuta testo senza REGISTRO', () => {
@@ -43,7 +43,7 @@ describe('REGISTRO', () => {
     const text = buildRegistro(progress, titles, '2026-10-26', 'macOS, Bash');
     const r = parseRegistro(text);
     expect(r.completed?.id).toBe('M2.L1');
-    expect(r.next?.id).toBe('M2.L2');
+    expect(r.next?.id).toBe('M2.L3');
   });
   it('lo stato iniziale riflette il brief', () => {
     const p = seedProgress();
@@ -88,8 +88,8 @@ describe('Valutazione e aiuti', () => {
   });
   it('le verifiche autonome non mostrano la soluzione', () => {
     const s = createWorkspace('t');
-    startLesson(s, 'M6.L5');
-    expect(useHelp(s, 'M6.L5', 'bash', 'solution').denied).toContain('autonoma');
+    startLesson(s, 'M6.L6');
+    expect(useHelp(s, 'M6.L6', 'bash', 'solution').denied).toContain('autonoma');
   });
   it('la soluzione non è disponibile prima dei suggerimenti', () => {
     const s = createWorkspace('t');

@@ -60,7 +60,7 @@ function registroSection(): HTMLElement {
   sec.append(h('p', { class: 'muted' }, 'Lo stesso formato è usato dal tutor in terminale e dalla chat: importando un REGISTRO incollato lo stato resta allineato (il livello e l\'avanzamento non tornano indietro).'));
   const out = h('textarea', { class: 'registro', readonly: true, rows: '8', 'aria-label': 'REGISTRO generato' });
   out.value = registroOut;
-  const inp = h('textarea', { class: 'registro', rows: '8', 'aria-label': 'Incolla qui un REGISTRO', placeholder: 'REGISTRO — [data]\nAmbiente: ...\nLezione completata: M2.L1 — ...\nLivello attuale: 2\nAcquisito: ...\nDa consolidare: ...\nProssima lezione: M2.L2 — ...', on: { input: () => { registroIn = inp.value; } } });
+  const inp = h('textarea', { class: 'registro', rows: '8', 'aria-label': 'Incolla qui un REGISTRO', placeholder: 'REGISTRO — [data]\nAmbiente: ...\nLezione completata: M2.L1 — ...\nLivello attuale: 2\nAcquisito: ...\nDa consolidare: ...\nProssima lezione: M2.L3 — ...', on: { input: () => { registroIn = inp.value; } } });
   inp.value = registroIn;
   sec.append(
     h('div', { class: 'row' },

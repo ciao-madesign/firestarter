@@ -49,17 +49,17 @@ describe('Backend applicativo', () => {
     expect(e.json.live.every((c: any) => c.pass)).toBe(true);
     const v = await call('POST', '/api/lessons/M2.L1/verify', { shell: 'bash' });
     expect(v.json.result.pass).toBe(true);
-    expect(v.json.session.course.next.lesson).toBe('M2.L2');
+    expect(v.json.session.course.next.lesson).toBe('M2.L3');
     expect(v.json.lesson.completions.bash.mode).toBe('autonomous');
   });
   it('la soluzione è registrata come aiuto e declassa il completamento', async () => {
-    await call('POST', '/api/lessons/M2.L2/start', {}, 'utente-2');
-    for (let i = 0; i < 4; i++) await call('POST', '/api/lessons/M2.L2/help', { kind: 'hint', shell: 'bash' }, 'utente-2');
-    const s = await call('POST', '/api/lessons/M2.L2/help', { kind: 'solution', shell: 'bash' }, 'utente-2');
+    await call('POST', '/api/lessons/M2.L3/start', {}, 'utente-2');
+    for (let i = 0; i < 4; i++) await call('POST', '/api/lessons/M2.L3/help', { kind: 'hint', shell: 'bash' }, 'utente-2');
+    const s = await call('POST', '/api/lessons/M2.L3/help', { kind: 'solution', shell: 'bash' }, 'utente-2');
     expect(s.json.text).toContain('uniq -c');
-    await call('POST', '/api/exec', { shell: 'bash', command: 'cd ~/corso-cli/m2l2' }, 'utente-2');
+    await call('POST', '/api/exec', { shell: 'bash', command: 'cd ~/corso-cli/m2l3' }, 'utente-2');
     await call('POST', '/api/exec', { shell: 'bash', command: "cut -d' ' -f9 accessi.log | sort | uniq -c > conteggio.txt" }, 'utente-2');
-    const v = await call('POST', '/api/lessons/M2.L2/verify', { shell: 'bash' }, 'utente-2');
+    const v = await call('POST', '/api/lessons/M2.L3/verify', { shell: 'bash' }, 'utente-2');
     expect(v.json.lesson.completions.bash.mode).toBe('solution');
   });
   it('la previsione richiede testo e perché', async () => {
@@ -93,7 +93,7 @@ describe('Backend applicativo', () => {
     expect(r.status).toBe(403);
   });
   it('importa ed esporta il REGISTRO', async () => {
-    const imp = await call('POST', '/api/course/registro', { text: 'REGISTRO — 27/10/2026\nAmbiente: macOS, Bash\nLezione completata: M2.L3 — Variabili\nLivello attuale: 3\nAcquisito: export; $?\nDa consolidare: codici di uscita\nProssima lezione: M2.L4 — Test' }, 'utente-7');
+    const imp = await call('POST', '/api/course/registro', { text: 'REGISTRO — 27/10/2026\nAmbiente: macOS, Bash\nLezione completata: M2.L4 — Variabili\nLivello attuale: 3\nAcquisito: export; $?\nDa consolidare: codici di uscita\nProssima lezione: M2.L7 — Test' }, 'utente-7');
     expect(imp.json.changes.join(' ')).toContain('Livello portato a 3');
     const out = await call('GET', '/api/course/registro', undefined, 'utente-7');
     expect(out.json.text).toContain('Livello attuale: 3');

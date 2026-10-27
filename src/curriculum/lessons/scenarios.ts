@@ -25,9 +25,9 @@ const tokens = (text: string): string[] => text.split(/\s+/).filter(Boolean);
 
 export const scenarios: Lesson[] = [
   {
-    id: 'M2.L5',
+    id: 'M2.L8',
     module: 2,
-    n: 5,
+    n: 8,
     title: 'Scenario nuovo: analizzare un log',
     objective: 'Applicare pipe, filtri e redirezione a un problema che non hai visto: riassumere un file di log.',
     explain: [
@@ -38,25 +38,25 @@ export const scenarios: Lesson[] = [
     autonomous: true,
     setup: (c) => c.file('access.log', ACCESS_LOG),
     guided: [
-      { title: 'Guardare il file', cmd: { bash: 'cat ~/corso-cli/m2l5/access.log', pwsh: 'Get-Content ~/corso-cli/m2l5/access.log' }, what: 'Mostra il log da analizzare.', who: 'cat / Get-Content.', parts: ['una riga per richiesta'], expect: '12 righe con data, metodo, percorso e status.', risk: 'Nessuno.', contains: '/v1/reports' },
-      { title: 'Contare le righe', cmd: { bash: 'wc -l ~/corso-cli/m2l5/access.log', pwsh: '(Get-Content ~/corso-cli/m2l5/access.log).Count' }, what: 'Conta le richieste registrate.', who: 'wc -l / Count.', parts: ['-l: righe'], expect: '12', risk: 'Nessuno.', contains: '12' },
-      { title: 'Estrarre una colonna', cmd: { bash: "cut -d' ' -f4 ~/corso-cli/m2l5/access.log | head -3", pwsh: "Get-Content ~/corso-cli/m2l5/access.log | ForEach-Object { ($_ -split ' ')[3] } | Select-Object -First 3" }, what: 'Isola lo status delle prime righe.', who: 'cut / -split.', parts: ['-d: separatore', '-f4: quarto campo'], expect: 'Tre status, uno per riga.', risk: 'Nessuno.', contains: '200' },
+      { title: 'Guardare il file', cmd: { bash: 'cat ~/corso-cli/m2l8/access.log', pwsh: 'Get-Content ~/corso-cli/m2l8/access.log' }, what: 'Mostra il log da analizzare.', who: 'cat / Get-Content.', parts: ['una riga per richiesta'], expect: '12 righe con data, metodo, percorso e status.', risk: 'Nessuno.', contains: '/v1/reports' },
+      { title: 'Contare le righe', cmd: { bash: 'wc -l ~/corso-cli/m2l8/access.log', pwsh: '(Get-Content ~/corso-cli/m2l8/access.log).Count' }, what: 'Conta le richieste registrate.', who: 'wc -l / Count.', parts: ['-l: righe'], expect: '12', risk: 'Nessuno.', contains: '12' },
+      { title: 'Estrarre una colonna', cmd: { bash: "cut -d' ' -f4 ~/corso-cli/m2l8/access.log | head -3", pwsh: "Get-Content ~/corso-cli/m2l8/access.log | ForEach-Object { ($_ -split ' ')[3] } | Select-Object -First 3" }, what: 'Isola lo status delle prime righe.', who: 'cut / -split.', parts: ['-d: separatore', '-f4: quarto campo'], expect: 'Tre status, uno per riga.', risk: 'Nessuno.', contains: '200' },
     ],
     predict: [
       {
         prompt: 'Quante volte compare 200 nell\'ultima colonna? Annota una stima prima di contare.',
-        cmd: { bash: "cut -d' ' -f4 ~/corso-cli/m2l5/access.log | grep -c 200", pwsh: "(Get-Content ~/corso-cli/m2l5/access.log | ForEach-Object { ($_ -split ' ')[3] } | Where-Object { $_ -eq '200' }).Count" },
+        cmd: { bash: "cut -d' ' -f4 ~/corso-cli/m2l8/access.log | grep -c 200", pwsh: "(Get-Content ~/corso-cli/m2l8/access.log | ForEach-Object { ($_ -split ' ')[3] } | Where-Object { $_ -eq '200' }).Count" },
         expect: '6',
         why: 'Contare con un filtro è più affidabile che contare a occhio.',
       },
     ],
     negative: {
       prompt: 'Cosa succede contando senza ordinare prima? `uniq -c` unisce solo righe ADIACENTI.',
-      cmd: { bash: "cut -d' ' -f4 ~/corso-cli/m2l5/access.log | uniq -c | head -4", pwsh: "Get-Content ~/corso-cli/m2l5/access.log | ForEach-Object { ($_ -split ' ')[3] } | Group-Object | Select-Object -First 4 | ForEach-Object { \"$($_.Count) $($_.Name)\" }" },
+      cmd: { bash: "cut -d' ' -f4 ~/corso-cli/m2l8/access.log | uniq -c | head -4", pwsh: "Get-Content ~/corso-cli/m2l8/access.log | ForEach-Object { ($_ -split ' ')[3] } | Group-Object | Select-Object -First 4 | ForEach-Object { \"$($_.Count) $($_.Name)\" }" },
       explain: 'Senza sort, uniq conta solo ripetizioni consecutive (in PowerShell Group-Object raggruppa già tutto).',
     },
     task: {
-      text: 'In ~/corso-cli/m2l5 crea (1) report.txt: per ogni status quante volte compare, dal più frequente al meno frequente (una riga per status, conteggio e status); (2) errori.txt: il percorso con più risposte 5xx (solo il percorso).',
+      text: 'In ~/corso-cli/m2l8 crea (1) report.txt: per ogni status quante volte compare, dal più frequente al meno frequente (una riga per status, conteggio e status); (2) errori.txt: il percorso con più risposte 5xx (solo il percorso).',
       criterion: 'report.txt ha i conteggi corretti in ordine decrescente; errori.txt contiene il percorso corretto; hai usato una pipeline.',
     },
     checks: [
@@ -93,12 +93,12 @@ export const scenarios: Lesson[] = [
         onFail: 'Il corso chiede di comporre comandi: collega i passaggi con la pipe.',
       },
     ],
-    example: { text: 'Esempio analogo: contare i valori di una colonna di un altro file.', cmd: { bash: "cut -d' ' -f2 ~/corso-cli/m2l5/access.log | sort | uniq -c", pwsh: "Get-Content ~/corso-cli/m2l5/access.log | ForEach-Object { ($_ -split ' ')[1] } | Group-Object | ForEach-Object { \"$($_.Count) $($_.Name)\" }" } },
+    example: { text: 'Esempio analogo: contare i valori di una colonna di un altro file.', cmd: { bash: "cut -d' ' -f2 ~/corso-cli/m2l8/access.log | sort | uniq -c", pwsh: "Get-Content ~/corso-cli/m2l8/access.log | ForEach-Object { ($_ -split ' ')[1] } | Group-Object | ForEach-Object { \"$($_.Count) $($_.Name)\" }" } },
     hints: ['Ricava prima la colonna che ti serve (cut -d\' \' -f4 oppure -split). Poi ordina, conta e riordina per conteggio.', 'Per il secondo file filtra PRIMA le righe con status >= 500, poi estrai il percorso.'],
     reference: {
-      bash: ['cd ~/corso-cli/m2l5', "awk '{print $4}' access.log | sort | uniq -c | sort -rn > report.txt", "awk '$4 >= 500 {print $3}' access.log | sort | uniq -c | sort -rn | head -1 | awk '{print $2}' > errori.txt"],
+      bash: ['cd ~/corso-cli/m2l8', "awk '{print $4}' access.log | sort | uniq -c | sort -rn > report.txt", "awk '$4 >= 500 {print $3}' access.log | sort | uniq -c | sort -rn | head -1 | awk '{print $2}' > errori.txt"],
       pwsh: [
-        'cd ~/corso-cli/m2l5',
+        'cd ~/corso-cli/m2l8',
         'Get-Content access.log | ForEach-Object { ($_ -split " ")[3] } | Group-Object | Sort-Object Count -Descending | ForEach-Object { "$($_.Count) $($_.Name)" } | Set-Content report.txt',
         'Get-Content access.log | Where-Object { [int](($_ -split " ")[3]) -ge 500 } | ForEach-Object { ($_ -split " ")[2] } | Group-Object | Sort-Object Count -Descending | Select-Object -First 1 -ExpandProperty Name | Set-Content errori.txt',
       ],
@@ -108,9 +108,9 @@ export const scenarios: Lesson[] = [
     concepts: ['pipeline su un problema nuovo', 'sort + uniq -c', 'trasferimento'],
   },
   {
-    id: 'M3.L5',
+    id: 'M3.L7',
     module: 3,
-    n: 5,
+    n: 7,
     title: 'Scenario nuovo: leggere due risposte sconosciute',
     objective: 'Confrontare una risposta di successo e una di errore di un endpoint mai usato e documentarne gli elementi essenziali con evidenze reali.',
     explain: [
@@ -139,7 +139,7 @@ export const scenarios: Lesson[] = [
       explain: 'Il percorso esiste ma il metodo no: 405 method_not_allowed e header Allow.',
     },
     task: {
-      text: 'In ~/corso-cli/m3l5/risposte.md riassumi le due risposte (successo di /v1/health e errore di un percorso inesistente): per ciascuna status, Content-Type, X-Request-Id; per l\'errore anche il codice applicativo.',
+      text: 'In ~/corso-cli/m3l7/risposte.md riassumi le due risposte (successo di /v1/health e errore di un percorso inesistente): per ciascuna status, Content-Type, X-Request-Id; per l\'errore anche il codice applicativo.',
       criterion: 'Le richieste reali esistono nel registro del server e il file cita i loro X-Request-Id reali, gli status e il codice di errore.',
     },
     checks: [
@@ -177,13 +177,13 @@ export const scenarios: Lesson[] = [
     hints: ['Con -i vedi gli header: cerca X-Request-Id e Content-Type. Il codice applicativo è nel body (campo error).', 'Puoi riassumere con grep sulle righe che ti servono e redirezionare in risposte.md.'],
     reference: {
       bash: [
-        'cd ~/corso-cli/m3l5',
+        'cd ~/corso-cli/m3l7',
         'H=$(curl -s -i $TASKFLOW_URL/v1/health)',
         'N=$(curl -s -i $TASKFLOW_URL/v1/inesistente)',
         '{ echo "# Risposte"; echo "## health"; echo "$H" | grep -i -E "^(HTTP|content-type|x-request-id)"; echo "## inesistente"; echo "$N" | grep -i -E "^(HTTP|content-type|x-request-id)"; echo "$N" | tail -1; } > risposte.md',
       ],
       pwsh: [
-        'cd ~/corso-cli/m3l5',
+        'cd ~/corso-cli/m3l7',
         '$H = curl.exe -s -i "$env:TASKFLOW_URL/v1/health"',
         '$N = curl.exe -s -i "$env:TASKFLOW_URL/v1/inesistente"',
         '$out = @("# Risposte", "## health") + ($H | Select-String -Pattern "^(HTTP|content-type|x-request-id)" | ForEach-Object { $_.Line }) + @("## inesistente") + ($N | Select-String -Pattern "^(HTTP|content-type|x-request-id)" | ForEach-Object { $_.Line }) + @($N[-1])',
@@ -195,9 +195,9 @@ export const scenarios: Lesson[] = [
     concepts: ['lettura di una risposta HTTP', 'status vs codice applicativo', 'trasferimento'],
   },
   {
-    id: 'M4.L7',
+    id: 'M4.L9',
     module: 4,
-    n: 7,
+    n: 9,
     title: 'Scenario nuovo: documentare la creazione di un task',
     objective: 'Partendo dalla sola specifica OpenAPI, ricavare le regole di un endpoint e provarle con una richiesta riuscita e una non valida.',
     explain: [
@@ -226,7 +226,7 @@ export const scenarios: Lesson[] = [
       explain: 'Senza Content-Type: application/json il server rifiuta il body (415).',
     },
     task: {
-      text: 'In ~/corso-cli/m4l7/endpoint.md documenta POST /v1/tasks: il campo obbligatorio (ricavato dalla specifica), una richiesta riuscita e una non valida, con status e X-Request-Id reali.',
+      text: 'In ~/corso-cli/m4l9/endpoint.md documenta POST /v1/tasks: il campo obbligatorio (ricavato dalla specifica), una richiesta riuscita e una non valida, con status e X-Request-Id reali.',
       criterion: 'Il registro del server mostra POST /v1/tasks con 201 e 422; endpoint.md cita i due X-Request-Id e il campo obbligatorio; hai consultato la specifica; nessun token nei comandi.',
     },
     checks: [
@@ -275,14 +275,14 @@ export const scenarios: Lesson[] = [
     hints: ['Nella specifica (i percorsi sono senza /v1) cerca paths["/tasks"].post.requestBody e il campo required.', 'Per vedere gli header (X-Request-Id) usa curl -i / curl.exe -i.'],
     reference: {
       bash: [
-        'cd ~/corso-cli/m4l7',
+        'cd ~/corso-cli/m4l9',
         'curl -s $TASKFLOW_URL/v1/openapi.json | jq \'.paths["/tasks"].post\'',
         'A=$(curl -s -i -X POST $TASKFLOW_URL/v1/tasks -H "Authorization: Bearer $TASKFLOW_TOKEN" -H "Content-Type: application/json" -d \'{"title":"prova"}\' | grep -i "^x-request-id" | tr -d "\\r")',
         'B=$(curl -s -i -X POST $TASKFLOW_URL/v1/tasks -H "Authorization: Bearer $TASKFLOW_TOKEN" -H "Content-Type: application/json" -d \'{}\' | grep -i "^x-request-id" | tr -d "\\r")',
         'printf "# POST /v1/tasks\\n\\nCampo obbligatorio: title\\n\\n201: %s\\n422: %s\\n" "$A" "$B" > endpoint.md',
       ],
       pwsh: [
-        'cd ~/corso-cli/m4l7',
+        'cd ~/corso-cli/m4l9',
         '(Invoke-RestMethod "$env:TASKFLOW_URL/v1/openapi.json").paths."/tasks".post | ConvertTo-Json -Depth 5 | Out-Null',
         '$h = @{ Authorization = "Bearer $env:TASKFLOW_TOKEN" }',
         '$A = (Invoke-WebRequest "$env:TASKFLOW_URL/v1/tasks" -Method Post -Headers $h -ContentType "application/json" -Body \'{"title":"prova"}\' -UseBasicParsing).Headers["X-Request-Id"]',
@@ -295,9 +295,9 @@ export const scenarios: Lesson[] = [
     concepts: ['lettura della specifica', 'validazione 422', 'trasferimento'],
   },
   {
-    id: 'M5.L6',
+    id: 'M5.L10',
     module: 5,
-    n: 6,
+    n: 10,
     title: 'Scenario nuovo: il 401 su staging',
     objective: 'Diagnosticare da soli un 401 in un ambiente diverso da quello usato finora e documentare causa e correzione.',
     explain: [
@@ -329,7 +329,7 @@ export const scenarios: Lesson[] = [
       explain: 'Stesso 401: ma la causa registrata nei log può essere diversa. Leggi sempre il corpo e il log.',
     },
     task: {
-      text: 'Fai riuscire GET /v1/tasks su staging e scrivi in ~/corso-cli/m5l6/diagnosi.md: sintomo, causa (con l\'evidenza che l\'hai trovata) e correzione.',
+      text: 'Fai riuscire GET /v1/tasks su staging e scrivi in ~/corso-cli/m5l10/diagnosi.md: sintomo, causa (con l\'evidenza che l\'hai trovata) e correzione.',
       criterion: 'Il server ha registrato su staging un 401 e poi un 200 su /v1/tasks; hai letto app.log; diagnosi.md nomina la causa (token di un altro ambiente) e l\'ambiente.',
     },
     checks: [
@@ -371,11 +371,11 @@ export const scenarios: Lesson[] = [
         onFail: 'Usa le variabili d\'ambiente per le credenziali.',
       },
     ],
-    example: { text: 'Esempio analogo: ricavare un token e metterlo in una variabile.', cmd: { bash: 'echo "vedi M4.L2: POST /v1/auth/token con client_id e client_secret dalle variabili"', pwsh: 'echo "vedi M4.L2: POST /v1/auth/token con client_id e client_secret dalle variabili"' } },
-    hints: ['Il prefisso del token indica l\'ambiente che lo ha emesso. Il corpo del 401 e app.log lo confermano.', 'Le credenziali dello staging sono già nelle variabili d\'ambiente: usa la procedura di M4.L2.'],
+    example: { text: 'Esempio analogo: ricavare un token e metterlo in una variabile.', cmd: { bash: 'echo "vedi M4.L3: POST /v1/auth/token con client_id e client_secret dalle variabili"', pwsh: 'echo "vedi M4.L3: POST /v1/auth/token con client_id e client_secret dalle variabili"' } },
+    hints: ['Il prefisso del token indica l\'ambiente che lo ha emesso. Il corpo del 401 e app.log lo confermano.', 'Le credenziali dello staging sono già nelle variabili d\'ambiente: usa la procedura di M4.L3.'],
     reference: {
       bash: [
-        'cd ~/corso-cli/m5l6',
+        'cd ~/corso-cli/m5l10',
         'curl -s -H "Authorization: Bearer $TASKFLOW_TOKEN" $TASKFLOW_URL/v1/tasks',
         'grep -i token /var/log/taskflow/staging/app.log',
         'export TASKFLOW_TOKEN=$(curl -s -X POST $TASKFLOW_URL/v1/auth/token -H "Content-Type: application/json" -d "{\\"client_id\\":\\"$TASKFLOW_CLIENT_ID\\",\\"client_secret\\":\\"$TASKFLOW_CLIENT_SECRET\\"}" | jq -r .access_token)',
@@ -383,7 +383,7 @@ export const scenarios: Lesson[] = [
         'echo "Sintomo: 401 su staging. Causa: invalid_token, token emesso per un altro ambiente (development). Correzione: nuovo token da staging." > diagnosi.md',
       ],
       pwsh: [
-        'cd ~/corso-cli/m5l6',
+        'cd ~/corso-cli/m5l10',
         'try { Invoke-RestMethod "$env:TASKFLOW_URL/v1/tasks" -Headers @{Authorization="Bearer $env:TASKFLOW_TOKEN"} } catch { $_.ErrorDetails.Message }',
         'Select-String -Pattern token -Path /var/log/taskflow/staging/app.log',
         '$body = @{ client_id = $env:TASKFLOW_CLIENT_ID; client_secret = $env:TASKFLOW_CLIENT_SECRET } | ConvertTo-Json',
