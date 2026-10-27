@@ -227,7 +227,7 @@ export const LESSON_TOOLS: Record<string, { bash?: string[]; pwsh?: string[] }> 
   'M9.L5': { bash: ['heredoc'], pwsh: ['here-string', 'Set-Content', '-Value'] },
   'M9.L6': { bash: ['grep -c', 'grep -n', 'heredoc'], pwsh: ['Select-String', '-Pattern', '-Path', '( ).Proprietà', 'here-string', 'Set-Content', '-Value'] },
   'M9.L7': { bash: ['git', 'heredoc'], pwsh: ['here-string', 'Set-Content', '-Value'] },
-  'M10.L1': { bash: ['curl', 'curl -s', 'curl -i', 'curl -c', 'curl -X', 'curl -H', 'curl -d', 'heredoc'] },
+  'M10.L1': { bash: ['curl', 'curl -s', 'curl -i', 'curl -c', 'curl -X', 'curl -H', 'curl -d', 'heredoc'], pwsh: ['$env:', 'here-string', 'Set-Content', '-Value'] },
   'M10.L2': { bash: ['curl', 'curl -s', 'curl -c', 'curl -X', 'curl -H', 'curl -d', 'jq', 'jq -r', '$( )', 'heredoc'], pwsh: ['ConvertTo-Json', 'Out-Null', '@{ }', '$env:', 'ConvertFrom-Json', '( ).Proprietà', 'here-string', 'Set-Content', '-Value'] },
   'M10.L3': { bash: ['for', 'tr', '$( )', 'curl', 'curl -s', 'curl -H', 'heredoc'], pwsh: ['( ).Proprietà', '[Tipo]::', 'function', '$env:', '$( )', 'here-string', 'Set-Content', '-Value'] },
   'M10.L4': { bash: ['$( )', 'curl', 'curl -s', 'curl -X', 'curl -d', 'curl -H', 'openssl', 'awk', 'heredoc'] },

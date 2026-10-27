@@ -1,8 +1,10 @@
-/** M10 — Sessioni, webhook e flussi di autenticazione (Bash). In PowerShell 5.1 servirebbero WebSession e classi .NET per HMAC, non simulati. */
+/** M10 — Sessioni, webhook e flussi di autenticazione. Cookie in Bash e PowerShell (curl.exe); webhook HMAC e mappa dei flussi solo Bash: in PowerShell 5.1 servirebbero classi .NET per HMAC, non simulate. */
 import type { Lesson, SetupCtx } from '../types.ts';
 import { demoPassword, webhookSecret } from '../../engine/api/server.ts';
 import { parseTables } from '../../docs/lint.ts';
 import { cmdMatches, setupApi } from './helpers.ts';
+
+const PS_LOGIN_BODY = '$b = \'{\\"username\\":\\"\' + $env:TASKFLOW_LOGIN_USER + \'\\",\\"password\\":\\"\' + $env:TASKFLOW_LOGIN_PASSWORD + \'\\"}\'';
 
 const PW_NOTE = "Lezione in Bash: in Windows PowerShell 5.1 i cookie si gestiscono con -SessionVariable/-WebSession e la firma HMAC con classi .NET (System.Security.Cryptography.HMACSHA256); il laboratorio non li simula.";
 
@@ -62,27 +64,27 @@ export const m10: Lesson[] = [
     explain: [
       'Oltre al token Bearer, molte applicazioni web usano una SESSIONE: dopo il login il server risponde con `Set-Cookie: session=...` e il client rimanda quel cookie a ogni richiesta (header `Cookie`). Il browser lo fa da solo; con curl si usano `-c file` (salva i cookie ricevuti) e `-b file` (li invia).',
       'Attributi da conoscere: `HttpOnly` (non leggibile da JavaScript), `Path` (a quali percorsi viene inviato), `Max-Age`/`Expires` (scadenza), `Secure` (solo HTTPS), `SameSite` (limita l\'invio da siti terzi).',
-      PW_NOTE,
+      'In Windows PowerShell 5.1 si usa `curl.exe` (non l\'alias `curl`): le opzioni `-c` e `-b` sono le stesse. Il JSON passato a curl.exe richiede le virgolette con il backslash (vedi M3.L5); i cookie con i cmdlet (`-SessionVariable`/`-WebSession`) non sono simulati.',
     ],
-    ...flow,
+    shells: ['bash', 'pwsh'],
     setup: setupSession,
     guided: [
-      { title: 'Senza sessione', cmd: { bash: 'curl -s -i $TASKFLOW_URL/v1/session' }, what: 'Chiede la sessione corrente senza cookie.', who: 'Il server risponde 401 no_session.', parts: [], expect: '401 con codice no_session.', risk: 'Nessuno.', contains: { bash: 'no_session' } },
-      { title: 'Il login', cmd: { bash: 'curl -s -i -c /tmp/prova.jar -X POST $TASKFLOW_URL/v1/login -H "Content-Type: application/json" -d "{\\"username\\":\\"$TASKFLOW_LOGIN_USER\\",\\"password\\":\\"$TASKFLOW_LOGIN_PASSWORD\\"}"' }, what: 'Fa il login e salva il cookie ricevuto in un file.', who: 'curl -c salva il cookie; la password viene da una variabile.', parts: ['-c file: salva i cookie', 'la password non è scritta nel comando'], expect: '200 con l\'header Set-Cookie: session=... HttpOnly.', risk: 'Nessuno.', contains: { bash: 'Set-Cookie' } },
-      { title: 'Il file dei cookie', cmd: { bash: 'cat /tmp/prova.jar' }, what: 'Mostra il cookie salvato.', who: 'cat.', parts: ['formato Netscape: dominio, percorso, nome, valore'], expect: 'Una riga con il nome session.', risk: 'Il file contiene un segreto: non condividerlo.', contains: { bash: 'session' } },
-      { title: 'Usare il cookie', cmd: { bash: 'curl -s -b /tmp/prova.jar $TASKFLOW_URL/v1/session' }, what: 'Chiede la sessione inviando il cookie.', who: 'curl -b invia i cookie del file.', parts: [], expect: '200 con l\'utente.', risk: 'Nessuno.', contains: { bash: 'bob' } },
+      { title: 'Senza sessione', cmd: { bash: 'curl -s -i $TASKFLOW_URL/v1/session', pwsh: 'curl.exe -s -i $env:TASKFLOW_URL/v1/session' }, what: 'Chiede la sessione corrente senza cookie.', who: 'Il server risponde 401 no_session.', parts: [], expect: '401 con codice no_session.', risk: 'Nessuno.', contains: 'no_session' },
+      { title: 'Il login', cmd: { bash: 'curl -s -i -c /tmp/prova.jar -X POST $TASKFLOW_URL/v1/login -H "Content-Type: application/json" -d "{\\"username\\":\\"$TASKFLOW_LOGIN_USER\\",\\"password\\":\\"$TASKFLOW_LOGIN_PASSWORD\\"}"', pwsh: '$b = \'{\\"username\\":\\"\' + $env:TASKFLOW_LOGIN_USER + \'\\",\\"password\\":\\"\' + $env:TASKFLOW_LOGIN_PASSWORD + \'\\"}\'; curl.exe -s -i -c /tmp/prova.jar -X POST $env:TASKFLOW_URL/v1/login -H "Content-Type: application/json" -d $b' }, what: 'Fa il login e salva il cookie ricevuto in un file.', who: 'curl -c salva il cookie; la password viene da una variabile.', parts: ['-c file: salva i cookie', 'la password non è scritta nel comando'], expect: '200 con l\'header Set-Cookie: session=... HttpOnly.', risk: 'Nessuno.', contains: { bash: 'Set-Cookie' } },
+      { title: 'Il file dei cookie', cmd: { bash: 'cat /tmp/prova.jar', pwsh: 'Get-Content /tmp/prova.jar' }, what: 'Mostra il cookie salvato.', who: 'cat.', parts: ['formato Netscape: dominio, percorso, nome, valore'], expect: 'Una riga con il nome session.', risk: 'Il file contiene un segreto: non condividerlo.', contains: 'session' },
+      { title: 'Usare il cookie', cmd: { bash: 'curl -s -b /tmp/prova.jar $TASKFLOW_URL/v1/session', pwsh: 'curl.exe -s -b /tmp/prova.jar $env:TASKFLOW_URL/v1/session' }, what: 'Chiede la sessione inviando il cookie.', who: 'curl -b invia i cookie del file.', parts: [], expect: '200 con l\'utente.', risk: 'Nessuno.', contains: 'bob' },
     ],
     predict: [
       {
         prompt: 'Cosa risponde GET /v1/session se invii un cookie inventato (session=abc)?',
-        cmd: { bash: 'curl -s -b "session=abc" $TASKFLOW_URL/v1/session' },
+        cmd: { bash: 'curl -s -b "session=abc" $TASKFLOW_URL/v1/session', pwsh: 'curl.exe -s -b session=abc $env:TASKFLOW_URL/v1/session' },
         expect: '401 invalid_session: il cookie è presente ma non valido.',
         why: 'no_session = cookie assente; invalid_session = cookie presente ma errato. Due cause, due messaggi.',
       },
     ],
     negative: {
       prompt: 'Login con password sbagliata:',
-      cmd: { bash: 'curl -s -i -X POST $TASKFLOW_URL/v1/login -H "Content-Type: application/json" -d \'{"username":"bob","password":"sbagliata"}\'' },
+      cmd: { bash: 'curl -s -i -X POST $TASKFLOW_URL/v1/login -H "Content-Type: application/json" -d \'{"username":"bob","password":"sbagliata"}\'', pwsh: 'curl.exe -s -i -X POST $env:TASKFLOW_URL/v1/login -H "Content-Type: application/json" -d \'{\\"username\\":\\"bob\\",\\"password\\":\\"sbagliata\\"}\'' },
       explain: '401 invalid_credentials e nessun Set-Cookie: senza login riuscito non esiste sessione.',
     },
     task: {
@@ -125,7 +127,7 @@ export const m10: Lesson[] = [
         onFail: 'Usa $TASKFLOW_LOGIN_PASSWORD nel comando di login.',
       },
     ],
-    example: { text: 'Esempio analogo: salvare e riusare i cookie con un altro file.', cmd: { bash: 'curl -s -c /tmp/altro.jar -o /dev/null $TASKFLOW_URL/v1/health && cat /tmp/altro.jar' } },
+    example: { text: 'Esempio analogo: salvare e riusare i cookie con un altro file.', cmd: { bash: 'curl -s -c /tmp/altro.jar -o /dev/null $TASKFLOW_URL/v1/health && cat /tmp/altro.jar', pwsh: 'curl.exe -s -c /tmp/altro.jar -o NUL $env:TASKFLOW_URL/v1/health; Get-Content /tmp/altro.jar' } },
     hints: ['-c salva i cookie ricevuti, -b invia quelli salvati. Con -i vedi gli header, compreso Set-Cookie.', 'Dopo il logout il cookie viene cancellato dal file: la richiesta successiva non ha sessione.'],
     solutions: {
       bash: [
@@ -136,6 +138,16 @@ export const m10: Lesson[] = [
         'curl -s -b jar.txt -c jar.txt -X POST $TASKFLOW_URL/v1/logout',
         'curl -s -b jar.txt $TASKFLOW_URL/v1/session',
         `cat > sessione.md <<'EOF'\n${SESSIONE_MD}EOF`,
+      ],
+      pwsh: [
+        'cd ~/corso-cli/m10l1',
+        PS_LOGIN_BODY,
+        'curl.exe -s -i -c jar.txt -X POST $env:TASKFLOW_URL/v1/login -H "Content-Type: application/json" -d $b',
+        'Get-Content jar.txt',
+        'curl.exe -s -b jar.txt $env:TASKFLOW_URL/v1/session',
+        'curl.exe -s -b jar.txt -c jar.txt -X POST $env:TASKFLOW_URL/v1/logout',
+        'curl.exe -s -b jar.txt $env:TASKFLOW_URL/v1/session',
+        `Set-Content sessione.md -Value @'\n${SESSIONE_MD}'@`,
       ],
     },
     summary: ['sessione = cookie rimandato a ogni richiesta', 'HttpOnly, Path, Max-Age, Secure, SameSite', 'no_session vs invalid_session', 'i cookie sono segreti'],
