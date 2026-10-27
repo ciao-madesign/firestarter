@@ -77,6 +77,20 @@ export function startLesson(state: WorkspaceState, id: string, forceSetup = fals
     state.predictions = state.predictions.filter((x) => x.lesson !== id);
   }
   const fresh = p.startClock === undefined;
+  // lasciando una lezione si ricordano le sue variabili TASKFLOW_* (token, URL...) e l'ambiente attivo: riaprendola si ritrovano così
+  const prevId = state.activeExercise;
+  if (prevId && prevId !== id && getLesson(prevId)) {
+    const env: Partial<Record<ShellId, Record<string, string>>> = {};
+    for (const [sh, st] of Object.entries(state.shells)) env[sh as ShellId] = Object.fromEntries(Object.entries(st.env).filter(([k]) => k.startsWith('TASKFLOW_')));
+    ensureProgress(state, prevId).envSnapshot = { env, activeEnv: state.activeEnv };
+  }
+  if (!fresh && !forceSetup && prevId !== id && p.envSnapshot) {
+    for (const [sh, st] of Object.entries(state.shells)) {
+      for (const k of Object.keys(st.env)) if (k.startsWith('TASKFLOW_')) delete st.env[k];
+      Object.assign(st.env, p.envSnapshot.env[sh as ShellId] ?? {});
+    }
+    state.activeEnv = p.envSnapshot.activeEnv;
+  }
   state.activeExercise = id;
   if (fresh || forceSetup) {
     const vfs = new Vfs(state.fs, () => state.clock);
@@ -109,6 +123,7 @@ export function resetLesson(state: WorkspaceState, id: string): void {
   p.lastVerify = undefined;
   state.predictions = state.predictions.filter((x) => x.lesson !== id);
   p.startClock = undefined;
+  p.envSnapshot = undefined;
   startLesson(state, id, true);
   state.changeLog.push({ at: state.clock, what: `Reset della lezione ${id}` });
 }

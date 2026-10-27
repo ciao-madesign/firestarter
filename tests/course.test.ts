@@ -167,3 +167,19 @@ describe('file creato nella cartella sbagliata', () => {
     expect(course.recurringErrors.some((e) => e.id === 'prompt-non-letto')).toBe(true);
   });
 });
+
+describe('Riapertura di una lezione già iniziata', () => {
+  it('ritrova le variabili TASKFLOW_* e l\'ambiente lasciati, non quelli dell\'ultima lezione aperta', () => {
+    const s = createWorkspace('t');
+    startLesson(s, 'M4.L2');
+    s.shells.bash.env.TASKFLOW_TOKEN = 'token-della-lezione';
+    const envPrima = s.activeEnv;
+    const urlPrima = s.shells.bash.env.TASKFLOW_URL;
+    startLesson(s, 'M5.L7'); // imposta l'ambiente testing e altre variabili
+    expect(s.shells.bash.env.TASKFLOW_TOKEN).not.toBe('token-della-lezione');
+    startLesson(s, 'M4.L2');
+    expect(s.shells.bash.env.TASKFLOW_TOKEN).toBe('token-della-lezione');
+    expect(s.shells.bash.env.TASKFLOW_URL).toBe(urlPrima);
+    expect(s.activeEnv).toBe(envPrima);
+  });
+});

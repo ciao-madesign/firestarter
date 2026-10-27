@@ -134,6 +134,8 @@ export interface ExerciseProgress {
   startSeq?: number;
   /** numero progressivo del comando più recente all'avvio del tentativo */
   startCmdSeq?: number;
+  /** variabili TASKFLOW_* e ambiente attivo al momento in cui si è passati a un'altra lezione: ripristinati alla riapertura */
+  envSnapshot?: { env: Partial<Record<ShellId, Record<string, string>>>; activeEnv: EnvName };
 }
 
 export interface PredictionRecord {
