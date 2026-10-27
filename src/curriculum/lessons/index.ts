@@ -20,6 +20,7 @@ import { m10 } from './m10.ts';
 import { m10b } from './m10b.ts';
 import { m11 } from './m11.ts';
 import { m11b } from './m11b.ts';
+import { ripassi } from './ripassi.ts';
 import { scenarios } from './scenarios.ts';
 import { diagnosi } from './diagnosi.ts';
 import { guidedM12 } from './guided-m12.ts';
@@ -45,6 +46,12 @@ export const MODULES: ModuleInfo[] = [...UNSORTED].sort((a, b) => a.n - b.n);
 
 export const CURRICULUM_VERSION = '0.1.0';
 
+/** i ripassi (Mx.R) vengono prima della prima lezione del loro modulo */
+function orderKey(id: string): number {
+  const r = /^M(\d+)\.R$/.exec(id);
+  return r ? parseInt(r[1], 10) * 100 : lessonIndex(id);
+}
+
 function mergeGuided(...maps: Record<string, GuidedStep[]>[]): Record<string, GuidedStep[]> {
   const out: Record<string, GuidedStep[]> = {};
   for (const m of maps) for (const [k, v] of Object.entries(m)) out[k] = [...(out[k] ?? []), ...v];
@@ -53,8 +60,8 @@ function mergeGuided(...maps: Record<string, GuidedStep[]>[]): Record<string, Gu
 
 const EXTRA_GUIDED = mergeGuided(guidedM12, guidedM34, guidedM5678, guidedExtra);
 
-export const LESSONS: Lesson[] = [...m1, ...m2, ...m2b, ...m3, ...m3b, ...m4, ...m4b, ...m5, ...m5b, ...m6, ...m6b, ...m7, ...m7b, ...m8, ...m9, ...m9b, ...m10, ...m10b, ...m11, ...m11b, ...scenarios, ...diagnosi]
-  .map((l) => (EXTRA_GUIDED[l.id] ? { ...l, guided: [...l.guided, ...EXTRA_GUIDED[l.id]] } : l)).sort((a, b) => lessonIndex(a.id) - lessonIndex(b.id) || (a.review ? -1 : 1));
+export const LESSONS: Lesson[] = [...m1, ...m2, ...m2b, ...m3, ...m3b, ...m4, ...m4b, ...m5, ...m5b, ...m6, ...m6b, ...m7, ...m7b, ...m8, ...m9, ...m9b, ...m10, ...m10b, ...m11, ...m11b, ...ripassi, ...scenarios, ...diagnosi]
+  .map((l) => (EXTRA_GUIDED[l.id] ? { ...l, guided: [...l.guided, ...EXTRA_GUIDED[l.id]] } : l)).sort((a, b) => orderKey(a.id) - orderKey(b.id) || (a.review ? -1 : 1));
 
 export function getLesson(id: string): Lesson | undefined {
   return LESSONS.find((l) => l.id === id);

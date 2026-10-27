@@ -583,7 +583,7 @@ def('Measure-Object', 'Property:0, Sum!, Average!, Maximum!, Minimum!, Line!, Wo
     return [custom({ Lines: text ? text.split('\n').length : 0, Words: text.split(/\s+/).filter(Boolean).length, Characters: text.replace(/\n/g, '').length, Property: null })];
   }
   const prop = c.has('Property') ? psToString(c.get('Property')) : null;
-  const vals = items.map((i) => (prop && i instanceof PSObject ? i.get(prop) : i)).filter((v) => typeof v === 'number') as number[];
+  const vals = items.map((i) => (prop && i instanceof PSObject ? i.get(prop) : i)).map((v) => (typeof v === 'string' && /^\s*-?\d+(\.\d+)?\s*$/.test(v) ? Number(v) : v)).filter((v) => typeof v === 'number') as number[];
   const o = custom({ Count: items.length, Average: null, Sum: null, Maximum: null, Minimum: null, Property: prop });
   if (vals.length) {
     const sum = vals.reduce((a, b) => a + b, 0);

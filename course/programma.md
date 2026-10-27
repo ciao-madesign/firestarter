@@ -52,6 +52,14 @@ Verifica (criterio): Un output contiene .nascosto e i file ordinati recente → 
 
 Pipe, redirezione, i due canali di uscita (stdout e stderr), filtri, variabili d'ambiente, codici di uscita anche nelle pipeline, PATH e permessi di esecuzione, test positivi e negativi.
 
+### Ripasso M1 — Ripasso: formattare e sommare colonne (printf, awk)
+
+Obiettivo: Riprendere in 5 minuti la lettura di un CSV, la stampa formattata e il totale di una colonna.
+
+Concetti: ripasso: awk e printf; ripasso: totale di una colonna.
+
+Verifica (criterio): report.txt = Anna: 7, Bruno: 5, Carla: 9, totale 21; hai usato awk (Bash) oppure Import-Csv (PowerShell).
+
 ### M2.L1 — Pipe e redirezione dell'output
 
 Obiettivo: Collegare comandi con | e scrivere l'output su file con > e >>, conoscendo il rischio di sovrascrittura.
@@ -255,6 +263,14 @@ Verifica (criterio): Il registro del server mostra POST /v1/tasks con 201 e 422;
 ## M5 — Integrazioni e diagnosi
 
 DNS, porta chiusa o filtrata e timeout, 4xx e 5xx, log e X-Request-Id, individuare il punto di rottura, retry e script elementari, errori intermittenti.
+
+### Ripasso M1 — Ripasso: nome, porta chiusa e timeout
+
+Obiettivo: Riprendere in 5 minuti i codici di curl per nome inesistente, porta chiusa e porta filtrata, e controllare il nome con nslookup.
+
+Concetti: ripasso: codici di curl; ripasso: nslookup.
+
+Verifica (criterio): ripasso.txt = nome 6, chiusa 7, filtrata 28; hai usato -m e il controllo del nome.
 
 ### M5.L1 — DNS e raggiungibilità: il nome non si risolve
 
