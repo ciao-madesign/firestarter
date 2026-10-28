@@ -121,24 +121,6 @@
       "summary": "Pipe, redirezione, i due canali di uscita (stdout e stderr), filtri, variabili d'ambiente, codici di uscita anche nelle pipeline, PATH e permessi di esecuzione, test positivi e negativi.",
       "lessons": [
         {
-          "id": "M2.R",
-          "title": "Ripasso: formattare e sommare colonne (printf, awk)",
-          "objective": "Riprendere in 5 minuti la lettura di un CSV, la stampa formattata e il totale di una colonna.",
-          "concepts": [
-            "ripasso: awk e printf",
-            "ripasso: totale di una colonna"
-          ],
-          "skills": [
-            "comandi",
-            "output"
-          ],
-          "review": true,
-          "shells": [
-            "bash",
-            "pwsh"
-          ]
-        },
-        {
           "id": "M2.L1",
           "title": "Pipe e redirezione dell'output",
           "objective": "Collegare comandi con | e scrivere l'output su file con > e >>, conoscendo il rischio di sovrascrittura.",
@@ -195,6 +177,24 @@
             "autonomia"
           ],
           "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M2.R",
+          "title": "Esercizio extra: leggere una tabella CSV e scrivere un report",
+          "objective": "Leggere un file CSV (una tabella scritta come testo), stampare righe formattate, sommare una colonna e salvare il risultato in un file.",
+          "concepts": [
+            "ripasso: awk e printf",
+            "ripasso: totale di una colonna"
+          ],
+          "skills": [
+            "comandi",
+            "output"
+          ],
+          "review": true,
           "shells": [
             "bash",
             "pwsh"
@@ -661,24 +661,6 @@
       "summary": "DNS, porta chiusa o filtrata e timeout, 4xx e 5xx, log e X-Request-Id, individuare il punto di rottura, retry e script elementari, errori intermittenti.",
       "lessons": [
         {
-          "id": "M5.R",
-          "title": "Ripasso: nome, porta chiusa e timeout",
-          "objective": "Riprendere in 5 minuti i codici di curl per nome inesistente, porta chiusa e porta filtrata, e controllare il nome con nslookup.",
-          "concepts": [
-            "ripasso: codici di curl",
-            "ripasso: nslookup"
-          ],
-          "skills": [
-            "diagnosi",
-            "http"
-          ],
-          "review": true,
-          "shells": [
-            "bash",
-            "pwsh"
-          ]
-        },
-        {
           "id": "M5.L1",
           "title": "DNS e raggiungibilità: il nome non si risolve",
           "objective": "Riconoscere un errore di risoluzione del nome (DNS), trovarne la causa in una configurazione e correggerla.",
@@ -861,6 +843,24 @@
             "comandi"
           ],
           "review": false,
+          "shells": [
+            "bash",
+            "pwsh"
+          ]
+        },
+        {
+          "id": "M5.R",
+          "title": "Ripasso: nome, porta chiusa e timeout",
+          "objective": "Riprendere in 5 minuti i codici di curl per nome inesistente, porta chiusa e porta filtrata, e controllare il nome con nslookup.",
+          "concepts": [
+            "ripasso: codici di curl",
+            "ripasso: nslookup"
+          ],
+          "skills": [
+            "diagnosi",
+            "http"
+          ],
+          "review": true,
           "shells": [
             "bash",
             "pwsh"

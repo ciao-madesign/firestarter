@@ -1,7 +1,7 @@
 /** Spiegazioni semplificate, modulo 2 (vedi spiegazioni.ts). */
 export const SPIEGAZIONI_M2: Record<string, string[]> = {
   "M2.R": [
-    "Questo ripasso riprende, in 5 minuti, due cose: come leggere una tabella salvata in un file e come scrivere un risultato in un nuovo file.",
+    "Questo è un esercizio extra di circa 10 minuti, da fare dopo la lezione sui filtri (M2.L3). Usa tre cose già viste (la redirezione `>` di M2.L1, `printf` di M2.L2 e i filtri di M2.L3) e ne introduce una nuova: leggere una tabella salvata in un file e scrivere un risultato in un nuovo file.",
     "Un file CSV è una tabella scritta come testo: ogni riga è una riga della tabella, e i valori di ogni colonna sono separati da una virgola. La prima riga contiene i nomi delle colonne (qui `nome,punti`). In `voti.csv` la colonna `punti` contiene i punti di ciascuno.",
     "In Bash il comando `awk` legge un file riga per riga. Con `-F,` gli dici di dividere ogni riga alla virgola; poi `$1` è il primo valore della riga, `$2` il secondo, `NR` è il numero della riga. `NR>1` significa «salta la prima riga». `printf` stampa con un formato: `%s` è un testo, `%d` un numero, `\\n` va a capo. `END { ... }` viene eseguito una volta sola, dopo l'ultima riga: è il posto giusto per scrivere un totale.",
     "Per CREARE un file con il risultato di un comando si scrive `comando > nome.txt`: se il file esiste già viene sovrascritto (cancellato e riscritto). Per AGGIUNGERE una riga in fondo senza cancellare si scrive `comando >> nome.txt`.",

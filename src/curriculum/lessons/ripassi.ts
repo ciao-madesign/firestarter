@@ -10,8 +10,8 @@ export const ripassi: Lesson[] = [
     module: 2,
     n: 0,
     review: true,
-    title: 'Ripasso: formattare e sommare colonne (printf, awk)',
-    objective: 'Riprendere in 5 minuti la lettura di un CSV, la stampa formattata e il totale di una colonna.',
+    title: 'Esercizio extra: leggere una tabella CSV e scrivere un report',
+    objective: 'Leggere un file CSV (una tabella scritta come testo), stampare righe formattate, sommare una colonna e salvare il risultato in un file.',
     explain: [
       'Un file CSV ha un valore per colonna, separati da virgola. In Bash `awk -F, \'{ ... }\'` legge le righe dividendole alla virgola: `$1` è la prima colonna, `$2` la seconda, `NR` il numero di riga. `printf` stampa con un formato (`%s` testo, `%d` numero, `\\n` a capo). `END { ... }` viene eseguito dopo l\'ultima riga: è il posto per i totali. Per CREARE un file con il risultato di un comando: `comando > nome.txt` (se esiste lo sovrascrive); per AGGIUNGERE una riga in fondo: `comando >> nome.txt`. In PowerShell `| Set-Content nome.txt` crea il file e `Add-Content nome.txt \'testo\'` aggiunge una riga.',
       'In PowerShell `Import-Csv` legge il file e dà un oggetto per riga con una proprietà per colonna (`$_.nome`); `Measure-Object punti -Sum` somma una colonna; `Add-Content` aggiunge una riga a un file.',

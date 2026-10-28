@@ -48,8 +48,10 @@ export const MODULES: ModuleInfo[] = [...UNSORTED].sort((a, b) => a.n - b.n);
 
 export const CURRICULUM_VERSION = '0.1.0';
 
-/** i ripassi (Mx.R) vengono prima della prima lezione del loro modulo */
 function orderKey(id: string): number {
+  // ripassi ed esercizi extra: stanno DOPO le lezioni che ne spiegano gli strumenti (M1.R, invece, è un ripasso iniziale)
+  const AFTER: Record<string, string> = { 'M2.R': 'M2.L3', 'M5.R': 'M5.L9' };
+  if (AFTER[id]) return lessonIndex(AFTER[id]) + 0.5;
   const r = /^M(\d+)\.R$/.exec(id);
   return r ? parseInt(r[1], 10) * 100 : lessonIndex(id);
 }
