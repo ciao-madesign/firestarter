@@ -165,7 +165,7 @@ export function buildUserPrompt(mode: AiMode, target: AiTarget, ctx: AiContext, 
 export async function callGemini(cfg: AiConfig, system: string, user: string): Promise<string> {
   const f = cfg.fetchFn ?? fetch;
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), cfg.timeoutMs ?? 15_000);
+  const timer = setTimeout(() => ctl.abort(), cfg.timeoutMs ?? 30_000);
   let res: Response;
   try {
     res = await f(`${cfg.baseUrl.replace(/\/$/, '')}/v1beta/models/${encodeURIComponent(cfg.model)}:generateContent`, {
@@ -174,7 +174,7 @@ export async function callGemini(cfg: AiConfig, system: string, user: string): P
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: 'user', parts: [{ text: user }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 700 },
+        generationConfig: { temperature: 0.3, maxOutputTokens: 1500 },
       }),
       signal: ctl.signal,
     });

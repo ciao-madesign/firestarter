@@ -28,7 +28,7 @@ Titolo, obiettivo, consegna e spiegazione della lezione (materiale pubblico del 
 ## Sicurezza e limiti
 - La chiave sta solo sul server (`LAB_GEMINI_KEY`), viaggia solo nell'intestazione `x-goog-api-key`, non è mai inviata al browser né salvata nei dati.
 - Senza chiave la funzione non esiste: nessun pulsante, `POST /api/ai` risponde 503.
-- Limiti: 20 richieste AI all'ora per workspace e 10 al minuto in totale; attesa massima 15 secondi; risposta massima circa 700 token.
+- Limiti: 20 richieste AI all'ora per workspace e 10 al minuto in totale; attesa massima 30 secondi (`LAB_GEMINI_TIMEOUT_MS` per cambiarla); risposta massima circa 1500 token (i modelli che «ragionano» consumano parte di questo limite).
 - Se il servizio non risponde, è bloccato dai filtri o risponde vuoto, si mostra l'aiuto standard con una nota.
 
 ## Attivazione sul Wyse
@@ -45,6 +45,13 @@ Il nome del modello cambia o viene ritirato. Elenca quelli disponibili per la tu
 sudo bash -c 'set -a; . /etc/learning-lab.env; curl -s -H "x-goog-api-key: $LAB_GEMINI_KEY" https://generativelanguage.googleapis.com/v1beta/models | grep -o "\"name\": \"models/gemini[^\"]*\""'
 ```
 Scegline uno con «flash» nel nome, aggiungi `LAB_GEMINI_MODEL=<nome senza «models/»>` a `/etc/learning-lab.env` e riavvia.
+
+## Se compare «Tempo scaduto»
+Il modello ha impiegato più dell'attesa massima o la rete del Wyse è lenta. Misura il tempo reale (la chiave non viene stampata):
+```bash
+sudo bash -c 'set -a; . /etc/learning-lab.env; time curl -s -m 60 -H "content-type: application/json" -H "x-goog-api-key: $LAB_GEMINI_KEY" -d "{\"contents\":[{\"parts\":[{\"text\":\"Rispondi solo: ok\"}]}]}" https://generativelanguage.googleapis.com/v1beta/models/$LAB_GEMINI_MODEL:generateContent | head -c 500'
+```
+Se risponde in pochi secondi il problema è il modello (prova un modello «flash-lite»); se non risponde o impiega molto, è la rete del Wyse (DNS o IPv6).
 
 ## API
 - `GET /api/ai/status` → `{ available, enabled, model, notice }`

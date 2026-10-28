@@ -14,7 +14,7 @@ const trustProxy = process.env.LAB_TRUST_PROXY === '1';
 const webRoot = resolve(process.env.LAB_WEB_ROOT ?? 'dist/web');
 // aiuto con AI (facoltativo): la chiave sta solo qui, nell'ambiente del servizio (/etc/learning-lab.env)
 const geminiKey = process.env.LAB_GEMINI_KEY?.trim();
-const ai = geminiKey ? { key: geminiKey, model: process.env.LAB_GEMINI_MODEL?.trim() || 'gemini-2.5-flash', baseUrl: process.env.LAB_GEMINI_URL?.trim() || 'https://generativelanguage.googleapis.com' } : undefined;
+const ai = geminiKey ? { key: geminiKey, model: process.env.LAB_GEMINI_MODEL?.trim() || 'gemini-2.5-flash', baseUrl: process.env.LAB_GEMINI_URL?.trim() || 'https://generativelanguage.googleapis.com', timeoutMs: parseInt(process.env.LAB_GEMINI_TIMEOUT_MS ?? '', 10) || undefined } : undefined;
 const server = createApp({ store, singleUser, webRoot, password, trustProxy, ai });
 server.requestTimeout = 30_000;
 server.listen(port, host, () => {

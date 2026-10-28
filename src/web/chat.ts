@@ -44,7 +44,7 @@ async function ask(mode: string, text = ''): Promise<void> {
 async function askAi(mode: 'simplify' | 'hint', target: 'lesson' | 'error' | 'text', text = ''): Promise<void> {
   const shown = mode === 'hint' ? 'Indizio (AI)' : target === 'error' ? 'Spiega l\'ultimo errore (AI)' : target === 'text' ? `Spiega con parole semplici (AI): ${text}` : 'Spiega la lezione con parole più semplici (AI)';
   messages.push({ role: 'user', text: shown });
-  messages.push({ role: 'tutor', text: 'Sto chiedendo all\'AI… (se non risponde entro 15 secondi ti do l\'aiuto standard)' });
+  messages.push({ role: 'tutor', text: 'Sto chiedendo all\'AI… (se non risponde entro 30 secondi ti do l\'aiuto standard)' });
   draw();
   try {
     const r = await api<any>('POST', '/ai', { mode, target, text, shell: app.shell });
