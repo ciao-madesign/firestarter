@@ -48,6 +48,8 @@ for (const l of LESSONS) {
       const m = re.exec(line);
       if (m) lines.push(...m[1].split('\n').filter((x) => !x.trim().startsWith('#')));
     }
+    // anche i comandi di previsione, test negativo ed esempio: lo studente li vede e li esegue, quindi i loro strumenti vanno spiegati
+    for (const c of [...l.predict.map((p) => p.cmd[sh]), l.negative.cmd[sh], l.example.cmd[sh]]) if (c) lines.push(c);
     for (const line of lines) for (const t0 of tokensOf(line, sh)) {
       if (/^export -/.test(t0)) continue;
       const t = ALIAS[t0] ?? t0;

@@ -99,7 +99,7 @@ export const m1: Lesson[] = [
         errorTag: 'previsioni-incoerenti',
       },
     ],
-    example: { text: 'Esempio analogo: per andare in /usr/share/doc con un percorso assoluto.', cmd: { bash: 'cd /usr/share/doc', pwsh: 'cd /usr/share/doc' } },
+    example: { text: 'Esempio analogo: per andare in /var/log/taskflow con un percorso assoluto.', cmd: { bash: 'cd /var/log/taskflow', pwsh: 'cd /var/log/taskflow' } },
     hints: ['Il percorso assoluto inizia con / e rispetta le maiuscole: /home/learner/corso-cli/m1r/Documenti/Rapporti.', 'L\'errore di sintassi lo ottieni con parentesi non quotate; quello di esecuzione con una cartella che non esiste.'],
     solutions: {
       bash: ['#predict: ls -l /home/Learner stampa No such file or directory', 'cd /home/learner/corso-cli/m1r/Documenti/Rapporti', 'ls -l Mio Progetto (v2)', 'ls /home/Learner', 'pwd'],
@@ -257,7 +257,7 @@ export const m1: Lesson[] = [
         onFail: '.. significa "la cartella sopra": da Alpha, ../Beta è la cartella sorella.',
       },
     ],
-    example: { text: 'Esempio analogo in un\'altra posizione: da /usr/share elenca ../lib senza spostarti.', cmd: { bash: 'cd /usr/share && ls ../bin', pwsh: 'cd /usr/share; ls ../bin' } },
+    example: { text: 'Esempio analogo in un\'altra posizione: da /var/log elenca ../../etc (due cartelle più in alto, poi etc) senza spostarti.', cmd: { bash: 'cd /var/log && ls ../../etc', pwsh: 'cd /var/log; ls ../../etc' } },
     hints: ['Il percorso assoluto inizia con / e include tutte le cartelle: /home/learner/corso-cli/m1l2/Progetti/Alpha.', '.. torna su di un livello: da Alpha, ../Beta è accanto.'],
     solutions: {
       bash: ['cd /home/learner/corso-cli/m1l2/Progetti/Alpha', 'ls ../Beta'],
@@ -327,7 +327,7 @@ export const m1: Lesson[] = [
         errorTag: 'sintassi-vs-esecuzione',
       },
     ],
-    example: { text: 'Esempio analogo: leggere un file con spazi in /tmp.', cmd: { bash: 'cat "/tmp/mio file (1).txt"', pwsh: 'Get-Content "/tmp/mio file (1).txt"' } },
+    example: { text: 'Esempio analogo: creare e leggere un file con spazi nel nome, in /tmp (le virgolette tengono insieme il nome).', cmd: { bash: 'echo ciao > "/tmp/mio file (1).txt" && cat "/tmp/mio file (1).txt"', pwsh: 'Set-Content "/tmp/mio file (1).txt" -Value ciao; Get-Content "/tmp/mio file (1).txt"' } },
     hints: ['Le virgolette creano un solo argomento: "cartella con spazi/file.txt".', 'Puoi usare cat per il primo file e di nuovo cat per il secondo, ciascuno con il suo percorso tra virgolette.'],
     solutions: {
       bash: ['cat "$HOME/corso-cli/m1l3/Mio Progetto (v2)/leggimi.txt"', 'cat "$HOME/corso-cli/m1l3/Mio Progetto (v2)/dati 2026.txt"'],

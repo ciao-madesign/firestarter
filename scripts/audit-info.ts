@@ -8,7 +8,7 @@ import type { Lesson } from '../src/curriculum/types.ts';
 import type { ShellId } from '../src/engine/types.ts';
 import { toolsFor } from '../src/curriculum/glossary.ts';
 
-function teaching(l: Lesson, sh: ShellId): string {
+export function teaching(l: Lesson, sh: ShellId): string {
   // solo testo che SPIEGA (non i comandi nudi): un comando mostrato senza spiegazione non insegna il costrutto
   const parts: string[] = [...l.explain, ...l.hints, l.example.text, l.negative.prompt, l.negative.explain];
   for (const t of toolsFor(l.id, sh)) parts.push(t.name, t.text);

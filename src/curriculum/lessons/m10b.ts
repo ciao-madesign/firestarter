@@ -194,7 +194,7 @@ export const m10b: Lesson[] = [
     ],
     predict: [
       {
-        prompt: 'Il token manomesso dichiara sub alice e role admin. Il server lo accetta, visto che il payload lo dice?',
+        prompt: 'Nella cartella della lezione ci sono tre file con un token ciascuno: valido.jwt, scaduto.jwt e manomesso.jwt (vedili con ls). Il token manomesso dichiara sub alice e role admin. Il server lo accetta, visto che il payload lo dice?',
         cmd: { bash: 'cd ~/corso-cli/m10l3; curl -s -H "Authorization: Bearer $(cat manomesso.jwt)" $TASKFLOW_URL/v1/admin/users', pwsh: 'cd ~/corso-cli/m10l3; curl.exe -s -H "Authorization: Bearer $(Get-Content manomesso.jwt)" "$env:TASKFLOW_URL/v1/admin/users"' },
         expect: 'No: 401 invalid_signature. Il payload è stato cambiato ma la firma è rimasta quella del token originale, quindi non coincide più.',
         why: 'Il payload si può riscrivere a piacere; la firma no, senza il segreto. Per questo conta la verifica del server, non ciò che il token dichiara.',

@@ -72,7 +72,7 @@ export const m4: Lesson[] = [
         onFail: 'Filtra i percorsi che hanno la chiave "post": in jq select(.value.post) dopo to_entries; in PowerShell Where-Object { $_.Value.post }.',
       },
     ],
-    example: { text: 'Esempio analogo: elencare i percorsi che accettano DELETE.', cmd: { bash: "jq -r '.paths | to_entries[] | select(.value.delete) | .key' openapi.json", pwsh: '$spec.paths.PSObject.Properties | Where-Object { $_.Value.delete } | ForEach-Object { $_.Name }' } },
+    example: { text: 'Esempio analogo: elencare i percorsi che accettano DELETE.', cmd: { bash: "curl -s $TASKFLOW_URL/v1/openapi.json | jq -r '.paths | to_entries[] | select(.value.delete) | .key'", pwsh: '$spec = Invoke-RestMethod "$env:TASKFLOW_URL/v1/openapi.json"; $spec.paths.PSObject.Properties | Where-Object { $_.Value.delete } | ForEach-Object { $_.Name }' } },
     hints: ['Con jq: to_entries trasforma l\'oggetto in coppie key/value; select() filtra; -r toglie le virgolette.', 'PowerShell: ConvertFrom-Json produce oggetti; .paths.PSObject.Properties ti dà Name e Value per ogni percorso.'],
     solutions: {
       bash: ['cd ~/corso-cli/m4l1', 'curl -s $TASKFLOW_URL/v1/openapi.json -o openapi.json', "jq -r '.paths | to_entries[] | select(.value.post) | .key' openapi.json > elenco.txt"],

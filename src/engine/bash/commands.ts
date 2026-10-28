@@ -634,6 +634,13 @@ reg('man', (args, io) => {
 reg('env', (args, io, rt) => {
   const assigns: Record<string, string> = {};
   let i = 0;
+  let clean = false;
+  const unset: string[] = [];
+  while (i < args.length && (args[i] === '-i' || args[i] === '-u')) {
+    if (args[i] === '-i') clean = true;
+    else if (args[i + 1] !== undefined) unset.push(args[++i]);
+    i++;
+  }
   while (i < args.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(args[i])) {
     const [k, v] = args[i].split(/=(.*)/s);
     assigns[k] = v;
@@ -641,6 +648,8 @@ reg('env', (args, io, rt) => {
   }
   if (i < args.length) {
     const saved = { ...rt.ss.env };
+    if (clean) rt.ss.env = {};
+    for (const k of unset) delete rt.ss.env[k];
     Object.assign(rt.ss.env, assigns);
     try {
       return rt.runCommand(args[i], args.slice(i + 1), io);
@@ -648,7 +657,9 @@ reg('env', (args, io, rt) => {
       rt.ss.env = saved;
     }
   }
-  for (const k of Object.keys(rt.ss.env)) io.out(`${k}=${rt.ss.env[k]}\n`);
+  const shown = clean ? assigns : { ...rt.ss.env, ...assigns };
+  for (const k of unset) delete shown[k];
+  for (const k of Object.keys(shown)) io.out(`${k}=${shown[k]}\n`);
   return 0;
 });
 reg('printenv', (args, io, rt) => {
@@ -2135,3 +2146,25 @@ reg('jq', (args0, io, rt) => {
 void glob;
 void resolvePath;
 void CREDENTIALS;
+
+/** od -c: mostra i caratteri di un file uno per uno (a capo, ritorno a capo e tabulazioni compresi). Solo -c e -An. */
+reg('od', (args, io, rt) => {
+  const o = getopt(args, { flags: 'c', values: 'tA', alias: {} });
+  if (o.error) return badOpt('od', io, o.error);
+  const noAddr = args.includes('-An') || o.values.A?.[0] === 'n';
+  if (!o.flags.has('c') && !args.includes('-An')) {
+    io.err('od: nel laboratorio è disponibile solo -c (con -An per togliere gli indirizzi)\n');
+    return 1;
+  }
+  const { inputs, failed } = readInputs(rt, io, 'od', o.rest.slice(0, 1));
+  if (failed) return 1;
+  const bytes = Buffer.from(inputs[0]?.text ?? io.stdin, 'utf8');
+  const names: Record<number, string> = { 0: '\\0', 7: '\\a', 8: '\\b', 9: '\\t', 10: '\\n', 11: '\\v', 12: '\\f', 13: '\\r' };
+  const cell = (b: number): string => (names[b] ?? (b >= 32 && b < 127 ? String.fromCharCode(b) : b.toString(8).padStart(3, '0'))).padStart(4, ' ');
+  for (let off = 0; off < bytes.length; off += 16) {
+    const row = [...bytes.subarray(off, off + 16)].map(cell).join('');
+    io.out((noAddr ? '' : off.toString(8).padStart(7, '0')) + row + '\n');
+  }
+  if (!noAddr) io.out(bytes.length.toString(8).padStart(7, '0') + '\n');
+  return 0;
+});

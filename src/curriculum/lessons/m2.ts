@@ -207,7 +207,7 @@ export const m2: Lesson[] = [
         onFail: 'Estrai la colonna dello status (9ª), raggruppa e conta, poi redirigi in conteggio.txt. In Bash ricorda sort prima di uniq -c.',
       },
     ],
-    example: { text: 'Esempio analogo: contare quante richieste ha fatto ogni indirizzo IP.', cmd: { bash: "cut -d' ' -f1 accessi.log | sort | uniq -c", pwsh: "Get-Content accessi.log | ForEach-Object { ($_ -split ' ')[0] } | Group-Object | ForEach-Object { \"$($_.Count) $($_.Name)\" }" } },
+    example: { text: 'Esempio analogo: contare quante richieste ha fatto ogni indirizzo IP.', cmd: { bash: "cd ~/corso-cli/m2l3 && cut -d' ' -f1 accessi.log | sort | uniq -c", pwsh: "cd ~/corso-cli/m2l3; Get-Content accessi.log | ForEach-Object { ($_ -split ' ')[0] } | Group-Object | ForEach-Object { \"$($_.Count) $($_.Name)\" }" } },
     hints: ['La colonna dello status è la nona, separata da spazi.', 'Pipeline: estrai → ordina → conta → salva con >.'],
     solutions: {
       bash: ['cd ~/corso-cli/m2l3', "cut -d' ' -f9 accessi.log | sort | uniq -c > conteggio.txt"],
@@ -271,7 +271,7 @@ export const m2: Lesson[] = [
         onFail: 'Subito dopo il comando fallito (stessa riga, separata da ;) scrivi l\'esito: echo $? > esito.txt in Bash; $? > esito.txt in PowerShell.',
       },
     ],
-    example: { text: 'Esempio analogo: salvare il codice di uscita di grep su un testo assente.', cmd: { bash: 'grep zzz check.txt; echo $? > cod.txt', pwsh: 'Select-String zzz check.txt; $? > cod.txt' } },
+    example: { text: 'Esempio analogo: salvare il codice di uscita di grep su un testo assente.', cmd: { bash: 'cd ~/corso-cli/m2l4 && grep zzz check.txt; echo $? > cod.txt', pwsh: 'cd ~/corso-cli/m2l4; Select-String zzz check.txt; $? > cod.txt' } },
     hints: ['Il comando che fallisce e la lettura dell\'esito devono stare sulla stessa riga (separati da ;), altrimenti $? riflette un altro comando.', 'Il percorso inesistente può essere /nonexistent.'],
     solutions: {
       bash: ['export STAGE=testing', 'cd ~/corso-cli/m2l4', 'ls /nonexistent; echo $? > esito.txt'],

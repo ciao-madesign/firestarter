@@ -265,7 +265,13 @@ Differenze rispetto al comando reale:
 
 Mostra l'ambiente o esegue un comando con variabili aggiunte.
 
-Sintassi: `env [VAR=valore] [comando]`
+Sintassi: `env [-i] [-u VAR] [VAR=valore] [comando]`
+
+- `-i`: parte da un ambiente vuoto
+- `-u VAR`: toglie una variabile
+
+Differenze rispetto al comando reale:
+- Un solo comando: `env -i bash -c '...'` ricrea un ambiente pulito come farebbe il vero env (con la sola eccezione che PATH resta usabile per trovare i comandi).
 
 ### `printenv`
 
@@ -868,6 +874,18 @@ Esempio: `getent hosts server.lab`
 
 Differenze rispetto al comando reale:
 - Solo "getent hosts". A differenza di nslookup e dig, che interrogano solo il DNS, tiene conto di /etc/hosts (come ping e curl).
+
+### `od`
+
+Mostra i caratteri di un file uno per uno: utile per vedere a capo (\n), ritorni a capo di Windows (\r) e tabulazioni (\t).
+
+Sintassi: `od -c [-An] [file]`
+
+- `-c`: mostra i caratteri
+- `-An`: senza la colonna degli indirizzi
+
+Differenze rispetto al comando reale:
+- Disponibili solo -c e -An; gli altri formati (-t, -x) non sono simulati.
 
 ### `base64`
 

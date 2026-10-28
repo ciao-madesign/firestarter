@@ -382,7 +382,7 @@ export const m5: Lesson[] = [
         onFail: 'Conta le righe che contengono "-> 5": grep -c (PowerShell: .Count).',
       },
     ],
-    example: { text: 'Esempio analogo: l\'utente con più richieste.', cmd: { bash: "awk '{print $(NF-1)}' traffic.log | sort | uniq -c | sort -rn | head -1", pwsh: 'Get-Content traffic.log | Group-Object { ($_ -split " ")[8] } | Sort-Object Count -Descending | Select-Object -First 1' } },
+    example: { text: 'Esempio analogo: l\'utente con più richieste.', cmd: { bash: "cd ~/corso-cli/m5l6 && awk '{print $(NF-1)}' traffic.log | sort | uniq -c | sort -rn | head -1", pwsh: 'cd ~/corso-cli/m5l6; Get-Content traffic.log | Group-Object { ($_ -split " ")[8] } | Sort-Object Count -Descending | Select-Object -First 1' } },
     hints: ["Il campo del percorso è il 5° quando dividi per spazi: `2026... INFO http: GET /v1/flaky`.", 'grep -- \'-> 5\' | awk \'{print $5}\' | sort | uniq -c | sort -rn | head -1 | awk \'{print $2}\''],
     solutions: {
       bash: ['cd ~/corso-cli/m5l6', "grep -- '-> 5' traffic.log | awk '{print $5}' | sort | uniq -c | sort -rn | head -1 | awk '{print $2}' > top-errori.txt", "grep -c -- '-> 5' traffic.log > totale-5xx.txt"],
