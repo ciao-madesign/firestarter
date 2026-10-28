@@ -39,6 +39,13 @@ Titolo, obiettivo, consegna e spiegazione della lezione (materiale pubblico del 
 5. Il Wyse deve poter uscire in HTTPS verso `generativelanguage.googleapis.com`.
 Per spegnere: togli la riga e riavvia.
 
+## Se compare «ha risposto 404» (modello non trovato)
+Il nome del modello cambia o viene ritirato. Elenca quelli disponibili per la tua chiave (la chiave non viene stampata):
+```bash
+sudo bash -c 'set -a; . /etc/learning-lab.env; curl -s -H "x-goog-api-key: $LAB_GEMINI_KEY" https://generativelanguage.googleapis.com/v1beta/models | grep -o "\"name\": \"models/gemini[^\"]*\""'
+```
+Scegline uno con «flash» nel nome, aggiungi `LAB_GEMINI_MODEL=<nome senza «models/»>` a `/etc/learning-lab.env` e riavvia.
+
 ## API
 - `GET /api/ai/status` → `{ available, enabled, model, notice }`
 - `POST /api/prefs { aiEnabled: true|false }`

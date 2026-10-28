@@ -177,3 +177,17 @@ describe('server', () => {
     s2.close();
   });
 });
+
+describe('errori di Gemini', () => {
+  it('la nota riporta lo status, il messaggio di Google e il suggerimento sul modello, senza la chiave', async () => {
+    nextReply = { status: 404, body: { error: { message: 'models/gemini-vecchio is not found for API version v1beta' } } };
+    const s = createWorkspace('t');
+    startLesson(s, 'M1.L1');
+    const r = await aiAssist(s, 'bash', 'simplify', 'lesson', '', { ...cfg(), model: 'gemini-vecchio' });
+    expect(r.ai).toBe(false);
+    expect(r.note).toContain('404');
+    expect(r.note).toContain('is not found');
+    expect(r.note).toContain('LAB_GEMINI_MODEL');
+    expect(r.note).not.toContain('CHIAVE-DI-PROVA');
+  });
+});

@@ -183,7 +183,17 @@ export async function callGemini(cfg: AiConfig, system: string, user: string): P
   } finally {
     clearTimeout(timer);
   }
-  if (!res.ok) throw new AiError('http', `Il servizio AI ha risposto ${res.status}`);
+  if (!res.ok) {
+    // il messaggio di Google non contiene la chiave; lo si include (accorciato) per capire la causa
+    let detail = '';
+    try {
+      detail = String(((await res.json()) as { error?: { message?: string } }).error?.message ?? '').replace(/\s+/g, ' ').slice(0, 160);
+    } catch {
+      /* corpo non leggibile */
+    }
+    const hint = res.status === 404 ? ` Il modello «${cfg.model}» non risulta disponibile: controlla LAB_GEMINI_MODEL.` : res.status === 400 || res.status === 403 ? ' Controlla la chiave (LAB_GEMINI_KEY).' : res.status === 429 ? ' Limite del piano gratuito raggiunto.' : '';
+    throw new AiError('http', `Il servizio AI ha risposto ${res.status}${detail ? `: ${detail}` : ''}.${hint}`);
+  }
   let data: { candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[]; promptFeedback?: { blockReason?: string } };
   try {
     data = (await res.json()) as typeof data;
