@@ -354,7 +354,7 @@ export const m2: Lesson[] = [
       },
     ],
     example: { text: 'Esempio analogo di tabella test per un\'altra funzione (somma).', cmd: { bash: "printf '| Input | Atteso | Effettivo |\\n|---|---|---|\\n| 2+2 | 4 | 4 |\\n' > piano-test.md" } },
-    hints: ['Un test negativo atteso: codice ≠ 0 e un messaggio comprensibile. Prova abc, 0, -5, e nessun argomento.', 'Scrivi la tabella a mano con echo/printf o con un editor (scheda Documenti e file del laboratorio).'],
+    hints: ['Un test negativo atteso: codice ≠ 0 e un messaggio comprensibile. Prova abc, 0, -5, e nessun argomento.', 'Scrivi la tabella a mano con echo/printf o con un editor (scheda Documentazione del laboratorio).'],
     solutions: {
       bash: ['cd ~/corso-cli/m2l7', 'bash dividi.sh 4', 'bash dividi.sh 10', 'bash dividi.sh abc', 'bash dividi.sh 0', "printf '| Input | Atteso | Effettivo |\\n|---|---|---|\\n| 4 | 25 | 25 |\\n| 10 | 10 | 10 |\\n| abc | errore, codice 1 | errore, codice 1 |\\n| 0 | errore, codice 2 | errore, codice 2 |\\n' > piano-test.md"],
       pwsh: ['cd ~/corso-cli/m2l7', './dividi.ps1 4', './dividi.ps1 10', './dividi.ps1 abc', './dividi.ps1 0', "Set-Content piano-test.md -Value '| Input | Atteso | Effettivo |','|---|---|---|','| 4 | 25 | 25 |','| 10 | 10 | 10 |','| abc | errore, codice 1 | errore, codice 1 |','| 0 | errore, codice 2 | errore, codice 2 |'"],

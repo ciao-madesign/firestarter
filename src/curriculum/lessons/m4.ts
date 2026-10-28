@@ -448,7 +448,7 @@ curl -s -H "Authorization: Bearer $TOKEN" "$TASKFLOW_URL/v1/me" | jq -r .name
       },
     ],
     example: { text: 'Esempio analogo: una piccola procedura PowerShell che stampa lo stato del servizio.', cmd: { pwsh: '(Invoke-RestMethod "$env:TASKFLOW_URL/v1/health").status' } },
-    hints: ['Parti da procedura.sh: due richieste (token, poi /me). Ogni riga ha un equivalente: jq .campo diventa .campo sull\'oggetto.', 'Per scrivere il file usa un here-string: Set-Content procedura.ps1 -Value @\'... \'@ (oppure l\'editor della scheda File).'],
+    hints: ['Parti da procedura.sh: due richieste (token, poi /me). Ogni riga ha un equivalente: jq .campo diventa .campo sull\'oggetto.', 'Per scrivere il file usa un here-string: Set-Content procedura.ps1 -Value @\'... \'@ (oppure l\'editor della scheda Documentazione).'],
     solutions: {
       pwsh: [
         'cd ~/corso-cli/m4l8',

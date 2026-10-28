@@ -22,6 +22,7 @@ import { m11 } from './m11.ts';
 import { m11b } from './m11b.ts';
 import { ripassi } from './ripassi.ts';
 import { scenarios2 } from './scenarios2.ts';
+import { SPIEGAZIONI } from './spiegazioni.ts';
 import { scenarios } from './scenarios.ts';
 import { diagnosi } from './diagnosi.ts';
 import { guidedM12 } from './guided-m12.ts';
@@ -62,6 +63,7 @@ function mergeGuided(...maps: Record<string, GuidedStep[]>[]): Record<string, Gu
 const EXTRA_GUIDED = mergeGuided(guidedM12, guidedM34, guidedM5678, guidedExtra);
 
 export const LESSONS: Lesson[] = [...m1, ...m2, ...m2b, ...m3, ...m3b, ...m4, ...m4b, ...m5, ...m5b, ...m6, ...m6b, ...m7, ...m7b, ...m8, ...m9, ...m9b, ...m10, ...m10b, ...m11, ...m11b, ...ripassi, ...scenarios, ...scenarios2, ...diagnosi]
+  .map((l) => (SPIEGAZIONI[l.id] ? { ...l, explain: SPIEGAZIONI[l.id] } : l))
   .map((l) => (EXTRA_GUIDED[l.id] ? { ...l, guided: [...l.guided, ...EXTRA_GUIDED[l.id]] } : l)).sort((a, b) => orderKey(a.id) - orderKey(b.id) || (a.review ? -1 : 1));
 
 export function getLesson(id: string): Lesson | undefined {

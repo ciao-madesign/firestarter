@@ -506,7 +506,7 @@ export const m6: Lesson[] = [
       explain: 'Il server non conosce PUT /v1/tasks (405 o 401 prima: l\'autenticazione precede). La guida documenta un\'operazione inesistente.',
     },
     task: {
-      text: 'Correggi `~/docs/m6l3-tasks-api.md` (puoi modificarlo con l\'editor della scheda File oppure da terminale) finché il controllo dei documenti non mostra né errori né avvisi verificabili e tutti gli esempi eseguiti hanno lo stato atteso corretto.',
+      text: 'Correggi `~/docs/m6l3-tasks-api.md` (puoi modificarlo con l\'editor della scheda Documentazione oppure da terminale) finché il controllo dei documenti non mostra né errori né avvisi verificabili e tutti gli esempi eseguiti hanno lo stato atteso corretto.',
       criterion: 'Zero errori e zero avvisi verificabili; almeno 2 esempi eseguiti, tutti con lo status dichiarato.',
     },
     checks: [
@@ -520,7 +520,7 @@ export const m6: Lesson[] = [
           const bad = r.issues.filter((i) => i.kind === 'verifiable' && i.severity !== 'info');
           return { pass: bad.length === 0, actual: bad.length ? bad.slice(0, 3).map((i) => `riga ${i.line}: ${i.message}`).join(' | ') : 'ok' };
         },
-        onFail: 'Apri la scheda Documenti e usa "Controlla": ogni messaggio indica riga e causa.',
+        onFail: 'Apri la scheda Documentazione e usa "Controlla": ogni messaggio indica riga e causa.',
       },
       {
         id: 'esempi',
