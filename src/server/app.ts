@@ -6,6 +6,7 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { extname, join, normalize, resolve, sep } from 'node:path';
+import { AI_NOTICE, aiAssist, type AiConfig, type AiMode, type AiTarget } from '../tutor/ai.ts';
 import { applyEnvToShells, complete, execute, promptFor, stateSize } from '../engine/index.ts';
 import { LIMITS, type EnvName, type ShellId, type WorkspaceState } from '../engine/types.ts';
 import { BASE_URLS, ENDPOINTS, API_VERSION } from '../engine/api/spec.ts';
@@ -35,6 +36,8 @@ export interface AppConfig {
   password?: string;
   /** fiducia nell'intestazione X-Forwarded-* (dietro tunnel o proxy) */
   trustProxy?: boolean;
+  /** aiuto con AI (Gemini): assente = funzione non disponibile. La chiave non lascia mai il server. */
+  ai?: AiConfig;
 }
 
 class HttpError extends Error {
@@ -64,6 +67,8 @@ export function createApp(cfg: AppConfig): Server {
   const locks = new Map<string, Promise<unknown>>();
   const hits = new Map<string, number[]>();
   const loginFails = new Map<string, number[]>();
+  const aiHits = new Map<string, number[]>();
+  const aiGlobal: number[] = [];
   const key = cfg.password ? createHash('sha256').update('lab-session:' + cfg.password).digest() : null;
   const SESSION_DAYS = 30;
 
@@ -299,6 +304,7 @@ export function createApp(cfg: AppConfig): Server {
       if (typeof body.splitPercent === 'number') p.splitPercent = Math.max(25, Math.min(80, body.splitPercent));
       if (body.shell === 'bash' || body.shell === 'pwsh') p.shell = body.shell;
       if (typeof body.tab === 'string') p.tab = body.tab.slice(0, 24);
+      if (typeof body.aiEnabled === 'boolean') p.aiEnabled = cfg.ai ? body.aiEnabled : false;
       persist(id, c);
       return sendJson(res, 200, { prefs: p });
     }
@@ -395,6 +401,34 @@ export function createApp(cfg: AppConfig): Server {
       if (ws.activeExercise && !ws.progress[ws.activeExercise]?.startClock) startLesson(ws, ws.activeExercise);
       const reply = tutorRespond(ws, mode, sh, text);
       ws.tutorChat.push({ role: 'tutor', text: reply.text, at: ws.clock });
+      if (ws.tutorChat.length > 200) ws.tutorChat.splice(0, ws.tutorChat.length - 200);
+      persist(id, c);
+      return sendJson(res, 200, { reply, chat: ws.tutorChat.slice(-60) });
+    }
+    // --- aiuto con AI (opzionale)
+    if (path === '/ai/status' && method === 'GET') {
+      return sendJson(res, 200, { available: !!cfg.ai, enabled: !!cfg.ai && ws.prefs.aiEnabled === true, model: cfg.ai?.model ?? null, notice: AI_NOTICE });
+    }
+    if (path === '/ai' && method === 'POST') {
+      if (!cfg.ai) throw new HttpError(503, "L'aiuto con AI non è configurato su questo server.");
+      if (ws.prefs.aiEnabled !== true) throw new HttpError(403, "L'aiuto con AI non è attivo: attivalo nella scheda Tutor.");
+      const now = Date.now();
+      const mine = (aiHits.get(id) ?? []).filter((t) => now - t < 3_600_000);
+      while (aiGlobal.length && now - aiGlobal[0] > 60_000) aiGlobal.shift();
+      if (mine.length >= 20) throw new HttpError(429, 'Hai usato 20 richieste AI nell\'ultima ora: attendi un po\' (il tutor standard resta disponibile).');
+      if (aiGlobal.length >= 10) throw new HttpError(429, 'Il servizio AI è occupato: riprova tra un minuto.');
+      mine.push(now);
+      aiHits.set(id, mine);
+      aiGlobal.push(now);
+      const mode: AiMode = body.mode === 'hint' ? 'hint' : 'simplify';
+      const target: AiTarget = body.target === 'error' ? 'error' : body.target === 'text' ? 'text' : 'lesson';
+      const text = typeof body.text === 'string' ? body.text.slice(0, 1200) : '';
+      if (ws.activeExercise && !ws.progress[ws.activeExercise]?.startClock) startLesson(ws, ws.activeExercise);
+      const label = mode === 'hint' ? 'Indizio (AI)' : target === 'error' ? 'Spiega l\'ultimo errore (AI)' : target === 'text' ? `Spiega con parole semplici (AI): ${text}` : 'Spiega la lezione con parole più semplici (AI)';
+      const reply = await aiAssist(ws, sh, mode, target, text, cfg.ai);
+      if (reply.denied) throw new HttpError(409, reply.denied);
+      ws.tutorChat.push({ role: 'user', text: label, at: ws.clock });
+      ws.tutorChat.push({ role: 'tutor', text: reply.note ? `${reply.text}\n\n_${reply.note}_` : reply.text, at: ws.clock });
       if (ws.tutorChat.length > 200) ws.tutorChat.splice(0, ws.tutorChat.length - 200);
       persist(id, c);
       return sendJson(res, 200, { reply, chat: ws.tutorChat.slice(-60) });

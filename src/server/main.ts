@@ -12,11 +12,15 @@ const store = new FileStore(dataDir, courseFile);
 const password = process.env.LAB_PASSWORD || undefined;
 const trustProxy = process.env.LAB_TRUST_PROXY === '1';
 const webRoot = resolve(process.env.LAB_WEB_ROOT ?? 'dist/web');
-const server = createApp({ store, singleUser, webRoot, password, trustProxy });
+// aiuto con AI (facoltativo): la chiave sta solo qui, nell'ambiente del servizio (/etc/learning-lab.env)
+const geminiKey = process.env.LAB_GEMINI_KEY?.trim();
+const ai = geminiKey ? { key: geminiKey, model: process.env.LAB_GEMINI_MODEL?.trim() || 'gemini-2.5-flash', baseUrl: process.env.LAB_GEMINI_URL?.trim() || 'https://generativelanguage.googleapis.com' } : undefined;
+const server = createApp({ store, singleUser, webRoot, password, trustProxy, ai });
 server.requestTimeout = 30_000;
 server.listen(port, host, () => {
   console.log(`CLI & API Learning Lab — http://${host}:${port}`);
   console.log(`Modalità: ${singleUser ? 'personale (un solo studente)' : 'multi-workspace (header X-Workspace)'}; dati in ${dataDir}`);
   console.log(password ? 'Accesso protetto da password (LAB_PASSWORD).' : 'ATTENZIONE: nessuna password. Va bene solo in locale o su rete privata.');
+  console.log(ai ? `Aiuto con AI disponibile (modello ${ai.model}); ogni allievo deve attivarlo.` : 'Aiuto con AI non configurato (LAB_GEMINI_KEY assente): il tutor resta deterministico.');
   console.log('Ambiente SIMULATO: nessun comando viene eseguito sul server o sul tuo dispositivo.');
 });

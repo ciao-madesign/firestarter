@@ -10,6 +10,8 @@ export const app = {
   shell: 'bash' as ShellId,
   online: true,
   tab: 'istruzioni',
+  /** aiuto con AI disponibile sul server E attivato dall'allievo */
+  aiEnabled: false,
 };
 
 export const bus = new EventTarget();

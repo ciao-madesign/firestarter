@@ -233,7 +233,12 @@ export function renderLesson(root: HTMLElement): void {
   root.append(h('p', { class: 'objective' }, h('strong', null, 'Obiettivo: '), ...inlineMd(l.objective)));
   root.append(h('p', { class: 'muted' }, `Cartella di lavoro: ${l.dir.replace('/home/learner', '~')} · cerca nel prompt dove ti trovi prima di ogni comando.`));
 
-  root.append(section('Spiegazione', [renderMarkdown(l.explain.join('\n\n'))], true));
+  root.append(section('Spiegazione', [
+    renderMarkdown(l.explain.join('\n\n')),
+    app.aiEnabled
+      ? h('div', { class: 'row' }, h('button', { type: 'button', class: 'btn small', title: 'Chiede all\'AI di riscrivere la spiegazione con parole più semplici (conta come spiegazione usata)', on: { click: () => { emit('ai-ask', { mode: 'simplify', target: 'lesson' }); hooks.gotoTab('chat'); } } }, 'Non ho capito: spiegala più semplice (AI)'))
+      : null,
+  ], true));
   const tools = ((l.tools ?? {})[app.shell] ?? []) as { name: string; text: string }[];
   if (tools.length) {
     root.append(section(`Strumenti per questo esercizio (${shellName(app.shell)})`, [

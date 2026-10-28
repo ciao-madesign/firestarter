@@ -23,6 +23,7 @@ Porte già occupate sul Wyse dagli altri progetti (non toccarle): 22, 80, 139, 4
 | Aggiornamento | `cd /opt/learning-lab && git pull && npm ci && npm run build:web && sudo systemctl restart learning-lab` |
 | Backup | copia di `/mnt/data/learning-lab` (contiene `course/progress.json` e i workspace) |
 | Password | `sudo nano /etc/learning-lab.env` (riga `LAB_PASSWORD`), poi riavvio |
+| Aiuto con AI (facoltativo) | `sudo nano /etc/learning-lab.env`, riga `LAB_GEMINI_KEY=<chiave>`, poi riavvio; dettagli in `docs/AI-GEMINI.md` |
 
 ## Backup
 

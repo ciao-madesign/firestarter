@@ -177,6 +177,8 @@ export interface Preferences {
   splitPercent: number;
   shell: ShellId;
   tab: string;
+  /** l'allievo ha attivato l'aiuto con AI (richiede la chiave sul server); assente = disattivato */
+  aiEnabled?: boolean;
 }
 
 export interface DocVersion {
